@@ -284,7 +284,7 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 .heat-box{position:relative}
 /* Straddling the left edge, the way the scroll hint straddles the right. Flush
    inside, the rail covered the weekday gutter and took Mon off the band. */
-.heat-ctl{position:absolute;left:-10px;top:-1px;z-index:3;display:none;
+.heat-ctl{position:absolute;left:-10px;top:-1px;z-index:3;display:none;margin:0;
   flex-direction:column;gap:0;background:var(--paper-card);
   border:1px solid var(--rule);border-radius:var(--radius);
   box-shadow:0 2px 8px rgba(0,0,0,.10)}
@@ -296,6 +296,52 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 /* The magnifying glass reports what it did. A write to localStorage is
    invisible, and a control that gives no sign it worked gets pressed twice. */
 .heat-ctl button.kept svg{fill:var(--stroke-mint)}
+
+/* ---------------------------------------------------------------- schema */
+/* An entity-relationship diagram: HTML cards over one SVG wire layer. The frame
+   scrolls rather than shrinking the cards, because a schema read at 60% is a
+   picture of a schema. */
+.erd{position:relative;overflow:auto;border:1px solid var(--rule);
+  border-radius:var(--radius);background:var(--paper-alt);padding:10px}
+.erd-stage{position:relative;transform-origin:0 0}
+.erd-wires{position:absolute;left:0;top:0;pointer-events:none}
+/* The card. Ink border and the page drop shadow, so it reads as a thing laid on
+   the stage; the wires pass behind it because the stage is painted first. */
+.ecard{position:absolute;width:176px;background:var(--paper-card);
+  border:1px solid var(--ink);border-radius:var(--radius-sm);
+  box-shadow:2px 2px 0 var(--rule);overflow:hidden}
+.ehd{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  height:26px;padding:0 6px 0 8px;background:var(--paper-alt);
+  border-bottom:1px solid var(--ink);font-size:10.5px;font-weight:600}
+.ecol{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  height:19px;padding:0 8px;font-family:var(--font-mono);font-size:9px;
+  color:var(--ink-muted);border-top:1px solid var(--rule-soft)}
+.ecol .et{color:var(--ink-faint);text-align:right;white-space:nowrap}
+/* A key row is tinted, not boxed. The tint says "these are the rows the diagram
+   is wired through" without spending a border the card is already using. */
+.ecol.pk,.ecol.fk{background:var(--pastel-vanilla)}
+.ecol.pk .en{font-weight:700;color:var(--ink)}
+/* The dot is the key mark. A glyph at 9px in a 19px row is a smudge; a filled
+   circle is legible at any size and needs no file. */
+.ecol.pk .en::before{content:"";display:inline-block;width:5px;height:5px;
+  margin-right:5px;border-radius:50%;background:var(--stroke-lilac);
+  vertical-align:1px}
+.ecol.fk .en{font-style:italic;color:var(--stroke-lilac)}
+/* The foreign-key mark. A 7px glyph in a 19px row came out as two specks; the
+   arrow is a character, sets at the row's own size, and needs no file. */
+.ecol.fk .en::after{content:"\\2197";margin-left:4px;font-style:normal}
+.ehd .ecount{font-family:var(--font-mono);font-size:9px;color:var(--ink-faint);
+  letter-spacing:.03em}
+/* margin-top comes from .gctl, which is a rail that sits under a figure. This
+   one is pinned to a corner, where a 10px top margin is 10px of drift. */
+.erd-ctl{position:absolute;right:10px;top:10px;z-index:3;display:none;margin:0;
+  background:var(--paper-card);border:1px solid var(--rule);
+  border-radius:var(--radius);box-shadow:0 2px 8px rgba(0,0,0,.10)}
+.erd.live .erd-ctl{display:flex}
+.erd-ctl button{padding:4px 5px;line-height:0}
+.erd-ctl button + button{border-left:1px solid var(--rule-soft)}
+.erd-ctl button svg{width:9px;height:9px;fill:var(--ink-muted)}
+.erd-ctl button[disabled] svg{fill:var(--rule)}
 
 /* A drop control that carries a glyph. The canonical bare variant sizes its mark
    because a bare control IS the mark; the boxed one never had one to size, and an

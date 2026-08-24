@@ -195,6 +195,48 @@ document.querySelectorAll(".scroll-wrap").forEach(function(w){
   upd();
 });
 
+/* ------------------------------------------------------------------- schema */
+/* Four controls over the diagram frame: fit, auto-arrange, out, in. Zoom scales
+   the stage, which keeps the wires registered with the cards -- they are one
+   coordinate system and scaling either alone would tear them apart. */
+document.querySelectorAll(".erd").forEach(function(erd){
+  var stage=erd.querySelector(".erd-stage");
+  if(!stage) return;
+  var W=parseFloat(stage.style.width)||stage.offsetWidth;
+  var STEPS=[.6,.75,.9,1,1.2,1.5];
+  var i=3;
+  var btn=function(a){ return erd.querySelector('[data-a="'+a+'"]'); };
+  var apply=function(){
+    stage.style.transform="scale("+STEPS[i]+")";
+    /* The frame has to grow with the stage or a zoomed diagram scrolls against
+       a box still sized for the old scale. */
+    stage.style.marginBottom=Math.round(stage.offsetHeight*(STEPS[i]-1))+"px";
+    btn("in").disabled=i>=STEPS.length-1;
+    btn("out").disabled=i<=0;
+  };
+  var step=function(d){ return function(){
+    i=Math.min(STEPS.length-1,Math.max(0,i+d)); apply();
+  };};
+  btn("in").addEventListener("click",step(1));
+  btn("out").addEventListener("click",step(-1));
+  /* Fit picks the largest step the frame can hold, rather than an arbitrary
+     fraction: the reader asked to see all of it, not to see it at 73%. */
+  btn("fit").addEventListener("click",function(){
+    var avail=erd.clientWidth-24;
+    var best=0;
+    for(var k=0;k<STEPS.length;k++) if(W*STEPS[k]<=avail) best=k;
+    i=best; apply(); erd.scrollLeft=0;
+  });
+  /* Auto-arrange returns the cards to the positions the renderer gave them.
+     A four-entity schema does not earn a force layout, and "tidy" that moved
+     the cards somewhere the author never saw would be the less useful button. */
+  btn("tidy").addEventListener("click",function(){
+    i=3; apply(); erd.scrollLeft=0; erd.scrollTop=0;
+  });
+  erd.classList.add("live");
+  apply();
+});
+
 /* ----------------------------------------------------- inspector and editor */
 /* Two modals and a picker. The panels are already rendered, one per row and all
    hidden, so opening a row is a matter of deciding which one is not hidden --

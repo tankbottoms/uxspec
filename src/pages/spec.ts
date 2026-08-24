@@ -14,6 +14,7 @@ import * as S from "../spark.ts";
 import * as W from "../wireframes.ts";
 import { stage } from "../viewer.ts";
 import * as D from "../dialogs.ts";
+import { erd, type Entity } from "../schema.ts";
 import { sparkline, stackedBar, legend, ppBar, dmy, type Seg } from "../charts.ts";
 import { toneAt, typeClass, TYPE_TONE } from "../palette.ts";
 import { rows, walk, days, sum, type Row } from "../data.ts";
@@ -53,6 +54,52 @@ const DRILL = GROUPS.map((g) => DATA.find((r) => r.group === g)).filter(
   (r): r is Row => r !== undefined,
 );
 const KINDS = [...new Set(DATA.map((r) => r.kind))];
+
+/* An invented schema, laid out by hand. Four entities is under the size where a
+   layout algorithm earns its keep, and a hand placement is stable across builds
+   in a way a force layout is not. */
+const SCHEMA: Entity[] = [
+  {
+    id: "acct", title: "account", count: "14", x: 8, y: 12,
+    fields: [
+      { name: "id", type: "uuid", pk: true },
+      { name: "name", type: "text" },
+      { name: "group", type: "enum" },
+      { name: "kind", type: "text" },
+    ],
+  },
+  {
+    id: "txn", title: "transaction", count: "9.2k", x: 262, y: 6,
+    fields: [
+      { name: "id", type: "uuid", pk: true },
+      { name: "account_id", type: "uuid", fk: "acct" },
+      { name: "payee_id", type: "uuid", fk: "payee" },
+      { name: "amount", type: "numeric" },
+      { name: "posted", type: "date" },
+    ],
+  },
+  {
+    id: "payee", title: "payee", count: "411", x: 516, y: 24,
+    fields: [
+      { name: "id", type: "uuid", pk: true },
+      { name: "label", type: "text" },
+      { name: "rule_id", type: "uuid", fk: "rule" },
+    ],
+  },
+  {
+    id: "rule", title: "rule", count: "63", x: 262, y: 156,
+    fields: [
+      { name: "id", type: "uuid", pk: true },
+      { name: "match", type: "text" },
+      { name: "kind", type: "text" },
+    ],
+  },
+];
+const SCHEMA_RELS = [
+  { from: "txn", field: "account_id", to: "acct" },
+  { from: "txn", field: "payee_id", to: "payee" },
+  { from: "payee", field: "rule_id", to: "rule" },
+];
 
 /* ------------------------------------------------------------ 1 foundations */
 
@@ -581,6 +628,23 @@ function charts(): string {
       `The regression line is drawn thin and in ink, never in a palette colour: it is a claim about the data, not one of the entities, and colouring it makes it look like another series.`,
     ) +
     S.fig(S.scatterChart(scatter), "Share against balance", "least squares, dashed") +
+    U.h3("Schemas are diagrams, not tables", "schema") +
+    U.p(
+      `A schema printed as a table of column names is a list of facts with the one fact the reader came for &mdash; what points at what &mdash; left implicit in a string. So it is drawn: a card for each entity, a curve for each relation, and the relation leaves the row that owns it rather than the edge of the box.`,
+    ) +
+    U.p(
+      `The cards are HTML over a single SVG wire layer, not SVG text. Type is the whole point of a schema card: a primary key is bold and carries a dot, a foreign key is italic and carries a mark, a type is right-justified mono, and the key rows are tinted so the wiring is legible before a single curve is followed. In HTML each of those is a class; in SVG each is a hand-measured <span class="mono">tspan</span>.`,
+    ) +
+    S.fig(
+      erd(SCHEMA, SCHEMA_RELS, { w: 700, h: 262 }),
+      "Four entities and the three relations between them. The frame scrolls and zooms; the cards do not shrink to fit, because a schema read at 60&percnt; is a picture of a schema.",
+      "invented schema",
+    ) +
+    U.noteBox({
+      kind: "caution",
+      title: "The wire layer carries no stylesheet",
+      body: `An inline SVG <span class="mono">&lt;style&gt;</span> is document-global. A selector as ordinary as <span class="mono">.col</span> inside one would reach every card on the page, so colour rides on presentation attributes holding <span class="mono">var()</span> tokens instead.`,
+    }) +
     U.h3("Percentage points", "pp") +
     U.p(`For a single proportion in running text, the inline bar is enough.`) +
     `<div>${ppBar(94.8, 100)} <span class="mono">94.8%</span> of days carried a reading</div>` +
