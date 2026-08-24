@@ -1,0 +1,9 @@
+node_modules/
+public/*.html
+.wrangler/
+.dev.vars
+.env
+.env.development
+.env.production
+!.env.example
+*.20[0-9][0-9][0-9][0-9][0-9][0-9]*.*

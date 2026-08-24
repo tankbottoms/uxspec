@@ -1,0 +1,17 @@
+{
+  "name": "uxspec",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "bun run src/design-lint.ts src && bun run src/badge-lint.ts src",
+    "build": "bun run lint && bunx tsc --noEmit && bun run src/index.ts",
+    "stage": "mkdir -p public && cp dist/*.html public/",
+    "dev": "bun run build && bun run stage && bunx wrangler@4 dev",
+    "deploy": "bun run build && bun run stage && bunx wrangler@4 deploy",
+    "serve": "bun run build && python3 -m http.server 8895 --bind 0.0.0.0 --directory dist",
+    "check": "bunx tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0"
+  }
+}

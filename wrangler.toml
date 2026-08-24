@@ -1,0 +1,15 @@
+name = "uxspec"
+compatibility_date = "2026-08-01"
+
+# uxspec.atsignhandle.workers.dev comes from the Worker name plus the account
+# subdomain -- it is not a route, and declaring it as one fails the deploy.
+# Top-level on purpose: a key written after a table header belongs to that table.
+workers_dev = true
+
+# No Worker script. The whole site is static single-file HTML plus the vendored
+# three.js module, so Workers Assets serves it directly -- there is nothing for a
+# request handler to decide. Adding one would be a runtime dependency the pages do
+# not have.
+[assets]
+directory = "public"
+not_found_handling = "404-page"
