@@ -158,4 +158,34 @@ export const CSS_EXTRA = `
 .meter i.warn{background:var(--pastel-amber)}
 .meter i.crit{background:var(--pastel-coral)}
 .meter i.idle{background:var(--rule)}
+
+/* ------------------------------------------------- the rotated label rail */
+/* Room around the rail glyph.
+
+   tokens.ts sets .badge.vert { padding: 0 4px }. In vertical writing the two
+   values swap roles: the 4px is the ribbon's thickness and the 0 is the space at
+   each *end* of it, so the glyph sat flush against the end of its own ribbon and
+   the name ran to the other end with nothing between either and the rules above
+   and below the block. Physical properties are used deliberately here rather than
+   the logical ones -- padding-block in vertical-rl addresses the thickness,
+   which is the axis that must not change. */
+.badge.vert { padding-top: 7px; padding-bottom: 7px; }
+/* And room between the glyph and the name it introduces. margin-inline-end
+   because with the text on its side the inline axis runs down the cell -- a right
+   margin would push the glyph across the ribbon instead of along it. */
+.badge.vert .gm { margin-inline-end: 8px; }
+/* Both of the above are spent out of the length available to the name, so
+   STACK_PX in tables.ts counts them. Change one, change the other. */
+
+/* The subtotal's mark, with no box around it.
+
+   .badge.gi in tokens.ts already says a mark is not a value and drops the fill
+   and the border -- but the tone classes are declared further down the file at the
+   same specificity, so .badge.gi.p5 gets its lilac back and draws the box again.
+   Scoping to the subtotal row wins on specificity without touching either rule,
+   and color is left alone: the glyph keeps the group's own colour, which is the
+   whole reason it is there. */
+tr.sub td.rot .badge.gi {
+  background: transparent; border-color: transparent; padding: 0;
+}
 `;

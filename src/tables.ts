@@ -67,8 +67,17 @@ export function totRow(cells: string): string {
 
 /** A row is 29px: 13 of padding, 15 of badge, 1 of rule. Measured, not guessed. */
 export const ROW_PX = 29;
-/** Inset at both ends of the stack, plus the glyph and the gap beneath it. */
-export const STACK_PX = 36;
+/**
+ * What the label cell spends before a single letter of the name is set.
+ *
+ * Nine of inset at each end of the stack, the glyph itself, the gap between the
+ * glyph and the name, and seven of padding at each end of the ribbon. If any of
+ * those change in `tokens-extra.ts`, this number changes with them -- it is the
+ * one place the CSS and the fitting arithmetic have to agree, and when they stop
+ * agreeing the failure is a name that fits by this calculation and is cut short
+ * by an ellipsis on the page.
+ */
+export const STACK_PX = 53;
 /** Heights a label cell may claim, indexed by how many rows' worth they are. */
 const GH_PX = [0, 29, 58, 87, 116, 145] as const;
 /** Width of a character in the label face at 11.5px, and in the smaller face. */
@@ -187,7 +196,16 @@ export function railW(names: readonly string[]): string {
 
 /** The subtotal's own mark: the block's glyph, on a row that is not in the block. */
 export function subMark(m: GroupMeta): string {
-  return `<td class="rot"><span class="gstack"><span class="badge vert w7 ${m.tone} hollow"><span class="gm" role="img" aria-label="${esc(
+  // `gi`, not `vert`: the mark on a subtotal is a glyph and nothing else. A
+  // subtotal is one row, so a rotated ribbon has 29px to stand in and would draw a
+  // box around a single upright mark -- a second, emptier badge beside the one the
+  // block already wears. `hollow` was the earlier attempt and it only dropped the
+  // fill; the border stayed, which is the part that read as a box.
+  //
+  // `gonly` on the cell because the stack's 9px insets exist to keep a full-height
+  // name clear of the rules above and below it. There is no name here, so they have
+  // nothing to protect and a 13px glyph does not fit in the 11px they leave.
+  return `<td class="rot gonly"><span class="gstack"><span class="badge gi w7 ${m.tone}"><span class="gm" role="img" aria-label="${esc(
     m.name,
   )}">${icon(m.ic)}</span></span></span></td>`;
 }
