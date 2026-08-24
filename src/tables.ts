@@ -40,7 +40,12 @@ export function table(o: {
   scope?: string;
 }): string {
   const cls = ["sortable", o.grouped ? "grouped" : ""].filter(Boolean).join(" ");
-  return `<div class="scroll"><table class="${cls}">
+  /* The wrapper exists only to hold the chevron still while the table slides
+     under it -- a pseudo-element on the scroller itself would scroll away with
+     the content. The hint is inert until the script measures an overflow and
+     adds `more`, so a table that fits never shows an affordance it cannot
+     honour, and a page with no script shows none at all rather than a lie. */
+  return `<div class="scroll-wrap"><div class="scroll"><table class="${cls}">
 <caption><span class="fig">${esc(o.fig)}</span>${o.caption}${
     // Raw HTML, like every other scope on the page: a scope is a period and its
     // separator is an entity.
@@ -48,7 +53,25 @@ export function table(o: {
   }</caption>
 ${thead(o.cols)}
 <tbody>${o.body}</tbody>${o.foot ? `\n<tfoot>${o.foot}</tfoot>` : ""}
-</table></div>`;
+</table></div><i class="scroll-hint">${icon("circle-chevron-right")}</i></div>`;
+}
+
+/**
+ * A cell that says one line and keeps the rest for a hover.
+ *
+ * The column stays one width and never wraps, which is what makes a dense table
+ * readable down a column; the detail that would have forced the wrap sits in a
+ * plate above the cell, on hover and on focus-within, so a keyboard reaches it
+ * too. `short` is authored text and is escaped; `full` is a fragment, because
+ * the detail is nearly always a definition list of its own.
+ */
+export function dtd(short: string, full: string, cls = ""): string {
+  /* The dotted underline belongs to the text, not to the cell. On the `td` it
+     runs the full column width and reads as an input box sitting in the row. */
+  return (
+    `<td${cls === "" ? "" : ` class="${cls}"`}>` +
+    `<span class="dt" tabindex="0">${esc(short)}<span class="dt-full">${full}</span></span></td>`
+  );
 }
 
 export function td(html: string, cls = ""): string {

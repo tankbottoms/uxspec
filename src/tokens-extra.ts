@@ -274,6 +274,16 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    scaling a 9px cell up to whatever width the page happens to have. */
 .heat{width:auto;max-width:none;margin:0}
 .scroll > .heat{margin:2px 0 4px}
+
+/* The canonical hint rotates its glyph, which assumes a caret drawn pointing
+   down. Ours is a circle-chevron already pointing where the table goes. */
+.scroll-hint svg{transform:none}
+
+/* A table caption carries its scope on its own line, the same as a figure does.
+   The canonical rule is scoped to figure figcaption, so a scope inside a
+   caption inherited nothing and ran straight on from the sentence before it. */
+caption .scope{display:block;margin-top:4px;font-family:var(--font-mono);
+  font-size:10.5px;line-height:1.5;color:var(--ink-soft)}
 .donut{margin:6px auto 2px}
 .hbars{margin-top:8px}
 .donut-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px}

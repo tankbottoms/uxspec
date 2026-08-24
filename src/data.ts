@@ -92,11 +92,19 @@ export function rows(seed = 7): Row[] {
         kind: kinds[i % kinds.length] as string,
         status: st > 0.82 ? "crit" : st > 0.62 ? "warn" : st > 0.14 ? "ok" : "idle",
         v: Math.round((400 + r() * 42000) * (gi === 1 ? -1 : 1)),
-        pct: Math.round(r() * 1000) / 10,
+        pct: 0, // normalised below: a share is a share of the book
         day: days(90)[Math.floor(r() * 89)] as string,
       });
       n++;
     }
+  });
+  /* Shares are computed from the balances rather than drawn independently.
+     Random shares do not sum to the book, and a subtotal column that adds up to
+     9,800% is the kind of detail a reader notices before anything else on the
+     page. */
+  const book = out.reduce((a, x) => a + Math.abs(x.v), 0) || 1;
+  out.forEach((x) => {
+    x.pct = Math.abs(x.v) / book;
   });
   return out;
 }

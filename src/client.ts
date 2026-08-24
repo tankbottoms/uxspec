@@ -137,6 +137,24 @@ document.addEventListener("click",function(e){
   });
 },true);
 
+/* ------------------------------------------------- sideways scroll affordance */
+/* A table wider than its box is the one overflow a reader can miss entirely:
+   nothing is clipped visibly, the last column simply is not there. The circle
+   carries a chevron and appears only while there is more table to the right,
+   which makes it a statement about this table at this width rather than a
+   decoration. Measured on scroll and on resize, because a column can come back
+   into range without anyone touching the scroller. */
+document.querySelectorAll(".scroll-wrap").forEach(function(w){
+  var el=w.querySelector(".scroll");
+  if(!el) return;
+  var upd=function(){
+    w.classList.toggle("more", el.scrollWidth-el.clientWidth-el.scrollLeft>2);
+  };
+  el.addEventListener("scroll",upd,{passive:true});
+  addEventListener("resize",upd);
+  upd();
+});
+
 /* ------------------------------------------------------------- copy code */
 document.querySelectorAll("pre.code").forEach(function(pre){
   pre.addEventListener("dblclick",function(){

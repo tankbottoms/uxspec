@@ -193,8 +193,14 @@ function statusBadge(r: Row): string {
 }
 
 function rowCells(r: Row): string {
+  /* The account name is the column that would wrap first, so it is the column
+     that carries the hover plate: one line in the table, the rest above it. */
+  const detail =
+    `<strong>${esc(r.name)}</strong>` +
+    `<span class="x">${esc(GNAME[r.group] ?? r.group)} &middot; ${esc(r.kind)}</span>` +
+    `<span class="iso">${esc(r.day)} &middot; ${usd(r.v)} &middot; ${pct(r.pct)} of book</span>`;
   return (
-    T.td(esc(r.name)) +
+    T.dtd(r.name, detail) +
     T.td(U.badge(r.kind, KIND_W, typeClass(r.group))) +
     T.td(statusBadge(r)) +
     T.td(day(r.day), "n") +
@@ -246,7 +252,7 @@ function tables(): string {
       T.td("") +
       T.td("", "n") +
       T.td(usd(sum(DATA)), "n") +
-      T.td("100.0%", "n"),
+      T.td(pct(DATA.reduce((a, x) => a + x.pct, 0)), "n"),
   );
   return (
     sec("tables") +
@@ -264,6 +270,20 @@ function tables(): string {
       grouped: true,
       scope: "invented data &middot; 90 days",
     }) +
+    U.h3("No wrap, and where the rest of it goes", "nowrap") +
+    U.p(
+      `Cells do not wrap. A wrapped cell makes its row taller than its neighbours, and the moment rows stop being one height the eye loses the column it was reading down &mdash; which is the only reason to draw a table rather than a list. So the table is set to <span class="mono">width:max-content</span> inside a scroll box and takes the width it needs.`,
+    ) +
+    U.p(
+      `That leaves two problems, and each has one answer. A table wider than its box can be missed entirely, because nothing looks clipped &mdash; the last column simply is not there; so the box carries a circle-chevron at its right edge, shown only while there is more table to the right and measured again on scroll and on resize. And a column whose value genuinely needs a sentence does not get a wider column: it gets a dotted underline and hands the sentence over on hover, and on focus, so a keyboard reaches it too. Hover the account names in <span class="mono">Table 1</span>.`,
+    ) +
+    U.code(
+      `<td class="dt" tabindex="0">Checking\u2003\u2003<span class="dt-full">&hellip;</span></td>
+
+/* the affordance is a statement about this table at this width */
+w.classList.toggle("more", el.scrollWidth - el.clientWidth - el.scrollLeft > 2);`,
+      { lang: "tables.ts + client.ts" },
+    ) +
     U.h3("Why the label is turned on its side", "rail") +
     U.p(
       `A group of nine rows gets one tall label instead of nine short ones. The catch is that a rotated label is only as legible as its block is tall, and the block is whatever the data put together &mdash; nine rows one time, one row the next.`,
