@@ -1,7 +1,7 @@
-name = "uxspec"
+name = "ux-spec"
 compatibility_date = "2026-08-01"
 
-# uxspec.atsignhandle.workers.dev comes from the Worker name plus the account
+# ux-spec.atsignhandle.workers.dev comes from the Worker name plus the account
 # subdomain -- it is not a route, and declaring it as one fails the deploy.
 # Top-level on purpose: a key written after a table header belongs to that table.
 workers_dev = true

@@ -39,7 +39,7 @@ const meta = (title: string, path: string): string =>
   `<meta property="og:title" content="${title}">` +
   `<meta property="og:description" content="${DESC}">` +
   `<meta property="og:type" content="website">` +
-  `<meta property="og:url" content="https://uxspec.atsignhandle.workers.dev/${path}">`;
+  `<meta property="og:url" content="https://ux-spec.atsignhandle.workers.dev/${path}">`;
 
 const pages: { file: string; nav: string; html: string }[] = [
   {

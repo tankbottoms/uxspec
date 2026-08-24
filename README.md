@@ -4,7 +4,7 @@ The house design system, as a working template: one Bun/TypeScript renderer, a
 badge contract, a grouped-row table, a generous set of spark charts and
 wireframes, and two linters that fail the build rather than the review.
 
-Live: <https://uxspec.atsignhandle.workers.dev>
+Live: <https://ux-spec.atsignhandle.workers.dev>
 
 ## What this is
 
