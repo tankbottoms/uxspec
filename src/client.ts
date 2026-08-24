@@ -195,6 +195,110 @@ document.querySelectorAll(".scroll-wrap").forEach(function(w){
   upd();
 });
 
+/* ----------------------------------------------------- inspector and editor */
+/* Two modals and a picker. The panels are already rendered, one per row and all
+   hidden, so opening a row is a matter of deciding which one is not hidden --
+   no client-side templating, no second set of escaping rules. */
+var rowDlg=document.getElementById("row-dialog");
+var edDlg=document.getElementById("edit-dialog");
+var openRow=function(i){
+  if(!rowDlg) return;
+  rowDlg.querySelectorAll(".rp").forEach(function(p){
+    p.hidden = p.getAttribute("data-row")!==String(i);
+  });
+  if(rowDlg.showModal && !rowDlg.open) rowDlg.showModal();
+};
+document.querySelectorAll("tr.clickable[data-row]").forEach(function(tr){
+  var go=function(){ openRow(tr.getAttribute("data-row")); };
+  tr.addEventListener("click",go);
+  /* The row is reachable by keyboard, so it answers to the keys a control
+     answers to. A tabindex without Enter is a focus ring that does nothing. */
+  tr.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); }
+  });
+});
+
+/* The picker. A button, a panel of buttons, and a hidden input holding the
+   value -- so everything downstream still reads .value and hears change. */
+var closePickers=function(){
+  document.querySelectorAll(".pk.open").forEach(function(o){
+    o.classList.remove("open");
+    var b=o.querySelector(".pkb");
+    if(b) b.setAttribute("aria-expanded","false");
+  });
+};
+document.querySelectorAll(".pk").forEach(function(pk){
+  var input=document.getElementById(pk.getAttribute("data-for"));
+  var btn=pk.querySelector(".pkb"), val=pk.querySelector(".pv");
+  var list=pk.querySelector(".pkl");
+  if(!input||!btn||!val||!list) return;
+  btn.addEventListener("click",function(e){
+    e.stopPropagation();
+    var was=pk.classList.contains("open");
+    closePickers();
+    if(was) return;
+    pk.classList.add("open");
+    btn.setAttribute("aria-expanded","true");
+    var on=list.querySelector("button.on");
+    if(on&&on.scrollIntoView) on.scrollIntoView({block:"nearest"});
+  });
+  list.querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      input.value=b.textContent;
+      val.textContent=b.textContent;
+      list.querySelectorAll("button").forEach(function(o){
+        var on=o===b;
+        o.className=on?"on":"";
+        o.setAttribute("aria-selected",on?"true":"false");
+      });
+      closePickers();
+      input.dispatchEvent(new Event("change"));
+    });
+  });
+});
+/* Anywhere else is a dismissal, and Escape is taken before the dialog sees it:
+   the open list is the nearest overlay, and closing the whole panel would throw
+   away a choice the reader was in the middle of making. */
+document.addEventListener("click",closePickers);
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Escape") return;
+  if(!document.querySelector(".pk.open")) return;
+  e.preventDefault(); e.stopPropagation(); closePickers();
+},true);
+
+/* The patch line. Readonly, and rewritten on every change, because the dialog
+   is a decision -- the thing it produces is a line for the source, not a write. */
+var edWhat=document.getElementById("ed-what");
+var edPatch=document.getElementById("ed-patch");
+var edGroup=document.getElementById("ed-group");
+var edKind=document.getElementById("ed-kind");
+var edFor="";
+var edLine=function(){
+  if(!edPatch) return;
+  edPatch.value='{ payee: "'+edFor+'", group: "'+(edGroup?edGroup.value:"")+
+    '", kind: "'+(edKind?edKind.value:"")+'" },';
+};
+if(edGroup) edGroup.addEventListener("change",edLine);
+if(edKind) edKind.addEventListener("change",edLine);
+document.querySelectorAll("[data-edit]").forEach(function(b){
+  b.addEventListener("click",function(){
+    var panel=b.closest(".rp");
+    var h=panel&&panel.querySelector("h4");
+    edFor=h?h.textContent:"";
+    if(edWhat) edWhat.textContent=edFor;
+    edLine();
+    if(rowDlg&&rowDlg.open) rowDlg.close();
+    if(edDlg&&edDlg.showModal) edDlg.showModal();
+  });
+});
+var edClear=document.getElementById("ed-clear");
+if(edClear) edClear.addEventListener("click",function(){
+  if(edPatch) edPatch.value="";
+});
+var edSave=document.getElementById("ed-save");
+if(edSave) edSave.addEventListener("click",function(){ if(edDlg) edDlg.close(); });
+
 /* ------------------------------------------------------------- copy code */
 document.querySelectorAll("pre.code").forEach(function(pre){
   pre.addEventListener("dblclick",function(){

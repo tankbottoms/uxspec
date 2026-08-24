@@ -297,6 +297,11 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    invisible, and a control that gives no sign it worked gets pressed twice. */
 .heat-ctl button.kept svg{fill:var(--stroke-mint)}
 
+/* A drop control that carries a glyph. The canonical bare variant sizes its mark
+   because a bare control IS the mark; the boxed one never had one to size, and an
+   unsized inline SVG in a 19px box comes out at whatever the file says. */
+dialog.rows button.drop .ic{width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+
 /* The canonical hint rotates its glyph, which assumes a caret drawn pointing
    down. Ours is a circle-chevron already pointing where the table goes. */
 .scroll-hint svg{transform:none}

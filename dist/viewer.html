@@ -235,31 +235,39 @@ p.lead { font-size: 13.5px; line-height: 1.62; }
    Pick the step that fits the longest value the column can hold; a longer label
    is clipped rather than allowed to widen its own box out of line with the rest
    of the column. */
-.badge.w3  { width: 3ch; }
-.badge.w5  { width: 5ch; }
-.badge.w7  { width: 7ch; }
-.badge.w9  { width: 9ch; }
-.badge.w11 { width: 11ch; }
-.badge.w12 { width: 12ch; }
-.badge.w14 { width: 14ch; }
-.badge.w17 { width: 17ch; }
-.badge.w19 { width: 19ch; }
-.badge.w23 { width: 23ch; }
-.badge.w25 { width: 25ch; }
+/* A "ch" is one character advance and does not include letter-spacing, so a label of N
+   characters in this font occupies N ch PLUS N x .04em -- about 0.4px a character at
+   10px. Uncompensated, any label that exactly fills its step overruns the box it was
+   given: "Partial" clipped by 2px at w7, "Progressive Insurance Premium" by 3px at w30.
+   Each step therefore adds its own letter-spacing back. The alternative -- widening the
+   scale, or having wcls() round up a step -- buys 3px of fit with up to 24px of slack on
+   every short label in the column, which is how a column goes ragged in the other
+   direction. */
+.badge.w3 { width: calc(3ch + 3 * 0.04em); }
+.badge.w5 { width: calc(5ch + 5 * 0.04em); }
+.badge.w7 { width: calc(7ch + 7 * 0.04em); }
+.badge.w9 { width: calc(9ch + 9 * 0.04em); }
+.badge.w11 { width: calc(11ch + 11 * 0.04em); }
+.badge.w12 { width: calc(12ch + 12 * 0.04em); }
+.badge.w14 { width: calc(14ch + 14 * 0.04em); }
+.badge.w17 { width: calc(17ch + 17 * 0.04em); }
+.badge.w19 { width: calc(19ch + 19 * 0.04em); }
+.badge.w23 { width: calc(23ch + 23 * 0.04em); }
+.badge.w25 { width: calc(25ch + 25 * 0.04em); }
 .badge.w3, .badge.w5, .badge.w7, .badge.w9, .badge.w11, .badge.w12,
 .badge.w14, .badge.w17, .badge.w19, .badge.w23, .badge.w25 {
   overflow: hidden; text-overflow: ellipsis; display: inline-flex;
 }
 /* The "auto" class is the deliberate opt-out, for a badge that is a heading rather
    than a column: it declares that no column has to line up with it. */
-.badge.auto { width: auto; min-width: 9ch; }
-.badge.w30 { width: 30ch; }
-.badge.w34 { width: 34ch; }
+.badge.auto { width: auto; min-width: calc(9ch + 9 * 0.04em); }
+.badge.w30 { width: calc(30ch + 30 * 0.04em); }
+.badge.w34 { width: calc(34ch + 34 * 0.04em); }
 /* The two widest steps exist for an account column: a full institution name runs to
    'American Express Platinum by Goldman Sachs', 42 characters, and clipping it to 25
    leaves two Amex cards and four Fidelity accounts indistinguishable from each other. */
-.badge.w38 { width: 38ch; }
-.badge.w42 { width: 42ch; }
+.badge.w38 { width: calc(38ch + 38 * 0.04em); }
+.badge.w42 { width: calc(42ch + 42 * 0.04em); }
 .badge.w30, .badge.w34, .badge.w38, .badge.w42 {
   overflow: hidden; text-overflow: ellipsis; display: inline-flex;
 }
@@ -397,13 +405,6 @@ td.rot.gh2 { height: 58px; }
 td.rot.gh3 { height: 87px; }
 td.rot.gh4 { height: 116px; }
 td.rot.gh5 { height: 145px; }
-/* Colour without fill. A payee sitting under its category is the same colour as the
-   category and must not compete with it, so it keeps the border and the text and
-   gives up the background. */
-.badge.hollow { background: var(--paper-card); }
-/* Ink on paper, for a column that is a label rather than a value -- a month name
-   carries no status and should not borrow a status colour to say so. */
-.badge.mono { background: var(--paper-card); border-color: var(--ink); color: var(--ink); }
 
 /* Subtotal and total rows. Neither is a row of data -- both are arithmetic on the rows
    above -- so both are tinted off the data field and ruled away from it. The subtotal
@@ -424,7 +425,10 @@ tr.sub > td { background: var(--paper-alt); border-top: 1px solid var(--rule); c
    the table talking about itself. */
 tr.sep > td {
   background: var(--paper-alt); border-top: 2px solid var(--rule);
-  color: var(--ink-muted); font-size: 11px; letter-spacing: .08em;
+  /* Owner request 2026-08-24: down to badge size. The band is a label on a fold, not a
+     heading, and at 11px uppercase with this tracking it outweighed the 10.5px table it
+     sits inside -- the one row that is not data was the loudest thing in the table. */
+  color: var(--ink-muted); font-size: 10px; letter-spacing: .08em;
   text-transform: uppercase; padding: 9px 10px;
 }
 /* Collapsed away by a control on the page. Kept out of the sort, which reads the rows
@@ -532,6 +536,74 @@ dialog.rows button.drop:hover { color: var(--ink); border-color: var(--ink); }
 /* The row control is one glyph, so it is drawn as one glyph. A box around a 10px mark
    in the last column of a table made of numbers reads as another value; the affordance
    is the pointer and the hover, and the word is on the title. Owner ruling 2026-08-23. */
+/* The pencil sits with the trash in the same cell: two verdicts on one row, "filed
+   wrong" and "not mine", and they belong side by side rather than in two columns of
+   which one is empty on every row. */
+dialog.rows button.edit.bare {
+  border-color: transparent; background: transparent; padding: 0 2px; height: auto;
+  color: var(--ink-faint); line-height: 0; margin-inline-end: 2px;
+}
+dialog.rows button.edit.bare .ic { width: 11px; height: 11px; }
+dialog.rows button.edit.bare:hover { color: var(--ink); border-color: transparent; }
+/* The reassignment panel. Narrow on purpose: it holds one charge and two choices, and
+   at the width of the row inspector it reads as a table with nothing in it. */
+/* Overflow is visible on this one so the picker's panel can hang below its button.
+   dialog.rows scrolls, which is right for the inspector's table of a few hundred rows
+   and wrong here: the panel would be clipped at the dialog's edge or, worse, open a
+   scrollbar and scroll the choice out from under the pointer. */
+dialog.rows.move { max-width: 460px; overflow: visible; }
+/* Two columns, not label-then-control down the side. It is one decision in two halves
+   -- the group narrows the list, the category is the answer -- and side by side says
+   that; four stacked rows read as a form. Owner ruling 2026-08-24. */
+dialog.rows.move .movef {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px;
+  align-items: start; margin: 10px 0 12px;
+}
+dialog.rows.move .pk { position: relative; }
+dialog.rows.move .pk .pl {
+  display: block; text-align: center; margin-bottom: 4px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-muted);
+}
+/* The closed control. Set in the page's own mono at 11px -- one step above the option
+   list, because the button says what was chosen and the list is only the choosing. */
+dialog.rows.move .pkb {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; height: 24px; padding: 0 8px; cursor: pointer;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em;
+  border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  background: var(--paper-card); color: var(--ink);
+}
+dialog.rows.move .pkb:hover, dialog.rows.move .pk.open .pkb { border-color: var(--ink); }
+dialog.rows.move .pkb .pv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+dialog.rows.move .pkb .ic { width: 9px; height: 9px; flex: none; color: var(--ink-faint); }
+dialog.rows.move .pk.open .pkb .ic { transform: rotate(180deg); }
+/* The open list. Bordered in ink with the page's own drop shadow, so it reads as a
+   sheet lifted off the dialog rather than as a region of it. Capped in height at about
+   nine options: the longest group has more categories than that and a panel taller
+   than the dialog it hangs from would cover the charge it is being asked about. */
+dialog.rows.move .pkl {
+  display: none; position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 3px);
+  max-height: 216px; overflow-y: auto; padding: 2px;
+  border: 1px solid var(--ink); border-radius: var(--radius-sm);
+  background: var(--paper-card); box-shadow: 2px 2px 0 var(--ink);
+}
+dialog.rows.move .pk.open .pkl { display: block; }
+dialog.rows.move .pkl button {
+  display: block; width: 100%; text-align: center; cursor: pointer;
+  font-family: var(--font-mono); font-size: 10.5px; line-height: 1.15;
+  padding: 4px 6px; border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink-muted);
+}
+dialog.rows.move .pkl button:hover { background: var(--paper-alt); color: var(--ink); }
+dialog.rows.move .pkl button.on { background: var(--paper-alt); color: var(--ink); font-weight: 600; }
+/* The action row sits bottom right. The panel is read top to bottom -- what the charge
+   is, where it should go, the line to paste -- and the verdict belongs at the end of
+   that reading, not back at the left margin where the labels start. Secondary first so
+   the primary lands on the corner the pointer leaves the dialog from. */
+dialog.rows.move .movea {
+  display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;
+}
 dialog.rows button.drop.bare {
   border-color: transparent; background: transparent; padding: 0 2px; height: auto;
   color: var(--ink-faint); line-height: 0;
@@ -617,6 +689,17 @@ td.nw, th.nw { white-space: nowrap; }
    subtotal rows, where the mark stands alone and a pill around it would read as a
    value in a row made of values. */
 .badge.bare { background: transparent; border-color: transparent; padding: 0; }
+/* Colour without fill. A payee sitting under its category is the same colour as the
+   category and must not compete with it, so it keeps the border and the text and gives
+   up the background. Down here for the same reason .badge.bare is: every .badge.pN is
+   written at this specificity further up, so a modifier declared above them loses and
+   the pill keeps its tint. Owner ruling 2026-08-23: the Table 1 badge is white-filled,
+   which is what this rule was always meant to say. */
+.badge.hollow { background: var(--paper-card); }
+/* Ink on paper, for a column that is a label rather than a value -- a month name
+   carries no status and should not borrow a status colour to say so. Same cascade
+   trap, same fix. */
+.badge.mono { background: var(--paper-card); border-color: var(--ink); color: var(--ink); }
 /* The same bare mark, but with a label beside it instead of alone in a cell. The
    width classes exist to line pills up in a column; a glyph that is a prefix to text
    has nothing to line up with, and 3ch of reserved box read as a gap between the mark
@@ -684,6 +767,28 @@ caption .fig, figure figcaption .fig, .therm + figcaption .fig {
   font-family: var(--font-mono); font-size: 9px; font-weight: 600;
   letter-spacing: .07em; text-transform: uppercase;
 }
+/* A caption long enough to be a paragraph is set smaller than one that is a line.
+   Captions are all 9.5px because they carry the same weight of information, and that
+   holds while a caption is a sentence. The obligations table needs four -- what the
+   figures are, how they were annualised, what the two bands mean, and why one column
+   is empty -- and at the common size that block competes with the table it describes.
+   Dropped a step, it reads as the footnote it is. 8.5px is the floor for this: the
+   caption is still prose a reader has to get through, not a label to be glanced at. */
+table.longcap caption { font-size: 8.5px; line-height: 1.55; }
+
+/* The shops inside a category, under the inspector's count-and-range line.
+   Set as a wrapping run of small units rather than a list, because the useful reading is
+   comparative -- which shop is most of this number -- and a column of forty rows buries
+   that above the fold. Name, count, total; the count is the dim one because it is the
+   least interesting of the three. */
+.stores { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 9px; }
+.stores .st {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  border: 1px solid var(--rule-hair); border-radius: var(--radius-sm);
+  padding: 2px 7px; font-size: 9px; line-height: 1.4; color: var(--ink-muted);
+}
+.stores .st i { font-style: normal; opacity: .55; font-family: var(--font-mono); }
+.stores .st b { font-weight: 600; font-family: var(--font-mono); color: var(--ink); }
 th {
   text-align: left; padding: 9px 11px 7px; font-size: inherit; font-weight: 500;
   letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
@@ -1429,6 +1534,11 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    invisible, and a control that gives no sign it worked gets pressed twice. */
 .heat-ctl button.kept svg{fill:var(--stroke-mint)}
 
+/* A drop control that carries a glyph. The canonical bare variant sizes its mark
+   because a bare control IS the mark; the boxed one never had one to size, and an
+   unsized inline SVG in a 19px box comes out at whatever the file says. */
+dialog.rows button.drop .ic{width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+
 /* The canonical hint rotates its glyph, which assumes a caret drawn pointing
    down. Ours is a circle-chevron already pointing where the table goes. */
 .scroll-hint svg{transform:none}
@@ -1755,6 +1865,110 @@ document.querySelectorAll(".scroll-wrap").forEach(function(w){
   addEventListener("resize",upd);
   upd();
 });
+
+/* ----------------------------------------------------- inspector and editor */
+/* Two modals and a picker. The panels are already rendered, one per row and all
+   hidden, so opening a row is a matter of deciding which one is not hidden --
+   no client-side templating, no second set of escaping rules. */
+var rowDlg=document.getElementById("row-dialog");
+var edDlg=document.getElementById("edit-dialog");
+var openRow=function(i){
+  if(!rowDlg) return;
+  rowDlg.querySelectorAll(".rp").forEach(function(p){
+    p.hidden = p.getAttribute("data-row")!==String(i);
+  });
+  if(rowDlg.showModal && !rowDlg.open) rowDlg.showModal();
+};
+document.querySelectorAll("tr.clickable[data-row]").forEach(function(tr){
+  var go=function(){ openRow(tr.getAttribute("data-row")); };
+  tr.addEventListener("click",go);
+  /* The row is reachable by keyboard, so it answers to the keys a control
+     answers to. A tabindex without Enter is a focus ring that does nothing. */
+  tr.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); }
+  });
+});
+
+/* The picker. A button, a panel of buttons, and a hidden input holding the
+   value -- so everything downstream still reads .value and hears change. */
+var closePickers=function(){
+  document.querySelectorAll(".pk.open").forEach(function(o){
+    o.classList.remove("open");
+    var b=o.querySelector(".pkb");
+    if(b) b.setAttribute("aria-expanded","false");
+  });
+};
+document.querySelectorAll(".pk").forEach(function(pk){
+  var input=document.getElementById(pk.getAttribute("data-for"));
+  var btn=pk.querySelector(".pkb"), val=pk.querySelector(".pv");
+  var list=pk.querySelector(".pkl");
+  if(!input||!btn||!val||!list) return;
+  btn.addEventListener("click",function(e){
+    e.stopPropagation();
+    var was=pk.classList.contains("open");
+    closePickers();
+    if(was) return;
+    pk.classList.add("open");
+    btn.setAttribute("aria-expanded","true");
+    var on=list.querySelector("button.on");
+    if(on&&on.scrollIntoView) on.scrollIntoView({block:"nearest"});
+  });
+  list.querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      input.value=b.textContent;
+      val.textContent=b.textContent;
+      list.querySelectorAll("button").forEach(function(o){
+        var on=o===b;
+        o.className=on?"on":"";
+        o.setAttribute("aria-selected",on?"true":"false");
+      });
+      closePickers();
+      input.dispatchEvent(new Event("change"));
+    });
+  });
+});
+/* Anywhere else is a dismissal, and Escape is taken before the dialog sees it:
+   the open list is the nearest overlay, and closing the whole panel would throw
+   away a choice the reader was in the middle of making. */
+document.addEventListener("click",closePickers);
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Escape") return;
+  if(!document.querySelector(".pk.open")) return;
+  e.preventDefault(); e.stopPropagation(); closePickers();
+},true);
+
+/* The patch line. Readonly, and rewritten on every change, because the dialog
+   is a decision -- the thing it produces is a line for the source, not a write. */
+var edWhat=document.getElementById("ed-what");
+var edPatch=document.getElementById("ed-patch");
+var edGroup=document.getElementById("ed-group");
+var edKind=document.getElementById("ed-kind");
+var edFor="";
+var edLine=function(){
+  if(!edPatch) return;
+  edPatch.value='{ payee: "'+edFor+'", group: "'+(edGroup?edGroup.value:"")+
+    '", kind: "'+(edKind?edKind.value:"")+'" },';
+};
+if(edGroup) edGroup.addEventListener("change",edLine);
+if(edKind) edKind.addEventListener("change",edLine);
+document.querySelectorAll("[data-edit]").forEach(function(b){
+  b.addEventListener("click",function(){
+    var panel=b.closest(".rp");
+    var h=panel&&panel.querySelector("h4");
+    edFor=h?h.textContent:"";
+    if(edWhat) edWhat.textContent=edFor;
+    edLine();
+    if(rowDlg&&rowDlg.open) rowDlg.close();
+    if(edDlg&&edDlg.showModal) edDlg.showModal();
+  });
+});
+var edClear=document.getElementById("ed-clear");
+if(edClear) edClear.addEventListener("click",function(){
+  if(edPatch) edPatch.value="";
+});
+var edSave=document.getElementById("ed-save");
+if(edSave) edSave.addEventListener("click",function(){ if(edDlg) edDlg.close(); });
 
 /* ------------------------------------------------------------- copy code */
 document.querySelectorAll("pre.code").forEach(function(pre){

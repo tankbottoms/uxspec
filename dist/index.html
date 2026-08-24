@@ -235,31 +235,39 @@ p.lead { font-size: 13.5px; line-height: 1.62; }
    Pick the step that fits the longest value the column can hold; a longer label
    is clipped rather than allowed to widen its own box out of line with the rest
    of the column. */
-.badge.w3  { width: 3ch; }
-.badge.w5  { width: 5ch; }
-.badge.w7  { width: 7ch; }
-.badge.w9  { width: 9ch; }
-.badge.w11 { width: 11ch; }
-.badge.w12 { width: 12ch; }
-.badge.w14 { width: 14ch; }
-.badge.w17 { width: 17ch; }
-.badge.w19 { width: 19ch; }
-.badge.w23 { width: 23ch; }
-.badge.w25 { width: 25ch; }
+/* A "ch" is one character advance and does not include letter-spacing, so a label of N
+   characters in this font occupies N ch PLUS N x .04em -- about 0.4px a character at
+   10px. Uncompensated, any label that exactly fills its step overruns the box it was
+   given: "Partial" clipped by 2px at w7, "Progressive Insurance Premium" by 3px at w30.
+   Each step therefore adds its own letter-spacing back. The alternative -- widening the
+   scale, or having wcls() round up a step -- buys 3px of fit with up to 24px of slack on
+   every short label in the column, which is how a column goes ragged in the other
+   direction. */
+.badge.w3 { width: calc(3ch + 3 * 0.04em); }
+.badge.w5 { width: calc(5ch + 5 * 0.04em); }
+.badge.w7 { width: calc(7ch + 7 * 0.04em); }
+.badge.w9 { width: calc(9ch + 9 * 0.04em); }
+.badge.w11 { width: calc(11ch + 11 * 0.04em); }
+.badge.w12 { width: calc(12ch + 12 * 0.04em); }
+.badge.w14 { width: calc(14ch + 14 * 0.04em); }
+.badge.w17 { width: calc(17ch + 17 * 0.04em); }
+.badge.w19 { width: calc(19ch + 19 * 0.04em); }
+.badge.w23 { width: calc(23ch + 23 * 0.04em); }
+.badge.w25 { width: calc(25ch + 25 * 0.04em); }
 .badge.w3, .badge.w5, .badge.w7, .badge.w9, .badge.w11, .badge.w12,
 .badge.w14, .badge.w17, .badge.w19, .badge.w23, .badge.w25 {
   overflow: hidden; text-overflow: ellipsis; display: inline-flex;
 }
 /* The "auto" class is the deliberate opt-out, for a badge that is a heading rather
    than a column: it declares that no column has to line up with it. */
-.badge.auto { width: auto; min-width: 9ch; }
-.badge.w30 { width: 30ch; }
-.badge.w34 { width: 34ch; }
+.badge.auto { width: auto; min-width: calc(9ch + 9 * 0.04em); }
+.badge.w30 { width: calc(30ch + 30 * 0.04em); }
+.badge.w34 { width: calc(34ch + 34 * 0.04em); }
 /* The two widest steps exist for an account column: a full institution name runs to
    'American Express Platinum by Goldman Sachs', 42 characters, and clipping it to 25
    leaves two Amex cards and four Fidelity accounts indistinguishable from each other. */
-.badge.w38 { width: 38ch; }
-.badge.w42 { width: 42ch; }
+.badge.w38 { width: calc(38ch + 38 * 0.04em); }
+.badge.w42 { width: calc(42ch + 42 * 0.04em); }
 .badge.w30, .badge.w34, .badge.w38, .badge.w42 {
   overflow: hidden; text-overflow: ellipsis; display: inline-flex;
 }
@@ -397,13 +405,6 @@ td.rot.gh2 { height: 58px; }
 td.rot.gh3 { height: 87px; }
 td.rot.gh4 { height: 116px; }
 td.rot.gh5 { height: 145px; }
-/* Colour without fill. A payee sitting under its category is the same colour as the
-   category and must not compete with it, so it keeps the border and the text and
-   gives up the background. */
-.badge.hollow { background: var(--paper-card); }
-/* Ink on paper, for a column that is a label rather than a value -- a month name
-   carries no status and should not borrow a status colour to say so. */
-.badge.mono { background: var(--paper-card); border-color: var(--ink); color: var(--ink); }
 
 /* Subtotal and total rows. Neither is a row of data -- both are arithmetic on the rows
    above -- so both are tinted off the data field and ruled away from it. The subtotal
@@ -424,7 +425,10 @@ tr.sub > td { background: var(--paper-alt); border-top: 1px solid var(--rule); c
    the table talking about itself. */
 tr.sep > td {
   background: var(--paper-alt); border-top: 2px solid var(--rule);
-  color: var(--ink-muted); font-size: 11px; letter-spacing: .08em;
+  /* Owner request 2026-08-24: down to badge size. The band is a label on a fold, not a
+     heading, and at 11px uppercase with this tracking it outweighed the 10.5px table it
+     sits inside -- the one row that is not data was the loudest thing in the table. */
+  color: var(--ink-muted); font-size: 10px; letter-spacing: .08em;
   text-transform: uppercase; padding: 9px 10px;
 }
 /* Collapsed away by a control on the page. Kept out of the sort, which reads the rows
@@ -532,6 +536,74 @@ dialog.rows button.drop:hover { color: var(--ink); border-color: var(--ink); }
 /* The row control is one glyph, so it is drawn as one glyph. A box around a 10px mark
    in the last column of a table made of numbers reads as another value; the affordance
    is the pointer and the hover, and the word is on the title. Owner ruling 2026-08-23. */
+/* The pencil sits with the trash in the same cell: two verdicts on one row, "filed
+   wrong" and "not mine", and they belong side by side rather than in two columns of
+   which one is empty on every row. */
+dialog.rows button.edit.bare {
+  border-color: transparent; background: transparent; padding: 0 2px; height: auto;
+  color: var(--ink-faint); line-height: 0; margin-inline-end: 2px;
+}
+dialog.rows button.edit.bare .ic { width: 11px; height: 11px; }
+dialog.rows button.edit.bare:hover { color: var(--ink); border-color: transparent; }
+/* The reassignment panel. Narrow on purpose: it holds one charge and two choices, and
+   at the width of the row inspector it reads as a table with nothing in it. */
+/* Overflow is visible on this one so the picker's panel can hang below its button.
+   dialog.rows scrolls, which is right for the inspector's table of a few hundred rows
+   and wrong here: the panel would be clipped at the dialog's edge or, worse, open a
+   scrollbar and scroll the choice out from under the pointer. */
+dialog.rows.move { max-width: 460px; overflow: visible; }
+/* Two columns, not label-then-control down the side. It is one decision in two halves
+   -- the group narrows the list, the category is the answer -- and side by side says
+   that; four stacked rows read as a form. Owner ruling 2026-08-24. */
+dialog.rows.move .movef {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px;
+  align-items: start; margin: 10px 0 12px;
+}
+dialog.rows.move .pk { position: relative; }
+dialog.rows.move .pk .pl {
+  display: block; text-align: center; margin-bottom: 4px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-muted);
+}
+/* The closed control. Set in the page's own mono at 11px -- one step above the option
+   list, because the button says what was chosen and the list is only the choosing. */
+dialog.rows.move .pkb {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; height: 24px; padding: 0 8px; cursor: pointer;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em;
+  border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  background: var(--paper-card); color: var(--ink);
+}
+dialog.rows.move .pkb:hover, dialog.rows.move .pk.open .pkb { border-color: var(--ink); }
+dialog.rows.move .pkb .pv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+dialog.rows.move .pkb .ic { width: 9px; height: 9px; flex: none; color: var(--ink-faint); }
+dialog.rows.move .pk.open .pkb .ic { transform: rotate(180deg); }
+/* The open list. Bordered in ink with the page's own drop shadow, so it reads as a
+   sheet lifted off the dialog rather than as a region of it. Capped in height at about
+   nine options: the longest group has more categories than that and a panel taller
+   than the dialog it hangs from would cover the charge it is being asked about. */
+dialog.rows.move .pkl {
+  display: none; position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 3px);
+  max-height: 216px; overflow-y: auto; padding: 2px;
+  border: 1px solid var(--ink); border-radius: var(--radius-sm);
+  background: var(--paper-card); box-shadow: 2px 2px 0 var(--ink);
+}
+dialog.rows.move .pk.open .pkl { display: block; }
+dialog.rows.move .pkl button {
+  display: block; width: 100%; text-align: center; cursor: pointer;
+  font-family: var(--font-mono); font-size: 10.5px; line-height: 1.15;
+  padding: 4px 6px; border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink-muted);
+}
+dialog.rows.move .pkl button:hover { background: var(--paper-alt); color: var(--ink); }
+dialog.rows.move .pkl button.on { background: var(--paper-alt); color: var(--ink); font-weight: 600; }
+/* The action row sits bottom right. The panel is read top to bottom -- what the charge
+   is, where it should go, the line to paste -- and the verdict belongs at the end of
+   that reading, not back at the left margin where the labels start. Secondary first so
+   the primary lands on the corner the pointer leaves the dialog from. */
+dialog.rows.move .movea {
+  display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;
+}
 dialog.rows button.drop.bare {
   border-color: transparent; background: transparent; padding: 0 2px; height: auto;
   color: var(--ink-faint); line-height: 0;
@@ -617,6 +689,17 @@ td.nw, th.nw { white-space: nowrap; }
    subtotal rows, where the mark stands alone and a pill around it would read as a
    value in a row made of values. */
 .badge.bare { background: transparent; border-color: transparent; padding: 0; }
+/* Colour without fill. A payee sitting under its category is the same colour as the
+   category and must not compete with it, so it keeps the border and the text and gives
+   up the background. Down here for the same reason .badge.bare is: every .badge.pN is
+   written at this specificity further up, so a modifier declared above them loses and
+   the pill keeps its tint. Owner ruling 2026-08-23: the Table 1 badge is white-filled,
+   which is what this rule was always meant to say. */
+.badge.hollow { background: var(--paper-card); }
+/* Ink on paper, for a column that is a label rather than a value -- a month name
+   carries no status and should not borrow a status colour to say so. Same cascade
+   trap, same fix. */
+.badge.mono { background: var(--paper-card); border-color: var(--ink); color: var(--ink); }
 /* The same bare mark, but with a label beside it instead of alone in a cell. The
    width classes exist to line pills up in a column; a glyph that is a prefix to text
    has nothing to line up with, and 3ch of reserved box read as a gap between the mark
@@ -684,6 +767,28 @@ caption .fig, figure figcaption .fig, .therm + figcaption .fig {
   font-family: var(--font-mono); font-size: 9px; font-weight: 600;
   letter-spacing: .07em; text-transform: uppercase;
 }
+/* A caption long enough to be a paragraph is set smaller than one that is a line.
+   Captions are all 9.5px because they carry the same weight of information, and that
+   holds while a caption is a sentence. The obligations table needs four -- what the
+   figures are, how they were annualised, what the two bands mean, and why one column
+   is empty -- and at the common size that block competes with the table it describes.
+   Dropped a step, it reads as the footnote it is. 8.5px is the floor for this: the
+   caption is still prose a reader has to get through, not a label to be glanced at. */
+table.longcap caption { font-size: 8.5px; line-height: 1.55; }
+
+/* The shops inside a category, under the inspector's count-and-range line.
+   Set as a wrapping run of small units rather than a list, because the useful reading is
+   comparative -- which shop is most of this number -- and a column of forty rows buries
+   that above the fold. Name, count, total; the count is the dim one because it is the
+   least interesting of the three. */
+.stores { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 9px; }
+.stores .st {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  border: 1px solid var(--rule-hair); border-radius: var(--radius-sm);
+  padding: 2px 7px; font-size: 9px; line-height: 1.4; color: var(--ink-muted);
+}
+.stores .st i { font-style: normal; opacity: .55; font-family: var(--font-mono); }
+.stores .st b { font-weight: 600; font-family: var(--font-mono); color: var(--ink); }
 th {
   text-align: left; padding: 9px 11px 7px; font-size: inherit; font-weight: 500;
   letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
@@ -1429,6 +1534,11 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    invisible, and a control that gives no sign it worked gets pressed twice. */
 .heat-ctl button.kept svg{fill:var(--stroke-mint)}
 
+/* A drop control that carries a glyph. The canonical bare variant sizes its mark
+   because a bare control IS the mark; the boxed one never had one to size, and an
+   unsized inline SVG in a 19px box comes out at whatever the file says. */
+dialog.rows button.drop .ic{width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+
 /* The canonical hint rotates its glyph, which assumes a caret drawn pointing
    down. Ours is a circle-chevron already pointing where the table goes. */
 .scroll-hint svg{transform:none}
@@ -1606,7 +1716,16 @@ svg.setAttribute(<span class="s">&quot;width&quot;</span>, String(Math.round(W *
 <h2 id="controls"><span class="n">7</span><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M211.6 28.5c1.6-7.3 8.1-12.5 15.6-12.5h57.6c7.5 0 14 5.2 15.6 12.5l12.9 57.1c.6 2.6 2.5 4.8 5 5.7c17.9 6.8 34.5 16.4 49.1 28.4c2.1 1.7 4.9 2.2 7.4 1.4l56-17.4c7.1-2.2 14.9 .8 18.6 7.3L478.3 161c3.7 6.5 2.5 14.7-3 19.8l-43.1 39.8c-2 1.8-2.9 4.5-2.5 7.2c1.5 9.2 2.3 18.7 2.3 28.4s-.8 19.1-2.3 28.4c-.4 2.6 .5 5.3 2.5 7.2l43.1 39.8c5.5 5.1 6.7 13.3 3 19.8L449.4 401c-3.7 6.5-11.5 9.5-18.6 7.3l-56-17.4c-2.6-.8-5.4-.3-7.4 1.4c-14.6 11.9-31.2 21.6-49.1 28.4c-2.5 1-4.4 3.1-5 5.7l-12.9 57.1c-1.6 7.3-8.1 12.5-15.6 12.5H227.2c-7.5 0-14-5.2-15.6-12.5l-12.9-57.1c-.6-2.6-2.5-4.8-5-5.7c-17.9-6.8-34.5-16.4-49.1-28.4c-2.1-1.7-4.9-2.2-7.4-1.4l-56 17.4c-7.1 2.2-14.9-.8-18.6-7.3L33.7 351c-3.7-6.5-2.5-14.7 3-19.8l43.1-39.8c2-1.8 2.9-4.5 2.5-7.2C80.8 275.1 80 265.7 80 256s.8-19.1 2.3-28.4c.4-2.6-.5-5.3-2.5-7.2L36.7 180.7c-5.5-5.1-6.7-13.3-3-19.8L62.6 111c3.7-6.5 11.5-9.5 18.6-7.3l2.4-7.6-2.4 7.6 56 17.4c2.6 .8 5.4 .3 7.4-1.4c14.6-12 31.2-21.6 49.1-28.4c2.5-1 4.4-3.1 5-5.7l12.9-57.1zM227.2 0c-15 0-27.9 10.4-31.2 25L184 78c-16.7 6.8-32.2 15.8-46.1 26.7L85.9 88.5C71.6 84 56.2 90.1 48.7 103L19.9 153c-7.5 13-5 29.4 6 39.5l39.9 36.9C64.6 238.1 64 247 64 256s.6 17.9 1.8 26.6L25.9 319.5l5.4 5.9-5.4-5.9c-11 10.1-13.5 26.6-6 39.5L48.7 409c7.5 13 22.9 19 37.2 14.6l51.9-16.2c14 10.9 29.5 19.9 46.1 26.7l12 53c3.3 14.6 16.3 25 31.2 25h57.6c15 0 27.9-10.4 31.2-25l12-53c16.7-6.7 32.2-15.8 46.1-26.7l51.9 16.2c14.3 4.4 29.7-1.6 37.2-14.6L492.1 359c7.5-13 5-29.4-6-39.5l-39.9-36.9c1.2-8.7 1.8-17.6 1.8-26.6s-.6-17.9-1.8-26.6l39.9-36.9c11-10.1 13.5-26.6 6-39.5L463.3 103c-7.5-13-22.9-19-37.2-14.6l-51.9 16.2C360.2 93.7 344.7 84.7 328 78L316 25c-3.3-14.6-16.3-25-31.2-25H227.2zM192 256a64 64 0 1 1 128 0 64 64 0 1 1 -128 0zm144 0a80 80 0 1 0 -160 0 80 80 0 1 0 160 0z"></path></svg>Controls<span class="hint"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M256 16a240 240 0 1 1 0 480 240 240 0 1 1 0-480zm0 496A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM208 352c-4.4 0-8 3.6-8 8s3.6 8 8 8h96c4.4 0 8-3.6 8-8s-3.6-8-8-8H264V216c0-4.4-3.6-8-8-8H224c-4.4 0-8 3.6-8 8s3.6 8 8 8h24V352H208zm48-176a16 16 0 1 0 0-32 16 16 0 1 0 0 32z"></path></svg>no script</span><span class="stmt">Menus, segmented switches and sorts built from native elements, correct with JavaScript off.</span></h2><p>Every control on this site works with scripting off, which rules out most of what a component library usually ships. A menu is <span class="mono">&lt;details&gt;</span>. A tab strip is radio inputs and sibling selectors. A popover is a checkbox and a label. None of these need a framework and none of them can break in a way that leaves the page unusable.</p><h3 id="segmented">Segmented control</h3><p>Radios, styled as badges. The checked state is reachable from CSS through the sibling combinator, so the selection survives with JavaScript disabled and is restored by the browser on a back-navigation for free.</p><div class="seg-ctl"><input type="radio" name="rng" id="rng0"><label for="rng0"><span class="badge w7 idle">30d</span></label><input type="radio" name="rng" id="rng1" checked><label for="rng1"><span class="badge w7 idle">90d</span></label><input type="radio" name="rng" id="rng2"><label for="rng2"><span class="badge w7 idle">1y</span></label><input type="radio" name="rng" id="rng3"><label for="rng3"><span class="badge w7 idle">All</span></label></div><div class="code-hd">rendered</div><pre class="code">&lt;input <span class="k">type</span>=<span class="s">&quot;radio&quot;</span> name=<span class="s">&quot;rng&quot;</span> id=<span class="s">&quot;rng1&quot;</span> checked&gt;
 &lt;label <span class="k">for</span>=<span class="s">&quot;rng1&quot;</span>&gt;&lt;span <span class="k">class</span>=<span class="s">&quot;badge w7 idle&quot;</span>&gt;90d&lt;/span&gt;&lt;/label&gt;
 /* .seg-ctl input:checked + label .badge { ... }  -- no script involved */</pre><h3 id="menus">Menus</h3><p>The section menu and the theme menu in the bar above are both <span class="mono">&lt;details&gt;</span>. They open on click, close on Escape, are keyboard-reachable, and are announced correctly &mdash; all of it from the element, none of it written here.</p><h3 id="glyphs">Glyph buttons</h3><p>A pressable badge. It carries <span class="mono">.badge</span> and adds state, so it inherits the height and the radius rather than declaring them again &mdash; a control that redeclares badge geometry is the first step towards two badge heights on one page.</p><div class="gctl"><button type="button" aria-pressed="true"><span class="badge w9 idle"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 40c0-4.4-3.6-8-8-8s-8 3.6-8 8V408c0 39.8 32.2 72 72 72H504c4.4 0 8-3.6 8-8s-3.6-8-8-8H72c-30.9 0-56-25.1-56-56V40zM477.7 141.7c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L320 276.7l-90.3-90.3c-3.1-3.1-8.2-3.1-11.3 0l-128 128c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0L224 203.3l90.3 90.3c3.1 3.1 8.2 3.1 11.3 0l152-152z"></path></svg>Spark</span></button><button type="button" aria-pressed="false"><span class="badge w9 idle"><svg class="ic" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M0 88c0-4.4 3.6-8 8-8H440c4.4 0 8 3.6 8 8s-3.6 8-8 8H8c-4.4 0-8-3.6-8-8zM0 248c0-4.4 3.6-8 8-8H440c4.4 0 8 3.6 8 8s-3.6 8-8 8H8c-4.4 0-8-3.6-8-8zM448 408c0 4.4-3.6 8-8 8H8c-4.4 0-8-3.6-8-8s3.6-8 8-8H440c4.4 0 8 3.6 8 8z"></path></svg>Bars</span></button><button type="button" aria-pressed="false"><span class="badge w9 idle"><svg class="ic" viewBox="0 0 576 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M288 0c-6.4 0-12.8 1.4-18.6 4.1L43.9 109.4C36.6 112.7 32 120 32 128s4.6 15.3 11.9 18.6L269.4 251.9c5.8 2.7 12.2 4.1 18.6 4.1s12.8-1.4 18.6-4.1L532.1 146.6C539.4 143.3 544 136 544 128s-4.6-15.3-11.9-18.6L306.6 4.1C300.8 1.4 294.4 0 288 0zM276.1 18.6c3.7-1.7 7.8-2.6 11.9-2.6s8.2 .9 11.9 2.6L525.4 123.9c1.6 .7 2.6 2.4 2.6 4.1s-1 3.4-2.6 4.1L299.9 237.4c-3.7 1.7-7.8 2.6-11.9 2.6s-8.2-.9-11.9-2.6L50.6 132.1c-1.6-.7-2.6-2.4-2.6-4.1s1-3.4 2.6-4.1L276.1 18.6zM43.9 237.4C36.6 240.7 32 248 32 256s4.6 15.3 11.9 18.6L269.4 379.9c5.8 2.7 12.2 4.1 18.6 4.1s12.8-1.4 18.6-4.1L532.1 274.6C539.4 271.3 544 264 544 256s-4.6-15.3-11.9-18.6l-59.4-27.7-18.9 8.8 71.5 33.4c1.6 .7 2.6 2.4 2.6 4.1s-1 3.4-2.6 4.1L299.9 365.4c-3.7 1.7-7.8 2.6-11.9 2.6s-8.2-.9-11.9-2.6L50.6 260.1c-1.6-.7-2.6-2.4-2.6-4.1s1-3.4 2.6-4.1l71.5-33.4-18.9-8.8L43.9 237.4zm0 128C36.6 368.7 32 376 32 384s4.6 15.3 11.9 18.6L269.4 507.9c5.8 2.7 12.2 4.1 18.6 4.1s12.8-1.4 18.6-4.1L532.1 402.6C539.4 399.3 544 392 544 384s-4.6-15.3-11.9-18.6l-59.4-27.7-18.9 8.8 71.5 33.4c1.6 .7 2.6 2.4 2.6 4.1s-1 3.4-2.6 4.1L299.9 493.4c-3.7 1.7-7.8 2.6-11.9 2.6s-8.2-.9-11.9-2.6L50.6 388.1c-1.6-.8-2.6-2.4-2.6-4.1s1-3.4 2.6-4.1l71.5-33.4-18.9-8.8L43.9 365.4z"></path></svg>Stack</span></button><button type="button" aria-pressed="false"><span class="badge w9 idle"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M211.6 28.5c1.6-7.3 8.1-12.5 15.6-12.5h57.6c7.5 0 14 5.2 15.6 12.5l12.9 57.1c.6 2.6 2.5 4.8 5 5.7c17.9 6.8 34.5 16.4 49.1 28.4c2.1 1.7 4.9 2.2 7.4 1.4l56-17.4c7.1-2.2 14.9 .8 18.6 7.3L478.3 161c3.7 6.5 2.5 14.7-3 19.8l-43.1 39.8c-2 1.8-2.9 4.5-2.5 7.2c1.5 9.2 2.3 18.7 2.3 28.4s-.8 19.1-2.3 28.4c-.4 2.6 .5 5.3 2.5 7.2l43.1 39.8c5.5 5.1 6.7 13.3 3 19.8L449.4 401c-3.7 6.5-11.5 9.5-18.6 7.3l-56-17.4c-2.6-.8-5.4-.3-7.4 1.4c-14.6 11.9-31.2 21.6-49.1 28.4c-2.5 1-4.4 3.1-5 5.7l-12.9 57.1c-1.6 7.3-8.1 12.5-15.6 12.5H227.2c-7.5 0-14-5.2-15.6-12.5l-12.9-57.1c-.6-2.6-2.5-4.8-5-5.7c-17.9-6.8-34.5-16.4-49.1-28.4c-2.1-1.7-4.9-2.2-7.4-1.4l-56 17.4c-7.1 2.2-14.9-.8-18.6-7.3L33.7 351c-3.7-6.5-2.5-14.7 3-19.8l43.1-39.8c2-1.8 2.9-4.5 2.5-7.2C80.8 275.1 80 265.7 80 256s.8-19.1 2.3-28.4c.4-2.6-.5-5.3-2.5-7.2L36.7 180.7c-5.5-5.1-6.7-13.3-3-19.8L62.6 111c3.7-6.5 11.5-9.5 18.6-7.3l2.4-7.6-2.4 7.6 56 17.4c2.6 .8 5.4 .3 7.4-1.4c14.6-12 31.2-21.6 49.1-28.4c2.5-1 4.4-3.1 5-5.7l12.9-57.1zM227.2 0c-15 0-27.9 10.4-31.2 25L184 78c-16.7 6.8-32.2 15.8-46.1 26.7L85.9 88.5C71.6 84 56.2 90.1 48.7 103L19.9 153c-7.5 13-5 29.4 6 39.5l39.9 36.9C64.6 238.1 64 247 64 256s.6 17.9 1.8 26.6L25.9 319.5l5.4 5.9-5.4-5.9c-11 10.1-13.5 26.6-6 39.5L48.7 409c7.5 13 22.9 19 37.2 14.6l51.9-16.2c14 10.9 29.5 19.9 46.1 26.7l12 53c3.3 14.6 16.3 25 31.2 25h57.6c15 0 27.9-10.4 31.2-25l12-53c16.7-6.7 32.2-15.8 46.1-26.7l51.9 16.2c14.3 4.4 29.7-1.6 37.2-14.6L492.1 359c7.5-13 5-29.4-6-39.5l-39.9-36.9c1.2-8.7 1.8-17.6 1.8-26.6s-.6-17.9-1.8-26.6l39.9-36.9c11-10.1 13.5-26.6 6-39.5L463.3 103c-7.5-13-22.9-19-37.2-14.6l-51.9 16.2C360.2 93.7 344.7 84.7 328 78L316 25c-3.3-14.6-16.3-25-31.2-25H227.2zM192 256a64 64 0 1 1 128 0 64 64 0 1 1 -128 0zm144 0a80 80 0 1 0 -160 0 80 80 0 1 0 160 0z"></path></svg>Set</span></button></div><h3 id="sort">Sortable headers</h3><p>The one enhancement that genuinely needs script. The table arrives already in a sensible order, so the feature is an improvement rather than a requirement &mdash; which is the test every enhancement on this site has to pass.</p><hr class="sep">
-<h2 id="overlays"><span class="n">8</span><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M496 256A240 240 0 1 0 16 256a240 240 0 1 0 480 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm168-56c0-30.9 25.1-56 56-56h56.2c35.2 0 63.8 28.6 63.8 63.8c0 21.4-10.8 41.5-28.7 53.3L264 294.9V320c0 4.4-3.6 8-8 8s-8-3.6-8-8V290.5c0-2.7 1.4-5.2 3.6-6.7l54.9-36.2c13.4-8.8 21.5-23.8 21.5-39.9c0-26.4-21.4-47.8-47.8-47.8H224c-22.1 0-40 17.9-40 40l0 6.5c0 4.4-3.6 8-8 8s-8-3.6-8-8l0-6.5zm72 168a16 16 0 1 1 32 0 16 16 0 1 1 -32 0z"></path></svg>Overlays<span class="hint"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M256 16a240 240 0 1 1 0 480 240 240 0 1 1 0-480zm0 496A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM208 352c-4.4 0-8 3.6-8 8s3.6 8 8 8h96c4.4 0 8-3.6 8-8s-3.6-8-8-8H264V216c0-4.4-3.6-8-8-8H224c-4.4 0-8 3.6-8 8s3.6 8 8 8h24V352H208zm48-176a16 16 0 1 0 0-32 16 16 0 1 0 0 32z"></path></svg>checkbox only</span><span class="stmt">Tips, receipt sheets and dialogs that open without a listener and close on Escape.</span></h2><p>Three depths, and a rule for choosing between them: a tooltip is one fact, a receipt sheet is the rows behind a number, a dialog is a decision. Overlay type is always one step below the page it covers, never above it.</p><div class="wf"><svg class="wfd " viewBox="0 0 620 146" width="100%" height="auto" role="img" aria-hidden="true"><rect x="0" y="16" width="190" height="96" rx="3" fill="var(--paper)" stroke="var(--rule)"></rect><text x="8" y="30" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">tip</text><rect x="8" y="38" width="120" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="8" y="46" width="150" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="8" y="54" width="96" height="4" rx="1.5" fill="var(--rule)"></rect><text x="8" y="84" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--rule)">11px · one fact</text><text x="8" y="100" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--rule)">checkbox · works JS-off</text><rect x="214" y="16" width="190" height="96" rx="3" fill="var(--paper)" stroke="var(--rule)"></rect><text x="222" y="30" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">receipt sheet</text><rect x="222" y="38" width="150" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="222" y="46" width="150" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="222" y="54" width="110" height="4" rx="1.5" fill="var(--rule)"></rect><text x="222" y="84" text-anchor="start" font-family="var(--font-mono)" font-size="5.5" fill="var(--rule)">9.5px table · the rows behind a number</text><rect x="428" y="16" width="190" height="96" rx="3" fill="var(--paper)" stroke="var(--rule)"></rect><text x="436" y="30" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">dialog</text><rect x="436" y="38" width="160" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="436" y="46" width="130" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="436" y="54" width="150" height="4" rx="1.5" fill="var(--rule)"></rect><text x="436" y="84" text-anchor="start" font-family="var(--font-mono)" font-size="5.5" fill="var(--rule)">13.5px head · the only shadow</text><text x="0" y="132" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">overlay type is one step below the page, never above it: 13.5 / 11 / 9.5, floor 9px</text></svg></div><h3 id="tip">Tooltip</h3><p>A checkbox and a label. It opens on click rather than hover, which is the only version that works on a phone, and it is in the document rather than positioned by script.</p><p>Coverage was <span class="tip"><input type="checkbox" id="t1"><label for="t1">94.8%</label><span class="body">Days with at least one reading, over days in the period. A day with a reading from any source counts.</span></span> for the quarter.</p><h3 id="receipts">Receipt sheet</h3><p>The rows behind a total, at 9.5px. A number a reader cannot open is a number they have to take on trust, and the whole point of the format is that they do not have to.</p><p>Depository subtotal <span class="rcpt"><input type="checkbox" id="r1"><label class="tx" for="r1">4 rows</label><span class="sheet"><label class="scrim" for="r1"></label><span class="sheet-in"><span class="sheet-hd"><span class="nm">March, Depository</span><label class="cl" for="r1">close &times;</label></span><div class="scroll" style="border:0;border-radius:0"><table><thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead><tbody><tr><td>22 May 2026</td><td>Northgate</td><td class="n">$26,125.00</td></tr><tr><td>2 Apr 2026</td><td>Ferrous</td><td class="n">$36,343.00</td></tr><tr><td>26 May 2026</td><td>Harrow Lane</td><td class="n">-$41,725.00</td></tr><tr><td>18 Apr 2026</td><td>Beckett</td><td class="n">-$19,378.00</td></tr></tbody></table></div></span></span></span> for March.</p><div class="banner ok">Both of these are <span class="mono">&lt;input type="checkbox"&gt;</span> and a <span class="mono">&lt;label&gt;</span>. With scripting off they still open and close. That is not a nicety &mdash; it is why the printed version of the page has the detail in it.</div><hr class="sep">
+<h2 id="overlays"><span class="n">8</span><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M496 256A240 240 0 1 0 16 256a240 240 0 1 0 480 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm168-56c0-30.9 25.1-56 56-56h56.2c35.2 0 63.8 28.6 63.8 63.8c0 21.4-10.8 41.5-28.7 53.3L264 294.9V320c0 4.4-3.6 8-8 8s-8-3.6-8-8V290.5c0-2.7 1.4-5.2 3.6-6.7l54.9-36.2c13.4-8.8 21.5-23.8 21.5-39.9c0-26.4-21.4-47.8-47.8-47.8H224c-22.1 0-40 17.9-40 40l0 6.5c0 4.4-3.6 8-8 8s-8-3.6-8-8l0-6.5zm72 168a16 16 0 1 1 32 0 16 16 0 1 1 -32 0z"></path></svg>Overlays<span class="hint"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M256 16a240 240 0 1 1 0 480 240 240 0 1 1 0-480zm0 496A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM208 352c-4.4 0-8 3.6-8 8s3.6 8 8 8h96c4.4 0 8-3.6 8-8s-3.6-8-8-8H264V216c0-4.4-3.6-8-8-8H224c-4.4 0-8 3.6-8 8s3.6 8 8 8h24V352H208zm48-176a16 16 0 1 0 0-32 16 16 0 1 0 0 32z"></path></svg>checkbox only</span><span class="stmt">Tips, receipt sheets and dialogs that open without a listener and close on Escape.</span></h2><p>Three depths, and a rule for choosing between them: a tooltip is one fact, a receipt sheet is the rows behind a number, a dialog is a decision. Overlay type is always one step below the page it covers, never above it.</p><div class="wf"><svg class="wfd " viewBox="0 0 620 146" width="100%" height="auto" role="img" aria-hidden="true"><rect x="0" y="16" width="190" height="96" rx="3" fill="var(--paper)" stroke="var(--rule)"></rect><text x="8" y="30" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">tip</text><rect x="8" y="38" width="120" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="8" y="46" width="150" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="8" y="54" width="96" height="4" rx="1.5" fill="var(--rule)"></rect><text x="8" y="84" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--rule)">11px · one fact</text><text x="8" y="100" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--rule)">checkbox · works JS-off</text><rect x="214" y="16" width="190" height="96" rx="3" fill="var(--paper)" stroke="var(--rule)"></rect><text x="222" y="30" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">receipt sheet</text><rect x="222" y="38" width="150" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="222" y="46" width="150" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="222" y="54" width="110" height="4" rx="1.5" fill="var(--rule)"></rect><text x="222" y="84" text-anchor="start" font-family="var(--font-mono)" font-size="5.5" fill="var(--rule)">9.5px table · the rows behind a number</text><rect x="428" y="16" width="190" height="96" rx="3" fill="var(--paper)" stroke="var(--rule)"></rect><text x="436" y="30" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">dialog</text><rect x="436" y="38" width="160" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="436" y="46" width="130" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="436" y="54" width="150" height="4" rx="1.5" fill="var(--rule)"></rect><text x="436" y="84" text-anchor="start" font-family="var(--font-mono)" font-size="5.5" fill="var(--rule)">13.5px head · the only shadow</text><text x="0" y="132" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">overlay type is one step below the page, never above it: 13.5 / 11 / 9.5, floor 9px</text></svg></div><h3 id="tip">Tooltip</h3><p>A checkbox and a label. It opens on click rather than hover, which is the only version that works on a phone, and it is in the document rather than positioned by script.</p><p>Coverage was <span class="tip"><input type="checkbox" id="t1"><label for="t1">94.8%</label><span class="body">Days with at least one reading, over days in the period. A day with a reading from any source counts.</span></span> for the quarter.</p><h3 id="receipts">Receipt sheet</h3><p>The rows behind a total, at 9.5px. A number a reader cannot open is a number they have to take on trust, and the whole point of the format is that they do not have to.</p><p>Depository subtotal <span class="rcpt"><input type="checkbox" id="r1"><label class="tx" for="r1">4 rows</label><span class="sheet"><label class="scrim" for="r1"></label><span class="sheet-in"><span class="sheet-hd"><span class="nm">March, Depository</span><label class="cl" for="r1">close &times;</label></span><div class="scroll" style="border:0;border-radius:0"><table><thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead><tbody><tr><td>22 May 2026</td><td>Northgate</td><td class="n">$26,125.00</td></tr><tr><td>2 Apr 2026</td><td>Ferrous</td><td class="n">$36,343.00</td></tr><tr><td>26 May 2026</td><td>Harrow Lane</td><td class="n">-$41,725.00</td></tr><tr><td>18 Apr 2026</td><td>Beckett</td><td class="n">-$19,378.00</td></tr></tbody></table></div></span></span></span> for March.</p><div class="banner ok">Both of these are <span class="mono">&lt;input type="checkbox"&gt;</span> and a <span class="mono">&lt;label&gt;</span>. With scripting off they still open and close. That is not a nicety &mdash; it is why the printed version of the page has the detail in it.</div><h3 id="inspect">Drilling into a row</h3><p>A total a reader cannot open is a total they have to take on trust. The third depth is for the case where the answer is not one fact and not one column of receipts but a row of its own with its own rows behind it: click the line and the charges arrive in a modal set at the same size as the table underneath it. Same size, deliberately &mdash; at 11.5px the inspector read as a larger, different document laid over the page rather than as a closer look at the one already there.</p><p>The trigger is <span class="mono">tr.clickable</span> on the row, not a control in a last column. A row that opens something is the whole row: a 10px mark in the final column of a table made of numbers reads as another value, and it puts the affordance an inch from where the reader is already pointing.</p><div class="scroll-wrap"><div class="scroll"><table class="sortable">
+<caption><span class="fig">TBL. 4</span>Four accounts. Any row opens the charges behind its balance.</caption>
+<thead><tr><th>Account</th><th>Kind</th><th class="n">Balance</th></tr></thead>
+<tbody><tr class="clickable" data-row="0" tabindex="0"><td>Northgate</td><td>Checking</td><td class="n">$26,125.00</td></tr><tr class="clickable" data-row="1" tabindex="0"><td>Harrow Lane</td><td>Revolving</td><td class="n">-$41,725.00</td></tr><tr class="clickable" data-row="2" tabindex="0"><td>Old Quay</td><td>Brokerage</td><td class="n">$33,152.00</td></tr><tr class="clickable" data-row="3" tabindex="0"><td>Vantage</td><td>Custodial</td><td class="n">$7,912.00</td></tr></tbody>
+</table></div><i class="scroll-hint"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M496 256A240 240 0 1 1 16 256a240 240 0 1 1 480 0zM0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zM221.7 381.7l120-120c3.1-3.1 3.1-8.2 0-11.3l-120-120c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3L324.7 256 210.3 370.3c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0z"></path></svg></i></div><dialog class="rows" id="row-dialog"><form method="dialog" class="x"><button value="close" aria-label="Close"><svg class="ic" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M338.1 413.4c3.1 3.1 8.2 3.1 11.3 0s3.1-8.2 0-11.3L203.3 256 349.4 109.9c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L192 244.7 45.9 98.6c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3L180.7 256 34.6 402.1c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0L192 267.3 338.1 413.4z"></path></svg></button></form><div class="rp" data-row="0" hidden><h4>Northgate &middot; Checking</h4><p class="sc">Depository &middot; last movement 2026-05-22 &middot; balance $26,125.00</p><table><thead><tr><th>Date</th><th>Payee</th><th>Account</th><th class="n">Amount</th></tr></thead><tbody><tr><td>2026-05-11</td><td class="pay">ACH DEBIT</td><td class="acct" title="Northgate &middot; Checking">NORTHGATE</td><td class="n">$6,731.00</td></tr><tr><td>2026-05-15</td><td class="pay">ACH DEBIT</td><td class="acct" title="Northgate &middot; Checking">NORTHGATE</td><td class="n">$7,869.00</td></tr><tr><td>2026-05-17</td><td class="pay">ACH DEBIT</td><td class="acct" title="Northgate &middot; Checking">NORTHGATE</td><td class="n">$7,359.00</td></tr><tr><td>2026-05-18</td><td class="pay">CARD 4417</td><td class="acct" title="Northgate &middot; Checking">NORTHGATE</td><td class="n">$4,166.00</td></tr></tbody></table><p class="sc"><button type="button" class="drop" data-edit="0"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M460.3 39.6l12.1 12.1c15.6 15.6 15.6 40.9 0 56.6L440 140.7 371.3 72l32.4-32.4c15.6-15.6 40.9-15.6 56.6 0zM175.4 267.9L360 83.3 428.7 152 244.1 336.6c-5.3 5.3-12 9-19.3 10.7l-78.1 18 18-78.1c1.7-7.3 5.4-14 10.7-19.3zm217-239.6L164.1 256.6c-7.4 7.4-12.6 16.8-15 27l-20.9 90.6c-.6 2.7 .2 5.5 2.1 7.5s4.8 2.8 7.5 2.1l90.6-20.9c10.2-2.4 19.6-7.5 27-15L483.7 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 28.3c-21.9-21.9-57.3-21.9-79.2 0zM72 64C32.2 64 0 96.2 0 136V440c0 39.8 32.2 72 72 72H376c39.8 0 72-32.2 72-72V296c0-4.4-3.6-8-8-8s-8 3.6-8 8V440c0 30.9-25.1 56-56 56H72c-30.9 0-56-25.1-56-56V136c0-30.9 25.1-56 56-56H216c4.4 0 8-3.6 8-8s-3.6-8-8-8H72z"></path></svg>Reassign this charge</button></p></div><div class="rp" data-row="1" hidden><h4>Harrow Lane &middot; Revolving</h4><p class="sc">Credit card &middot; last movement 2026-05-26 &middot; balance -$41,725.00</p><table><thead><tr><th>Date</th><th>Payee</th><th>Account</th><th class="n">Amount</th></tr></thead><tbody><tr><td>2026-05-01</td><td class="pay">WIRE OUT</td><td class="acct" title="Harrow Lane &middot; Revolving">HARROW LAN</td><td class="n">-$14,807.00</td></tr><tr><td>2026-05-12</td><td class="pay">CARD 4417</td><td class="acct" title="Harrow Lane &middot; Revolving">HARROW LAN</td><td class="n">-$8,606.00</td></tr><tr><td>2026-05-17</td><td class="pay">ACH CREDIT</td><td class="acct" title="Harrow Lane &middot; Revolving">HARROW LAN</td><td class="n">-$7,351.00</td></tr><tr><td>2026-05-20</td><td class="pay">CARD 4417</td><td class="acct" title="Harrow Lane &middot; Revolving">HARROW LAN</td><td class="n">-$10,961.00</td></tr></tbody></table><p class="sc"><button type="button" class="drop" data-edit="1"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M460.3 39.6l12.1 12.1c15.6 15.6 15.6 40.9 0 56.6L440 140.7 371.3 72l32.4-32.4c15.6-15.6 40.9-15.6 56.6 0zM175.4 267.9L360 83.3 428.7 152 244.1 336.6c-5.3 5.3-12 9-19.3 10.7l-78.1 18 18-78.1c1.7-7.3 5.4-14 10.7-19.3zm217-239.6L164.1 256.6c-7.4 7.4-12.6 16.8-15 27l-20.9 90.6c-.6 2.7 .2 5.5 2.1 7.5s4.8 2.8 7.5 2.1l90.6-20.9c10.2-2.4 19.6-7.5 27-15L483.7 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 28.3c-21.9-21.9-57.3-21.9-79.2 0zM72 64C32.2 64 0 96.2 0 136V440c0 39.8 32.2 72 72 72H376c39.8 0 72-32.2 72-72V296c0-4.4-3.6-8-8-8s-8 3.6-8 8V440c0 30.9-25.1 56-56 56H72c-30.9 0-56-25.1-56-56V136c0-30.9 25.1-56 56-56H216c4.4 0 8-3.6 8-8s-3.6-8-8-8H72z"></path></svg>Reassign this charge</button></p></div><div class="rp" data-row="2" hidden><h4>Old Quay &middot; Brokerage</h4><p class="sc">Investment &middot; last movement 2026-04-07 &middot; balance $33,152.00</p><table><thead><tr><th>Date</th><th>Payee</th><th>Account</th><th class="n">Amount</th></tr></thead><tbody><tr><td>2026-04-06</td><td class="pay">TRANSFER IN</td><td class="acct" title="Old Quay &middot; Brokerage">OLD QUAY</td><td class="n">$6,640.00</td></tr><tr><td>2026-04-12</td><td class="pay">TRANSFER IN</td><td class="acct" title="Old Quay &middot; Brokerage">OLD QUAY</td><td class="n">$11,222.00</td></tr><tr><td>2026-04-23</td><td class="pay">TRANSFER IN</td><td class="acct" title="Old Quay &middot; Brokerage">OLD QUAY</td><td class="n">$9,587.00</td></tr><tr><td>2026-04-25</td><td class="pay">WIRE OUT</td><td class="acct" title="Old Quay &middot; Brokerage">OLD QUAY</td><td class="n">$5,703.00</td></tr></tbody></table><p class="sc"><button type="button" class="drop" data-edit="2"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M460.3 39.6l12.1 12.1c15.6 15.6 15.6 40.9 0 56.6L440 140.7 371.3 72l32.4-32.4c15.6-15.6 40.9-15.6 56.6 0zM175.4 267.9L360 83.3 428.7 152 244.1 336.6c-5.3 5.3-12 9-19.3 10.7l-78.1 18 18-78.1c1.7-7.3 5.4-14 10.7-19.3zm217-239.6L164.1 256.6c-7.4 7.4-12.6 16.8-15 27l-20.9 90.6c-.6 2.7 .2 5.5 2.1 7.5s4.8 2.8 7.5 2.1l90.6-20.9c10.2-2.4 19.6-7.5 27-15L483.7 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 28.3c-21.9-21.9-57.3-21.9-79.2 0zM72 64C32.2 64 0 96.2 0 136V440c0 39.8 32.2 72 72 72H376c39.8 0 72-32.2 72-72V296c0-4.4-3.6-8-8-8s-8 3.6-8 8V440c0 30.9-25.1 56-56 56H72c-30.9 0-56-25.1-56-56V136c0-30.9 25.1-56 56-56H216c4.4 0 8-3.6 8-8s-3.6-8-8-8H72z"></path></svg>Reassign this charge</button></p></div><div class="rp" data-row="3" hidden><h4>Vantage &middot; Custodial</h4><p class="sc">Crypto &middot; last movement 2026-05-27 &middot; balance $7,912.00</p><table><thead><tr><th>Date</th><th>Payee</th><th>Account</th><th class="n">Amount</th></tr></thead><tbody><tr><td>2026-05-03</td><td class="pay">CARD 9902</td><td class="acct" title="Vantage &middot; Custodial">VANTAGE</td><td class="n">$2,878.00</td></tr><tr><td>2026-05-03</td><td class="pay">CHECK 1182</td><td class="acct" title="Vantage &middot; Custodial">VANTAGE</td><td class="n">$1,754.00</td></tr><tr><td>2026-05-23</td><td class="pay">CARD 4417</td><td class="acct" title="Vantage &middot; Custodial">VANTAGE</td><td class="n">$1,372.00</td></tr><tr><td>2026-05-27</td><td class="pay">TRANSFER IN</td><td class="acct" title="Vantage &middot; Custodial">VANTAGE</td><td class="n">$1,908.00</td></tr></tbody></table><p class="sc"><button type="button" class="drop" data-edit="3"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M460.3 39.6l12.1 12.1c15.6 15.6 15.6 40.9 0 56.6L440 140.7 371.3 72l32.4-32.4c15.6-15.6 40.9-15.6 56.6 0zM175.4 267.9L360 83.3 428.7 152 244.1 336.6c-5.3 5.3-12 9-19.3 10.7l-78.1 18 18-78.1c1.7-7.3 5.4-14 10.7-19.3zm217-239.6L164.1 256.6c-7.4 7.4-12.6 16.8-15 27l-20.9 90.6c-.6 2.7 .2 5.5 2.1 7.5s4.8 2.8 7.5 2.1l90.6-20.9c10.2-2.4 19.6-7.5 27-15L483.7 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 28.3c-21.9-21.9-57.3-21.9-79.2 0zM72 64C32.2 64 0 96.2 0 136V440c0 39.8 32.2 72 72 72H376c39.8 0 72-32.2 72-72V296c0-4.4-3.6-8-8-8s-8 3.6-8 8V440c0 30.9-25.1 56-56 56H72c-30.9 0-56-25.1-56-56V136c0-30.9 25.1-56 56-56H216c4.4 0 8-3.6 8-8s-3.6-8-8-8H72z"></path></svg>Reassign this charge</button></p></div></dialog><h3 id="picker">Editing without the platform's furniture</h3><p>Editing a row means choosing from a list, and a <span class="mono">&lt;select&gt;</span> hands that list to the operating system. Beside a dialog set in 10px mono, the macOS popup arrives in 13px Helvetica: it is the one control on the page that does not look like the page, and no amount of styling on the closed control fixes the open one. So the list is drawn here &mdash; a button, a panel of buttons, and a hidden input holding the value. Everything downstream still reads <span class="mono">.value</span> and still hears <span class="mono">change</span>, which is the part worth protecting.</p><p>The panel has one more job than a native list: it names the shape of the edit. Two pickers, a sentence saying what the rule is written against, and the line the change would write &mdash; readonly, because the dialog is a decision and not a database. The verdict sits at the bottom right, where the reading ends, with the secondary action first so the primary lands on the corner the pointer leaves from.</p><div class="note caution"><div class="hd">The list closes before the dialog does</div><p>Escape is taken by the open picker first. The nearest overlay is the list, and closing the whole panel would throw away a choice the reader was in the middle of making.</p></div><dialog class="rows move" id="edit-dialog"><form method="dialog" class="x"><button value="close" aria-label="Close"><svg class="ic" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M338.1 413.4c3.1 3.1 8.2 3.1 11.3 0s3.1-8.2 0-11.3L203.3 256 349.4 109.9c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L192 244.7 45.9 98.6c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3L180.7 256 34.6 402.1c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0L192 267.3 338.1 413.4z"></path></svg></button></form><h4>Reassign this charge</h4><p class="sc" id="ed-what">&mdash;</p><div class="movef"><div class="pk" id="ed-pick-group" data-for="ed-group"><span class="pl">Group</span><input type="hidden" id="ed-group" value="Depository"><button type="button" class="pkb" aria-haspopup="listbox" aria-expanded="false"><span class="pv">Depository</span><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M250.3 397.7c3.1 3.1 8.2 3.1 11.3 0l216-216c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L256 380.7 45.7 170.3c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3l216 216z"></path></svg></button><div class="pkl" role="listbox"><button type="button" role="option" aria-selected="true" class="on">Depository</button><button type="button" role="option" aria-selected="false">Credit card</button><button type="button" role="option" aria-selected="false">Investment</button><button type="button" role="option" aria-selected="false">Crypto</button></div></div><div class="pk" id="ed-pick-kind" data-for="ed-kind"><span class="pl">Kind</span><input type="hidden" id="ed-kind" value="Checking"><button type="button" class="pkb" aria-haspopup="listbox" aria-expanded="false"><span class="pv">Checking</span><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M250.3 397.7c3.1 3.1 8.2 3.1 11.3 0l216-216c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L256 380.7 45.7 170.3c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3l216 216z"></path></svg></button><div class="pkl" role="listbox"><button type="button" role="option" aria-selected="true" class="on">Checking</button><button type="button" role="option" aria-selected="false">Savings</button><button type="button" role="option" aria-selected="false">Revolving</button><button type="button" role="option" aria-selected="false">Charge</button><button type="button" role="option" aria-selected="false">Brokerage</button><button type="button" role="option" aria-selected="false">Retirement</button><button type="button" role="option" aria-selected="false">Managed</button><button type="button" role="option" aria-selected="false">Custodial</button><button type="button" role="option" aria-selected="false">Self-custody</button><button type="button" role="option" aria-selected="false">Gnosis Safe</button></div></div></div><p class="sc">The rule is written against the payee, not this one row: a charge is filed by who took the money, and the next one from the same payee should land in the same place without a second visit here. Nothing changes upstream until the line below is pasted into the source.</p><textarea id="ed-patch" rows="3" readonly></textarea><div class="movea"><button type="button" class="badge auto" id="ed-clear"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M127.9 419.9c90.5 70.7 221.2 54.7 292-35.8s54.7-221.2-35.8-292C293.6 21.4 162.9 37.4 92.1 127.9L56 176H184c4.4 0 8 3.6 8 8s-3.6 8-8 8H40c-4.4 0-8-3.6-8-8V40c0-4.4 3.6-8 8-8s8 3.6 8 8V160l31.4-41.8 0 0 .1-.1C155.6 20.6 296.4 3.3 393.9 79.5s114.8 216.9 38.6 314.4s-216.9 114.8-314.4 38.6C93.4 413.2 73.9 389.8 59.7 364c-2.1-3.9-.7-8.7 3.2-10.9s8.7-.7 10.9 3.2c13.2 24 31.3 45.7 54.2 63.7z"></path></svg>Clear</button><button type="button" class="badge auto" id="ed-save"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M256 16a240 240 0 1 1 0 480 240 240 0 1 1 0-480zm0 496A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM357.7 197.7c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L224 308.7l-58.3-58.3c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3l64 64c3.1 3.1 8.2 3.1 11.3 0l128-128z"></path></svg>Apply</button></div></dialog><div class="code-hd">DIALOGS.TS</div><pre class="code"><span class="c">// dialogs.ts — the control, not the platform's</span>
+pick(<span class="s">&quot;ed-pick-group&quot;</span>, <span class="s">&quot;ed-group&quot;</span>, <span class="s">&quot;Group&quot;</span>, groups, groups[0]);
+
+<span class="c">// The row is the target, so the row carries the class.</span>
+<span class="s">`&lt;tr class=&quot;clickable&quot; data-row=&quot;${i}&quot; tabindex=&quot;0&quot;&gt;`</span>
+<span class="c">// tokens.ts already has: dialog.rows, .pk/.pkb/.pkl, tr.clickable, td.pop</span></pre><hr class="sep">
 <h2 id="wireframes"><span class="n">9</span><svg class="ic" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M0 88c0-4.4 3.6-8 8-8H440c4.4 0 8 3.6 8 8s-3.6 8-8 8H8c-4.4 0-8-3.6-8-8zM0 248c0-4.4 3.6-8 8-8H440c4.4 0 8 3.6 8 8s-3.6 8-8 8H8c-4.4 0-8-3.6-8-8zM448 408c0 4.4-3.6 8-8 8H8c-4.4 0-8-3.6-8-8s3.6-8 8-8H440c4.4 0 8 3.6 8 8z"></path></svg>Wireframes<span class="hint"><svg class="ic" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.7 412.3c-3.1 5.3-4.7 11.2-4.7 17.3c0 19 15.4 34.4 34.4 34.4H461.6c19 0 34.4-15.4 34.4-34.4c0-6.1-1.6-12.1-4.7-17.3L290.3 67.7C283.2 55.5 270.1 48 256 48s-27.2 7.5-34.3 19.7L20.7 412.3zM6.9 404.2l201-344.6C217.9 42.5 236.2 32 256 32s38.1 10.5 48.1 27.6l201 344.6c4.5 7.7 6.9 16.5 6.9 25.4c0 27.8-22.6 50.4-50.4 50.4H50.4C22.6 480 0 457.4 0 429.6c0-8.9 2.4-17.7 6.9-25.4zM256 160c4.4 0 8 3.6 8 8V328c0 4.4-3.6 8-8 8s-8-3.6-8-8V168c0-4.4 3.6-8 8-8zM240 384a16 16 0 1 1 32 0 16 16 0 1 1 -32 0z"></path></svg>no SVG style</span><span class="stmt">Anatomy drawings that carry their colour on presentation attributes, because an inline SVG style leaks.</span></h2><p>Wireframes here are monochrome on purpose: ink and hairlines on <span class="mono">--paper-alt</span>, never a palette colour. The moment a diagram is coloured, the reader starts reading the colour as meaning, and the page has spent one of its twelve identity swatches on a drawing that identifies nothing. Two exceptions, both annotations rather than content &mdash; a dimension line is drawn in aqua so it reads as measurement, and a callout for the thing being warned about is drawn in coral.</p><h3 id="skeleton">Page skeleton</h3><div class="wf"><svg class="wfd " viewBox="0 0 620 366" width="100%" height="auto" role="img" aria-hidden="true"><rect x="0" y="0" width="620" height="26" rx="3" fill="var(--paper-alt)" stroke="var(--rule)"></rect><rect x="12" y="11" width="54" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="78" y="11" width="30" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="536" y="11" width="26" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="572" y="11" width="36" height="4" rx="1.5" fill="var(--rule)"></rect><text x="12" y="40" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">page-head</text><rect x="12" y="48" width="70" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="12" y="56" width="210" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="12" y="64" width="340" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="12" y="80" width="140" height="44" rx="3" fill="var(--paper-alt)" stroke="var(--rule)"></rect><rect x="164" y="80" width="140" height="44" rx="3" fill="var(--paper-alt)" stroke="var(--rule)"></rect><rect x="316" y="80" width="140" height="44" rx="3" fill="var(--paper-alt)" stroke="var(--rule)"></rect><rect x="468" y="80" width="140" height="44" rx="3" fill="var(--paper-alt)" stroke="var(--rule)"></rect><text x="12" y="138" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">tiles — the four numbers the page is about</text><line x1="12" y1="150" x2="608" y2="150" stroke="var(--rule)"></line><text x="12" y="168" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">1  section</text><rect x="12" y="176" width="596" height="62" rx="3" fill="var(--paper)" stroke="var(--rule)" stroke-dasharray="3 3"></rect><rect x="24" y="192" width="420" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="24" y="200" width="380" height="4" rx="1.5" fill="var(--rule)"></rect><rect x="24" y="208" width="300" height="22" rx="3" fill="var(--paper-alt)" stroke="var(--rule)"></rect><text x="332" y="222" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">figure + caption</text><line x1="12" y1="252" x2="608" y2="252" stroke="var(--rule)"></line><text x="12" y="270" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">2  section</text><rect x="12" y="278" width="596" height="76" rx="3" fill="var(--paper)" stroke="var(--rule)" stroke-dasharray="3 3"></rect><rect x="24" y="292" width="572" height="50" rx="3" fill="var(--paper-alt)" stroke="var(--rule)"></rect><text x="30" y="312" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">table — caption above, scroll box around</text></svg></div><p><span class="fig">Fig. F</span> Bar, head, tiles, then sections separated by rules. The order is the reading order: what this is, the four numbers, then the evidence.</p><h3 id="no-text">Text is a lie</h3><p>Every line of copy in these drawings is a grey bar. Real text in a wireframe invites the reader to evaluate the writing instead of the layout, and they will &mdash; every time, without noticing they have switched tasks.</p><div class="code-hd">wireframes.ts</div><pre class="code"><span class="k">export</span> <span class="k">function</span> textLine(x: number, y: number, w: number, h = 4): string {
   <span class="k">return</span> <span class="s">`&lt;rect x=&quot;${x}&quot; y=&quot;${y}&quot; width=&quot;${w}&quot; height=&quot;${h}&quot; rx=&quot;1.5&quot; fill=&quot;${HAIR}&quot;&gt;&lt;/rect&gt;`</span>;
 }</pre><h3 id="dims">Dimensions carry numbers</h3><p>A dimension line without a number is decoration. Both arrowheads, the measurement between them, in aqua.</p><div class="wf"><svg class="wfd " viewBox="0 0 620 190" width="100%" height="auto" role="img" aria-hidden="true"><rect x="60" y="44" width="118" height="15" rx="3" fill="var(--pastel-mint)" stroke="var(--stroke-mint)"></rect><text x="66" y="55" text-anchor="start" font-family="var(--font-mono)" font-size="9" fill="var(--stroke-mint)">Gnosis Safe</text><line x1="60" y1="34" x2="178" y2="34" stroke="var(--stroke-aqua)" stroke-width="0.8"></line><line x1="60" y1="31" x2="60" y2="37" stroke="var(--stroke-aqua)" stroke-width="0.8"></line><line x1="178" y1="31" x2="178" y2="37" stroke="var(--stroke-aqua)" stroke-width="0.8"></line><text x="119" y="30" text-anchor="middle" font-family="var(--font-mono)" font-size="6" fill="var(--stroke-aqua)">17ch — from the scale</text><line x1="196" y1="44" x2="196" y2="59" stroke="var(--stroke-aqua)" stroke-width="0.8"></line><line x1="193" y1="44" x2="199" y2="44" stroke="var(--stroke-aqua)" stroke-width="0.8"></line><line x1="193" y1="59" x2="199" y2="59" stroke="var(--stroke-aqua)" stroke-width="0.8"></line><text x="201" y="54.5" text-anchor="start" font-family="var(--font-mono)" font-size="6" fill="var(--stroke-aqua)">15px</text><line x1="60" y1="59" x2="30" y2="84" stroke="var(--ink-soft)" stroke-width="0.7"></line><circle cx="60" cy="59" r="1.8" fill="var(--ink-soft)"></circle><text x="26" y="87" text-anchor="end" font-family="var(--font-mono)" font-size="6" fill="var(--ink-soft)">radius 3px, never a pill</text><line x1="178" y1="51" x2="300" y2="84" stroke="var(--ink-soft)" stroke-width="0.7"></line><circle cx="178" cy="51" r="1.8" fill="var(--ink-soft)"></circle><text x="304" y="87" text-anchor="start" font-family="var(--font-mono)" font-size="6" fill="var(--ink-soft)">content-box: padding does not widen it</text><text x="60" y="118" text-anchor="start" font-family="var(--font-mono)" font-size="6.5" fill="var(--ink-soft)">one width for the whole column, empty and error rows included</text><rect x="60" y="126" width="118" height="15" rx="3" fill="var(--paper)" stroke="var(--rule)" stroke-dasharray="3 3"></rect><text x="66" y="137" text-anchor="start" font-family="var(--font-mono)" font-size="7" fill="var(--ink-soft)">(empty)</text><rect x="60" y="148" width="118" height="15" rx="3" fill="var(--pastel-coral)" stroke="var(--stroke-coral)"></rect><text x="66" y="159" text-anchor="start" font-family="var(--font-mono)" font-size="9" fill="var(--stroke-coral)">no data</text></svg></div><hr class="sep">
@@ -1831,6 +1950,110 @@ document.querySelectorAll(".scroll-wrap").forEach(function(w){
   addEventListener("resize",upd);
   upd();
 });
+
+/* ----------------------------------------------------- inspector and editor */
+/* Two modals and a picker. The panels are already rendered, one per row and all
+   hidden, so opening a row is a matter of deciding which one is not hidden --
+   no client-side templating, no second set of escaping rules. */
+var rowDlg=document.getElementById("row-dialog");
+var edDlg=document.getElementById("edit-dialog");
+var openRow=function(i){
+  if(!rowDlg) return;
+  rowDlg.querySelectorAll(".rp").forEach(function(p){
+    p.hidden = p.getAttribute("data-row")!==String(i);
+  });
+  if(rowDlg.showModal && !rowDlg.open) rowDlg.showModal();
+};
+document.querySelectorAll("tr.clickable[data-row]").forEach(function(tr){
+  var go=function(){ openRow(tr.getAttribute("data-row")); };
+  tr.addEventListener("click",go);
+  /* The row is reachable by keyboard, so it answers to the keys a control
+     answers to. A tabindex without Enter is a focus ring that does nothing. */
+  tr.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); }
+  });
+});
+
+/* The picker. A button, a panel of buttons, and a hidden input holding the
+   value -- so everything downstream still reads .value and hears change. */
+var closePickers=function(){
+  document.querySelectorAll(".pk.open").forEach(function(o){
+    o.classList.remove("open");
+    var b=o.querySelector(".pkb");
+    if(b) b.setAttribute("aria-expanded","false");
+  });
+};
+document.querySelectorAll(".pk").forEach(function(pk){
+  var input=document.getElementById(pk.getAttribute("data-for"));
+  var btn=pk.querySelector(".pkb"), val=pk.querySelector(".pv");
+  var list=pk.querySelector(".pkl");
+  if(!input||!btn||!val||!list) return;
+  btn.addEventListener("click",function(e){
+    e.stopPropagation();
+    var was=pk.classList.contains("open");
+    closePickers();
+    if(was) return;
+    pk.classList.add("open");
+    btn.setAttribute("aria-expanded","true");
+    var on=list.querySelector("button.on");
+    if(on&&on.scrollIntoView) on.scrollIntoView({block:"nearest"});
+  });
+  list.querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      input.value=b.textContent;
+      val.textContent=b.textContent;
+      list.querySelectorAll("button").forEach(function(o){
+        var on=o===b;
+        o.className=on?"on":"";
+        o.setAttribute("aria-selected",on?"true":"false");
+      });
+      closePickers();
+      input.dispatchEvent(new Event("change"));
+    });
+  });
+});
+/* Anywhere else is a dismissal, and Escape is taken before the dialog sees it:
+   the open list is the nearest overlay, and closing the whole panel would throw
+   away a choice the reader was in the middle of making. */
+document.addEventListener("click",closePickers);
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Escape") return;
+  if(!document.querySelector(".pk.open")) return;
+  e.preventDefault(); e.stopPropagation(); closePickers();
+},true);
+
+/* The patch line. Readonly, and rewritten on every change, because the dialog
+   is a decision -- the thing it produces is a line for the source, not a write. */
+var edWhat=document.getElementById("ed-what");
+var edPatch=document.getElementById("ed-patch");
+var edGroup=document.getElementById("ed-group");
+var edKind=document.getElementById("ed-kind");
+var edFor="";
+var edLine=function(){
+  if(!edPatch) return;
+  edPatch.value='{ payee: "'+edFor+'", group: "'+(edGroup?edGroup.value:"")+
+    '", kind: "'+(edKind?edKind.value:"")+'" },';
+};
+if(edGroup) edGroup.addEventListener("change",edLine);
+if(edKind) edKind.addEventListener("change",edLine);
+document.querySelectorAll("[data-edit]").forEach(function(b){
+  b.addEventListener("click",function(){
+    var panel=b.closest(".rp");
+    var h=panel&&panel.querySelector("h4");
+    edFor=h?h.textContent:"";
+    if(edWhat) edWhat.textContent=edFor;
+    edLine();
+    if(rowDlg&&rowDlg.open) rowDlg.close();
+    if(edDlg&&edDlg.showModal) edDlg.showModal();
+  });
+});
+var edClear=document.getElementById("ed-clear");
+if(edClear) edClear.addEventListener("click",function(){
+  if(edPatch) edPatch.value="";
+});
+var edSave=document.getElementById("ed-save");
+if(edSave) edSave.addEventListener("click",function(){ if(edDlg) edDlg.close(); });
 
 /* ------------------------------------------------------------- copy code */
 document.querySelectorAll("pre.code").forEach(function(pre){

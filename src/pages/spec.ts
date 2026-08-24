@@ -13,6 +13,7 @@ import * as T from "../tables.ts";
 import * as S from "../spark.ts";
 import * as W from "../wireframes.ts";
 import { stage } from "../viewer.ts";
+import * as D from "../dialogs.ts";
 import { sparkline, stackedBar, legend, ppBar, dmy, type Seg } from "../charts.ts";
 import { toneAt, typeClass, TYPE_TONE } from "../palette.ts";
 import { rows, walk, days, sum, type Row } from "../data.ts";
@@ -45,6 +46,13 @@ const RAIL = T.railW(Object.values(GNAME));
 /** Computed from every label the column can hold -- including "no data". */
 const STATUS_W = wcls(["ok", "warn", "crit", "idle", "no data"]);
 const KIND_W = wcls(DATA.map((r) => r.kind).concat(["(none)"]));
+
+/* Four rows for the inspector demo, one from each group, so the panel that opens
+   is never four variations of a checking account. */
+const DRILL = GROUPS.map((g) => DATA.find((r) => r.group === g)).filter(
+  (r): r is Row => r !== undefined,
+);
+const KINDS = [...new Set(DATA.map((r) => r.kind))];
 
 /* ------------------------------------------------------------ 1 foundations */
 
@@ -675,6 +683,53 @@ function overlays(): string {
     U.banner(
       "ok",
       `Both of these are <span class="mono">&lt;input type="checkbox"&gt;</span> and a <span class="mono">&lt;label&gt;</span>. With scripting off they still open and close. That is not a nicety &mdash; it is why the printed version of the page has the detail in it.`,
+    ) +
+    U.h3("Drilling into a row", "inspect") +
+    U.p(
+      `A total a reader cannot open is a total they have to take on trust. The third depth is for the case where the answer is not one fact and not one column of receipts but a row of its own with its own rows behind it: click the line and the charges arrive in a modal set at the same size as the table underneath it. Same size, deliberately &mdash; at 11.5px the inspector read as a larger, different document laid over the page rather than as a closer look at the one already there.`,
+    ) +
+    U.p(
+      `The trigger is <span class="mono">tr.clickable</span> on the row, not a control in a last column. A row that opens something is the whole row: a 10px mark in the final column of a table made of numbers reads as another value, and it puts the affordance an inch from where the reader is already pointing.`,
+    ) +
+    T.table({
+      fig: "TBL. 4",
+      caption: "Four accounts. Any row opens the charges behind its balance.",
+      cols: [
+        { h: "Account" },
+        { h: "Kind" },
+        { h: "Balance", cls: "n" },
+      ],
+      body: DRILL.map(
+        (r, i) =>
+          `<tr class="clickable" data-row="${i}" tabindex="0">` +
+          T.td(esc(r.name)) +
+          T.td(esc(r.kind)) +
+          T.td(usd(r.v), "n") +
+          `</tr>`,
+      ).join(""),
+    }) +
+    D.inspector("row-dialog", DRILL, GNAME) +
+    U.h3("Editing without the platform's furniture", "picker") +
+    U.p(
+      `Editing a row means choosing from a list, and a <span class="mono">&lt;select&gt;</span> hands that list to the operating system. Beside a dialog set in 10px mono, the macOS popup arrives in 13px Helvetica: it is the one control on the page that does not look like the page, and no amount of styling on the closed control fixes the open one. So the list is drawn here &mdash; a button, a panel of buttons, and a hidden input holding the value. Everything downstream still reads <span class="mono">.value</span> and still hears <span class="mono">change</span>, which is the part worth protecting.`,
+    ) +
+    U.p(
+      `The panel has one more job than a native list: it names the shape of the edit. Two pickers, a sentence saying what the rule is written against, and the line the change would write &mdash; readonly, because the dialog is a decision and not a database. The verdict sits at the bottom right, where the reading ends, with the secondary action first so the primary lands on the corner the pointer leaves from.`,
+    ) +
+    U.noteBox({
+      kind: "caution",
+      title: "The list closes before the dialog does",
+      body: `Escape is taken by the open picker first. The nearest overlay is the list, and closing the whole panel would throw away a choice the reader was in the middle of making.`,
+    }) +
+    D.editor("edit-dialog", Object.values(GNAME), KINDS) +
+    U.code(
+      `// dialogs.ts \u2014 the control, not the platform's
+pick("ed-pick-group", "ed-group", "Group", groups, groups[0]);
+
+// The row is the target, so the row carries the class.
+\`<tr class="clickable" data-row="\${i}" tabindex="0">\`
+// tokens.ts already has: dialog.rows, .pk/.pkb/.pkl, tr.clickable, td.pop`,
+      { lang: "DIALOGS.TS" },
     )
   );
 }
