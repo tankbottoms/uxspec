@@ -20,7 +20,11 @@ import { rows, walk, days, sum, type Row } from "../data.ts";
 const sec = (id: string) => {
   const s = SECTIONS.find((x) => x.id === id);
   if (!s) throw new Error(`unknown section: ${id}`);
-  return U.h2(Number(s.n), s.id, s.title, icon(s.ic));
+  return U.h2(Number(s.n), s.id, s.title, icon(s.ic), {
+    hint: s.hint,
+    hintIc: icon(s.hintIc),
+    stmt: s.stmt,
+  });
 };
 
 const DATA = rows(7);
@@ -632,6 +636,154 @@ function wireframes(): string {
   );
 }
 
+/* ---------------------------------------------------------- 10 layout */
+
+/**
+ * The furniture a data page is assembled from, in the order a page uses it:
+ * something is wrong at the top, the four numbers, where the numbers came from,
+ * the list they came out of, and the machines that produced them.
+ */
+function layout(): string {
+  const roleW = wcls(["ingest", "enrich", "store", "edge"]);
+  const nodes = [
+    { nm: "spark-1", role: "ingest", tone: "p1", link: "1 Gb/s", ms: "33.9 ms", load: 60, disk: 64 },
+    { nm: "node-eighteen", role: "enrich", tone: "p8", link: "1 Gb/s", ms: "9.4 ms", load: 5, disk: 71 },
+    { nm: "unraid-one", role: "store", tone: "p12", link: "10 Gb/s", ms: "4.3 ms", load: 30, disk: 24 },
+  ];
+  const nodeCards = nodes
+    .map((n) =>
+      U.card({
+        title: n.nm,
+        role: n.role,
+        roleW,
+        tone: n.tone,
+        meta: n.ms,
+        body:
+          U.chips([
+            { k: "link", v: n.link, tone: "idle" },
+            { k: "state", v: "online", tone: "ok" },
+          ]) +
+          S.meterRow("load", `${n.load}%`, n.load, n.load > 55 ? "warn" : n.tone) +
+          S.meterRow("disk", `${n.disk}%`, n.disk, n.disk > 68 ? "warn" : n.tone),
+      }),
+    )
+    .join("");
+
+  const byGroup = GROUPS.map((g) => {
+    const items = DATA.filter((r) => r.group === g);
+    return {
+      name: GNAME[g] as string,
+      ic: icon(GICON[g] as string),
+      tone: typeClass(g),
+      count: `${items.length} acct`,
+      total: usd(sum(items)),
+      open: g === "Depository",
+      items: items.map((r) => ({
+        title: r.name,
+        meta: [
+          { label: r.kind, tone: "mono" },
+          { label: r.status, tone: r.status },
+          { label: usd(r.v), tone: "mono" },
+        ],
+      })),
+    };
+  });
+
+  return (
+    sec("layout") +
+    U.p(
+      `Nine sections of this spec are about one component each. This one is about the page they sit in: the notice at the top, the strip of figures under it, the rail that says where the figures came from, the list they were computed over, and the cards for the machines that produced them. Every surface below is drawn from classes <span class="mono">tokens.ts</span> already defines &mdash; the section adds four helpers in <span class="mono">ui.ts</span> and not one rule.`,
+    ) +
+    U.h3("Notices, and there are four", "notices") +
+    U.p(
+      `Four intents, closed. Plain is the reasoning behind a rule; <span class="mono">good</span> is a confirmed outcome; <span class="mono">caution</span> is a thing that will bite later; <span class="mono">crit</span> is a thing that is wrong now. A fifth has never survived contact with a reader &mdash; by the time a page carries five tints two of them are being read as one, and the cheap fix is deciding which of the two the box actually was.`,
+    ) +
+    U.noteBox({
+      ic: icon("circle-info"),
+      title: "Why the figures are invented",
+      body: `Every number on this page is generated from a seeded walk with a fixed epoch, so two builds of the same source produce byte-identical HTML and <span class="mono">git diff dist/</span> is a review tool rather than noise.`,
+    }) +
+    U.noteBox({
+      kind: "good",
+      ic: icon("circle-check"),
+      title: "Ledger reconciled",
+      body: `All four groups closed against the statement. The last unmatched row cleared on ${day("2026-03-14")}.`,
+    }) +
+    U.noteBox({
+      kind: "caution",
+      ic: icon("triangle-exclamation"),
+      title: "Two sources are stale",
+      body: `Crypto balances were last refreshed 9 days ago. The figures are shown because a blank is worse than a dated number, but the trend beside them is short by nine points.`,
+    }) +
+    U.noteBox({
+      kind: "crit",
+      ic: icon("ban"),
+      title: "One source failed",
+      body: `The brokerage feed returned a 502 on its last three attempts. Nothing downstream of it on this page is current, and the affected rows carry <span class="mono">crit</span> in the status column rather than a stale value dressed as a fresh one.`,
+    }) +
+    U.h3("The strip: gap-separated against hairline-separated", "strip") +
+    U.p(
+      `The same four readings twice. Loose boxes with a gap between them read as four things and the eye counts them; one bordered rail with hairline dividers reads as one row of readings and the eye reads it. <span class="mono">.tiles</span> is the rail, and it is the only one of the two this system ships &mdash; the gapped version is shown here so the difference is arguable rather than asserted.`,
+    ) +
+    U.tiles([
+      { k: "Sources", v: "7", s: "3 stale, 1 failed" },
+      { k: "Rows", v: String(DATA.length), s: "across four groups" },
+      { k: "Coverage", v: "94.8%", s: "of days with a reading" },
+      { k: "Last ingest", v: "9 min", s: "ago, from unraid-one" },
+    ]) +
+    U.note(
+      `The rail is a grid with <span class="mono">auto-fit</span> and a 158px minimum, so it re-flows to two rows on a phone without a breakpoint declared anywhere. Five readings is the ceiling for the same reason four tiles is: the fifth wraps, and a wrapped tile reads as more important than its neighbours.`,
+    ) +
+    U.h3("Chip rails", "chips") +
+    U.p(
+      `Where a figure came from, and what it cost to get. Each pair is <em>two</em> badges, never one reading <span class="mono">DB 2.0 ms</span> &mdash; set as one string the reader has to parse it; set as two, the labels line up down the rail and the numbers line up beside them, and the comparison the rail exists for is the one the eye makes first. Both columns take a single width computed from every member, so a slower source added next month does not shuffle the ones already there.`,
+    ) +
+    U.chips([
+      { k: "sqlite", v: "2.0 ms", tone: "ok" },
+      { k: "nfs", v: "5.9 ms", tone: "ok" },
+      { k: "ipfs", v: "378.2 ms", tone: "warn" },
+      { k: "brokerage", v: "timeout", tone: "crit" },
+    ]) +
+    U.code(
+      `U.chips([
+  { k: "sqlite", v: "2.0 ms",   tone: "ok" },
+  { k: "ipfs",   v: "378.2 ms", tone: "warn" },
+  { k: "brokerage", v: "timeout", tone: "crit" },
+])`,
+      { lang: "ui.ts" },
+    ) +
+    U.note(
+      `<span class="mono">timeout</span> is why both widths are computed from the whole rail rather than from the numbers. It is the longest string in the value column and it only appears when something is broken &mdash; a width measured on the happy path would jump the rail sideways at exactly the moment the reader is trying to read it.`,
+    ) +
+    U.h3("Band lists", "bands") +
+    U.p(
+      `A group, its members, and each member's metadata &mdash; one bordered plate rather than four cards. The disclosure is a native <span class="mono">&lt;details&gt;</span>, so it opens with scripting off and the browser handles the keyboard for it. The first band ships open: a page that opens on a column of closed triangles has told the reader nothing about what is inside them.`,
+    ) +
+    U.bands(byGroup) +
+    U.note(
+      `The member metadata takes one width across <em>every</em> band, not one per band. Computed per band, the kind column in Depository would sit at one x-position and the kind column in Crypto at another, and the list would stop being a list.`,
+    ) +
+    U.h3("Status cards", "cards") +
+    U.p(
+      `A machine, its role, its link, and what it is doing. The role badge sits right of the title on the title's own baseline for the same reason the section hint does &mdash; a fact about the thing belongs on the thing's line, and dropping it underneath turns a one-line header into a two-line one and buys nothing. The meters are the same primitive as everywhere else: width inline because the width is the datum, colour a class because the colour is design.`,
+    ) +
+    U.cards(nodeCards) +
+    U.note(
+      `The tone flips to <span class="mono">warn</span> above a threshold, and the threshold is in the code beside the number rather than in the stylesheet. A meter that is amber because a CSS rule said so cannot be traced back to what made it amber. The identity swatches these cards draw on are aqua, orchid and indigo &mdash; not blush, and not mint. Blush at a glance is the crit red from the band list above, and mint is the <span class="mono">ok</span> green in the chips inside the card; both would have been the same colour meaning two things on one page.`,
+    ) +
+    U.h3("Panels are not a separate system", "panels") +
+    U.p(
+      `Every surface above can be re-hosted in a draggable panel, and the temptation is to build the panel version as its own component set. It is not one. A panel is a container; the strip inside it is the same <span class="mono">.tiles</span>, the list is the same <span class="mono">.bands</span>, and a control in the panel writes page state &mdash; so changing row density in the panel re-renders the table in section 3, rather than re-rendering a copy of it that now disagrees.`,
+    ) +
+    U.noteBox({
+      kind: "caution",
+      ic: icon("triangle-exclamation"),
+      title: "The failure mode this avoids",
+      body: `A panel with its own copy of a table is two tables. They agree until one of them is fixed, and then the reader has two answers and no way to tell which is current. If a surface needs to appear in a panel, the panel takes the surface &mdash; it does not take a second implementation of it.`,
+    })
+  );
+}
+
 /* ---------------------------------------------------------------- 10 viewer */
 
 function viewerSection(): string {
@@ -785,6 +937,7 @@ export function specBody(): string {
     controls() +
     overlays() +
     wireframes() +
+    layout() +
     viewerSection() +
     contract() +
     recipes()

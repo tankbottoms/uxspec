@@ -57,6 +57,29 @@ export function lines(
   return widths.map((w, i) => textLine(x, y + i * gap, w)).join("");
 }
 
+/**
+ * SVG text is not HTML text.
+ *
+ * An `&mdash;` inside `<text>` is not decoded by the HTML parser the way it is in
+ * a paragraph -- and `esc()` then turns the ampersand into `&amp;`, so the label
+ * reads "&mdash;" literally. Every caption in this file writes the entity because
+ * every caption in the rest of the codebase does; the substitution happens here,
+ * once, rather than by asking each caller to remember which of the two worlds it
+ * is writing for.
+ */
+const ENT: readonly [RegExp, string][] = [
+  [/&mdash;/g, "\u2014"],
+  [/&ndash;/g, "\u2013"],
+  [/&times;/g, "\u00d7"],
+  [/&minus;/g, "\u2212"],
+  [/&middot;/g, "\u00b7"],
+  [/&hellip;/g, "\u2026"],
+];
+
+function svgText(t: string): string {
+  return esc(ENT.reduce((acc, [rx, ch]) => acc.replace(rx, ch), t));
+}
+
 export function label(
   x: number,
   y: number,
@@ -67,7 +90,7 @@ export function label(
     `<text x="${x}" y="${y}" text-anchor="${o.anchor ?? "start"}" ` +
     `font-family="${MONO}" font-size="${o.size ?? 8.5}" fill="${
       o.fill ?? INK
-    }">${esc(t)}</text>`
+    }">${svgText(t)}</text>`
   );
 }
 
@@ -92,7 +115,7 @@ export function dim(
     }" y2="${y2 + (vertical ? 0 : 3)}" stroke="${DIM}" stroke-width="0.8"></line>` +
     `<text x="${vertical ? mx + 5 : mx}" y="${vertical ? my + 3 : my - 4}" ` +
     `text-anchor="${vertical ? "start" : "middle"}" font-family="${MONO}" ` +
-    `font-size="8" fill="${DIM}">${esc(t)}</text>`
+    `font-size="8" fill="${DIM}">${svgText(t)}</text>`
   );
 }
 
@@ -112,7 +135,7 @@ export function callout(
     `<circle cx="${x}" cy="${y}" r="1.8" fill="${c}"></circle>` +
     `<text x="${tx + (tx > x ? 4 : -4)}" y="${ty + 3}" text-anchor="${
       tx > x ? "start" : "end"
-    }" font-family="${MONO}" font-size="8" fill="${c}">${esc(t)}</text>`
+    }" font-family="${MONO}" font-size="8" fill="${c}">${svgText(t)}</text>`
   );
 }
 

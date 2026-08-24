@@ -28,13 +28,33 @@ import * as U from "../ui.ts";
 export function thingBody(): string {
   return U.pageHead({ eyebrow: [...], h1: "...", lede: "..." })
     + U.tiles([...])      // the four numbers the page is about, before the evidence
-    + U.h2(1, "id", "Section", icon("layer-group"))
+    + U.h2(1, "id", "Section", icon("layer-group"), {
+        hint: "live now",              // one small fact, right-justified on the title line
+        hintIc: icon("circle-info"),   // circle-info is reserved for hints; do not
+        stmt: "One line saying what the section is for.",  //   use it as a section glyph
+      })
     + ...;
 }
 ```
 
 Then register it in `src/index.ts` and add its sections to `SECTIONS` in
 `src/shell.ts` if it needs its own table of contents.
+
+## Section headings
+
+Four parts, fixed order, two lines:
+
+| Part | Where | Rule |
+|---|---|---|
+| `.n` | left | White fill, black rule. Reading order, never a category -- a coloured chip here competes with every tone below it. |
+| glyph + title | left | One glyph per section, none repeated. |
+| `.hint` | far right, title's line | One small fact, marked `circle-info`. Never a control, never a sentence. |
+| `.stmt` | its own line | One line saying what the section is for. Lives in `SECTIONS`, not at the call site. |
+
+The statement is inside the `<h2>` (`flex-basis:100%` breaks it to its own row),
+not a sibling `<p>`. A paragraph after the heading reads as body copy that
+happens to sit first; this reads as part of the heading, and the eye scanning
+only titles still gets the argument of the page.
 
 ## Adding a component
 

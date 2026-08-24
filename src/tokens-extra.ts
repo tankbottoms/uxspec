@@ -188,4 +188,49 @@ export const CSS_EXTRA = `
 tr.sub td.rot .badge.gi {
   background: transparent; border-color: transparent; padding: 0;
 }
+
+/* --------------------------------------------------- the section heading */
+/* tokens.ts already sets h2 as a wrapping flex row, gives .n and .hint the same
+   printed-mark treatment, and pushes .hint out to the right with margin-left:auto.
+   Two things are added here and nothing is overridden.
+
+   The statement takes the full width of the row, which in a wrapping flex row is
+   what forces it onto its own line under the title. It is deliberately not a
+   sibling <p>: a paragraph after the heading has the heading's bottom margin
+   between them and reads as body copy that happens to sit first, where this reads
+   as part of the heading and is skipped by the eye that is only scanning titles.
+
+   Its weight and colour are stepped down from the title on purpose. Same size as
+   a caption, because that is what it is. */
+h2 .stmt {
+  flex-basis: 100%; margin-top: 4px;
+  font-size: 10.5px; font-weight: 400; line-height: 1.5;
+  color: var(--ink-muted); letter-spacing: 0;
+}
+
+/* The hint's glyph. Sized to the mono cap-height beside it rather than to the
+   title, or it sets the height of the whole badge and the mark stops matching
+   the number at the other end of the line. */
+h2 .hint .ic { width: 9px; height: 9px; margin-right: 4px; vertical-align: -1px; }
+
+/* ---------------------------------------------------- layout surfaces */
+/* Cards across, one column on a phone. auto-fit rather than a fixed count, so a
+   fourth node does not need a second grid declared for it. */
+.cardgrid {
+  display: grid; gap: 12px; margin-bottom: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
+}
+.cardgrid .card { margin-bottom: 0; }
+
+/* A band member. The title takes the slack and the badges terminate on the right
+   edge, so the metadata forms a column down the list instead of trailing each
+   title at whatever length that title happens to be. */
+.band-fs .nm { flex: 1 1 auto; min-width: 0; font-size: 11px; }
+.band-fs .badge { flex: none; }
+.keyrow .ki { gap: 4px; }
+
+/* The summary of a band is the band header, so the marker has to go or it sits
+   in front of a header that already carries a glyph. */
+.band > summary { cursor: pointer; list-style: none; }
+.band > summary::-webkit-details-marker { display: none; }
 `;

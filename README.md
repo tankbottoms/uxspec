@@ -48,7 +48,7 @@ usable review of what a change did to the page.
 | `src/wireframes.ts` | Monochrome blueprints. Ink and hairlines, never a palette colour. |
 | `src/viewer.ts` | The WebGL stage, its glyph controls, and its no-JS still. |
 | `src/client.ts` | The only client script: theme, sorting, span re-cutting. |
-| `src/shell.ts` | `head()`, `nav()`, `foot()`, and the section table of contents. |
+| `src/shell.ts` | `head()`, `nav()`, `foot()`, and `SECTIONS` -- each section's number, glyph, title, right-hand hint and one-line statement. |
 | `src/pages/` | The two pages. Composition only — no new rules live here. |
 | `src/design-lint.ts` | Raw hex, unscoped SVG `<style>`, emoji, unknown colour classes. |
 | `src/badge-lint.ts` | Badge width from the scale, no inline colour on a badge. |

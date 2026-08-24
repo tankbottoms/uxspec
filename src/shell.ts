@@ -10,22 +10,96 @@ import { faviconDataUri, icon } from "./icons.ts";
 import { CSS } from "./tokens.ts";
 import { CSS_EXTRA } from "./tokens-extra.ts";
 
-export type Section = { id: string; n: string; ic: string; title: string };
+/**
+ * A section of the spec.
+ *
+ * `stmt` is the one-line statement that sets under the title; `hint` is the small
+ * fact that sets right-justified on the title's own line. Both live here rather
+ * than at the call site so the nav, the page and any future index all read the
+ * same words -- a heading whose summary is written twice is written wrong once.
+ */
+export type Section = {
+  id: string;
+  n: string;
+  ic: string;
+  title: string;
+  hint: string;
+  hintIc: string;
+  stmt: string;
+};
 
-/** The spec's own table of contents. One glyph per section, none repeated. */
+/**
+ * The spec's own table of contents. One glyph per section, none repeated -- and
+ * `circle-info` is not among them, because that one is spoken for: it is the mark
+ * on every section hint, and a glyph that means "here is a small fact" cannot
+ * also mean "this is the overlays section".
+ */
 export const SECTIONS: readonly Section[] = [
-  { id: "foundations", n: "1", ic: "layer-group", title: "Foundations" },
-  { id: "badges", n: "2", ic: "circle-check", title: "Badges" },
-  { id: "tables", n: "3", ic: "file-lines", title: "Tables and grouped rows" },
-  { id: "tiles", n: "4", ic: "scale-balanced", title: "Tiles, meters, readouts" },
-  { id: "sparks", n: "5", ic: "chart-line", title: "Sparks" },
-  { id: "charts", n: "6", ic: "building-columns", title: "Figures and charts" },
-  { id: "controls", n: "7", ic: "gear", title: "Controls" },
-  { id: "overlays", n: "8", ic: "circle-info", title: "Overlays" },
-  { id: "wireframes", n: "9", ic: "bars", title: "Wireframes" },
-  { id: "viewer", n: "10", ic: "laptop", title: "Viewer and glyph controls" },
-  { id: "contract", n: "11", ic: "ban", title: "The contract, enforced" },
-  { id: "recipes", n: "12", ic: "book", title: "Recipes" },
+  {
+    id: "foundations", n: "1", ic: "layer-group", title: "Foundations",
+    hint: "12 swatches", hintIc: "circle-info",
+    stmt: "One stylesheet, one closed palette, and the rule that a colour means one thing per page.",
+  },
+  {
+    id: "badges", n: "2", ic: "circle-check", title: "Badges",
+    hint: "15 widths", hintIc: "circle-info",
+    stmt: "Square, never a pill; width from the scale, colour from a class, and the build fails on anything else.",
+  },
+  {
+    id: "tables", n: "3", ic: "file-lines", title: "Tables and grouped rows",
+    hint: "4 groups", hintIc: "circle-info",
+    stmt: "A rotated label rail, members, and a subtotal at the foot of each block that survives a re-sort.",
+  },
+  {
+    id: "tiles", n: "4", ic: "scale-balanced", title: "Tiles, meters, readouts",
+    hint: "4 across", hintIc: "circle-info",
+    stmt: "The numbers the page is about, stated before any of the evidence for them.",
+  },
+  {
+    id: "sparks", n: "5", ic: "chart-line", title: "Sparks",
+    hint: "no axes", hintIc: "circle-info",
+    stmt: "Shape at a glance, at row height, with the figure that matters printed beside it.",
+  },
+  {
+    id: "charts", n: "6", ic: "building-columns", title: "Figures and charts",
+    hint: "5-slice ceiling", hintIc: "circle-info",
+    stmt: "Larger drawings, each one numbered, captioned, and carrying its own scale.",
+  },
+  {
+    id: "controls", n: "7", ic: "gear", title: "Controls",
+    hint: "no script", hintIc: "circle-info",
+    stmt: "Menus, segmented switches and sorts built from native elements, correct with JavaScript off.",
+  },
+  {
+    id: "overlays", n: "8", ic: "circle-question", title: "Overlays",
+    hint: "checkbox only", hintIc: "circle-info",
+    stmt: "Tips, receipt sheets and dialogs that open without a listener and close on Escape.",
+  },
+  {
+    id: "wireframes", n: "9", ic: "bars", title: "Wireframes",
+    hint: "no SVG style", hintIc: "triangle-exclamation",
+    stmt: "Anatomy drawings that carry their colour on presentation attributes, because an inline SVG style leaks.",
+  },
+  {
+    id: "layout", n: "10", ic: "folder-open", title: "Layout surfaces",
+    hint: "live now", hintIc: "circle-info",
+    stmt: "Notices, strips, chip rails, band lists and status cards &mdash; the furniture a data page is assembled from.",
+  },
+  {
+    id: "viewer", n: "11", ic: "laptop", title: "Viewer and glyph controls",
+    hint: "vendored", hintIc: "circle-info",
+    stmt: "A WebGL stage tinted from the same tokens, with a flat still underneath it when it cannot run.",
+  },
+  {
+    id: "contract", n: "12", ic: "ban", title: "The contract, enforced",
+    hint: "2 gates", hintIc: "triangle-exclamation",
+    stmt: "What the two linters reject, shown failing, so the rule is a diagnosis and not a slogan.",
+  },
+  {
+    id: "recipes", n: "13", ic: "book", title: "Recipes",
+    hint: "copy these", hintIc: "circle-info",
+    stmt: "The four things a new page needs, in the order a new page needs them.",
+  },
 ] as const;
 
 export function head(title: string, extraMeta = ""): string {

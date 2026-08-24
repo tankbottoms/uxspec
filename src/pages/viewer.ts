@@ -26,12 +26,20 @@ export function viewerBody(): string {
       { k: "No-JS state", v: "a still", s: "same figure, flat" },
       { k: "Draw calls", v: "2/shape", s: "solid plus edges" },
     ]) +
-    U.h2(1, "stage", "The stage", icon("laptop")) +
+    U.h2(1, "stage", "The stage", icon("laptop"), {
+      hint: "live now",
+      hintIc: icon("circle-info"),
+      stmt: "Four shapes, tinted from the same tokens as every badge on the spec page, drawn twice each &mdash; solid and edges.",
+    }) +
     stage() +
     U.p(
       `<span class="fig">Fig. 1</span> Shape and tone are independent, so the same geometry can carry any of the twelve identity swatches without a second material declared anywhere.`,
     ) +
-    U.h2(2, "fallback", "What is underneath it", icon("bars")) +
+    U.h2(2, "fallback", "What is underneath it", icon("bars"), {
+      hint: "no script",
+      hintIc: icon("circle-info"),
+      stmt: "The same subject as flat isometric SVG, in the markup from the start, hidden only once a frame has actually been produced.",
+    }) +
     U.p(
       `The fallback is not a placeholder graphic. It is the same subject drawn as flat isometric SVG, present in the markup from the start, and only hidden once the renderer has produced a frame. The order matters: hide-then-draw leaves a blank rectangle for however long the module takes, and forever if it fails.`,
     ) +
@@ -44,7 +52,11 @@ export function viewerBody(): string {
     ) +
     W.chartAnatomy() +
     U.p(`<span class="fig">Fig. 2</span> The same frame, caption and scope apply to a canvas as to a chart.`) +
-    U.h2(3, "colour", "Colour comes from the stylesheet", icon("circle-check")) +
+    U.h2(3, "colour", "Colour comes from the stylesheet", icon("circle-check"), {
+      hint: "0 hex here",
+      hintIc: icon("circle-info"),
+      stmt: "Materials read their tint out of the computed custom properties, so the stage follows the theme without a second palette declared for it.",
+    }) +
     U.p(
       `Nothing in the module holds a hex. Each material reads a <span class="mono">--pastel-*</span> and a <span class="mono">--stroke-*</span> out of the computed style of the document element, so a theme change repaints the scene through a <span class="mono">MutationObserver</span> rather than through a duplicated palette that would drift on the first edit.`,
     ) +
@@ -52,7 +64,11 @@ export function viewerBody(): string {
       "warn",
       `The temptation is to copy the six hexes into the module &ldquo;just for the 3D&rdquo;. That is exactly the fork that <span class="mono">design-lint.ts</span> exists to catch, and the linter reads the module too.`,
     ) +
-    U.h2(4, "budget", "What it costs", icon("chart-line")) +
+    U.h2(4, "budget", "What it costs", icon("chart-line"), {
+      hint: "2 draws/shape",
+      hintIc: icon("circle-info"),
+      stmt: "The whole of the stage, measured &mdash; module weight, draw calls, and what it does when the tab is not being looked at.",
+    }) +
     U.p(
       `Two draw calls per shape &mdash; a solid and its edges &mdash; with one shared geometry per kind, so the count does not grow with the instances. The frame time is printed live in the corner of the stage; if it stops being a number, the loop is not running.`,
     ) +
