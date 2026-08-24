@@ -260,9 +260,59 @@ export function overlayAnatomy(): string {
     box(428, 16, 190, 96, { fill: PAPER }) +
     label(436, 30, "dialog") +
     lines(436, 38, [160, 130, 150]) +
-    label(436, 84, "13.5px head &middot; the only one with a shadow", { fill: HAIR, size: 7.5 }) +
+    label(436, 84, "13.5px head &middot; the only shadow", { fill: HAIR, size: 7.5 }) +
     label(0, 132, "overlay type is one step below the page, never above it: 13.5 / 11 / 9.5, floor 9px");
   return wf(g, 620, 146);
+}
+
+/**
+ * The five docks, and what each one is allowed to hold.
+ *
+ * Drawn once because the rule is a placement rule: it cannot be stated in CSS
+ * and it cannot be enforced by a linter, so the only way it survives the next
+ * page is as a picture someone can hold a screenshot up against.
+ */
+export function viewportDocks(): string {
+  const F = { x: 8, y: 26, w: 396, h: 196 };
+  const dock = (x: number, y: number, w: number, t: string) =>
+    box(x, y, w, 16, { fill: ALT, dash: true, r: 2 }) +
+    label(x + 5, y + 11, t, { fill: HAIR, size: 7.5 });
+  // Every annotation leaves to the right of the frame. An earlier version ran a
+  // leader from each dock to a stack of captions, and the two from the left-hand
+  // docks crossed the whole rectangle -- the drawing then demonstrated the exact
+  // thing it is arguing against, which is chrome laid over content.
+  const foot = (cx: number, t: string, anchor: string) =>
+    label(cx, F.y + F.h + 15, t, { anchor, fill: HAIR, size: 7.5 });
+  const g =
+    box(F.x, F.y, F.w, F.h, { fill: PAPER }) +
+    label(F.x + 4, F.y - 6, "viewport &mdash; content owns the whole rectangle", {
+      fill: HAIR,
+      size: 7.5,
+    }) +
+    dock(F.x + 9, F.y + 9, 104, "layer / mode") +
+    dock(F.x + F.w - 9 - 66, F.y + 9, 66, "range") +
+    box(F.x + F.w - 9 - 68, F.y + 32, 68, 28, { fill: ALT, r: 2 }) +
+    label(F.x + F.w - 9 - 62, F.y + 51, "88 mph", { size: 10.5 }) +
+    dock(F.x + 9, F.y + F.h - 25, 62, "state") +
+    dock(F.x + F.w / 2 - 42, F.y + F.h - 25, 84, "navigate") +
+    dock(F.x + F.w - 9 - 70, F.y + F.h - 25, 70, "frame") +
+    box(F.x + F.w - 9 - 104, F.y + F.h - 90, 104, 56, { fill: ALT, r: 2 }) +
+    label(F.x + F.w - 9 - 97, F.y + F.h - 74, "picker opens up and", { fill: HAIR, size: 7 }) +
+    label(F.x + F.w - 9 - 97, F.y + F.h - 64, "right-aligned, so it", { fill: HAIR, size: 7 }) +
+    label(F.x + F.w - 9 - 97, F.y + F.h - 54, "never grows off frame", { fill: HAIR, size: 7 }) +
+    dim(F.x, F.y + F.h + 30, F.x + 9, F.y + F.h + 30, "9") +
+    // three feet, one per bottom dock, under the dock they describe
+    foot(F.x + 12, "state of the viewport", "start") +
+    foot(F.x + F.w / 2, "moves within the content", "middle") +
+    foot(F.x + F.w - 12, "acts on the frame itself", "end") +
+    // two callouts, both leaving to the right, neither crossing the content
+    callout(F.x + F.w - 9, F.y + 17, F.x + F.w + 26, F.y + 8,
+      "options: what is shown") +
+    callout(F.x + F.w - 12, F.y + 46, F.x + F.w + 26, F.y + 44,
+      "readout, not a control") +
+    label(0, F.y + F.h + 48,
+      "same glyph, same dock, every viewport on the page &mdash; the split is by what a control acts on");
+  return wf(g, 620, F.y + F.h + 58);
 }
 
 /** What a spark is allowed to claim, and what it is not. */
@@ -276,9 +326,13 @@ export function chartAnatomy(): string {
     box(36, 24, 330, 66, { fill: ALT }) +
     `<path d="${path}" fill="none" stroke="${INK}" stroke-width="1.4"></path>` +
     dim(376, 24, 376, 90, "34px") +
-    callout(40, 64, 20, 118, "no y-axis, so no absolute reading", true) +
-    label(400, 44, "range printed", { fill: HAIR }) +
-    label(400, 58, "beside the name", { fill: HAIR }) +
+    // Leaves to the right. Aimed left, the label anchors at its end and runs off
+    // the left edge of the drawing, which clipped it to its last few letters.
+    callout(40, 64, 118, 118, "no y-axis, so no absolute reading", true) +
+    // Above the dimension's own midpoint label, not level with it -- at 400 these
+    // two lines landed on the same baseline as the "34px" and read as one string.
+    label(400, 30, "range printed", { fill: HAIR }) +
+    label(400, 42, "beside the name", { fill: HAIR }) +
     label(0, 138, "chart &mdash; gridded and labelled. The maximum is printed; a bar chart without it is a ranking.") +
     box(36, 150, 330, 76, { fill: ALT }) +
     [0, 1, 2]
@@ -287,8 +341,11 @@ export function chartAnatomy(): string {
     [40, 92, 144, 196, 248, 300]
       .map((x, i) => box(x, 226 - (14 + i * 9), 34, 14 + i * 9, { fill: PAPER, r: 0 }))
       .join("") +
-    callout(36, 226, 400, 214, "zero baseline drawn even when nothing is negative");
-  return wf(g, 620, 244);
+    // Leaves from the right end of the baseline and stays short. Aimed from the
+    // left corner it drew a diagonal across the whole plot, and the sentence ran
+    // off the right edge of the drawing and lost its last word.
+    callout(366, 226, 392, 240, "zero baseline, always");
+  return wf(g, 620, 258);
 }
 
 /** The four-step spacing rhythm, so nobody invents a fifth. */

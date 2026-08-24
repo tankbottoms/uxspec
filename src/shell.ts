@@ -86,17 +86,22 @@ export const SECTIONS: readonly Section[] = [
     stmt: "Notices, strips, chip rails, band lists and status cards &mdash; the furniture a data page is assembled from.",
   },
   {
-    id: "viewer", n: "11", ic: "laptop", title: "Viewer and glyph controls",
+    id: "viewports", n: "11", ic: "car", title: "Viewports and docked controls",
+    hint: "5 docks", hintIc: "circle-info",
+    stmt: "Maps, stages and page-size charts, with their controls docked inside the frame instead of stealing a toolbar from it.",
+  },
+  {
+    id: "viewer", n: "12", ic: "laptop", title: "Viewer and glyph controls",
     hint: "vendored", hintIc: "circle-info",
     stmt: "A WebGL stage tinted from the same tokens, with a flat still underneath it when it cannot run.",
   },
   {
-    id: "contract", n: "12", ic: "ban", title: "The contract, enforced",
+    id: "contract", n: "13", ic: "ban", title: "The contract, enforced",
     hint: "2 gates", hintIc: "triangle-exclamation",
     stmt: "What the two linters reject, shown failing, so the rule is a diagnosis and not a slogan.",
   },
   {
-    id: "recipes", n: "13", ic: "book", title: "Recipes",
+    id: "recipes", n: "14", ic: "book", title: "Recipes",
     hint: "copy these", hintIc: "circle-info",
     stmt: "The four things a new page needs, in the order a new page needs them.",
   },

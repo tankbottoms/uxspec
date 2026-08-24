@@ -1,6 +1,8 @@
 // Formatting and the popover primitive. Every number on the page goes through one of
 // these so a stray raw float can never reach the reader.
 
+import { icon } from "./icons.ts";
+
 export function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -38,6 +40,29 @@ export function tip(label: string, body: string, alignRight = false): string {
   tipSeq += 1;
   const id = `t${tipSeq}`;
   return `<span class="tip${alignRight ? " rt" : ""}"><input type="checkbox" id="${id}"><label for="${id}">${label}</label><span class="body">${body}</span></span>`;
+}
+
+/**
+ * The same popover, marked with a glyph instead of an underlined phrase.
+ *
+ * A badge or a table cell has one line and no room to explain itself. The usual
+ * repairs are both bad: let the cell wrap, and one long value sets the height of
+ * every row beside it; truncate it, and the reader is told there is more without
+ * being told what. A circle-i sits after the value at a fixed 10px, costs the
+ * column nothing, and holds as many lines as the fact needs -- so the default
+ * reading stays one concise line and the detail is one hover or tap away.
+ *
+ * Right-align it when the mark is near the right edge of a table, or the panel
+ * opens off the page.
+ */
+export function tipMark(body: string, o: { rt?: boolean; label?: string } = {}): string {
+  tipSeq += 1;
+  const id = `t${tipSeq}`;
+  return (
+    `<span class="tip mk${o.rt ? " rt" : ""}"><input type="checkbox" id="${id}">` +
+    `<label for="${id}" aria-label="${o.label ?? "Details"}">${icon("circle-info")}</label>` +
+    `<span class="body">${body}</span></span>`
+  );
 }
 
 let rcptSeq = 0;

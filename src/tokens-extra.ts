@@ -21,7 +21,7 @@ export const CSS_EXTRA = `
    code is read, not compared column-wise. */
 .code{margin:10px 0 0;padding:9px 11px;background:var(--paper-alt);
   border:1px solid var(--rule-soft);border-radius:var(--radius);
-  font-family:var(--font-mono);font-size:10.5px;line-height:1.65;color:var(--ink);
+  font-family:var(--font-mono);font-size:8.5px;line-height:1.7;color:var(--ink);
   font-variant-numeric:normal;overflow-x:auto;white-space:pre;tab-size:2}
 .code .c{color:var(--ink-soft)}
 .code .s{color:var(--stroke-teal)}
@@ -30,7 +30,7 @@ export const CSS_EXTRA = `
   display:block;margin:0 -11px;padding:0 9px}
 .code .good{background:var(--pastel-mint);box-shadow:inset 2px 0 0 var(--stroke-green);
   display:block;margin:0 -11px;padding:0 9px}
-.code-hd{margin:14px 0 0;font-family:var(--font-mono);font-size:9.5px;
+.code-hd{margin:14px 0 0;font-family:var(--font-mono);font-size:8.5px;
   letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
 
 /* --------------------------------------------------------------- two-up */
@@ -73,6 +73,42 @@ export const CSS_EXTRA = `
 .stage .hud{position:absolute;left:9px;bottom:9px;display:flex;gap:5px;
   font-family:var(--font-mono);font-size:9.5px;color:var(--ink-soft)}
 
+/* --------------------------------------------------------------- tip mark */
+/* The glyph form of .tip. The dotted underline that promises a pointer on a word
+   makes no sense under a 10px circle, so it comes off and the mark carries the
+   affordance by being a mark. It is inline-flex at a fixed size so a cell that
+   gains one does not gain a millimetre of height, and muted until hovered so a
+   column of them reads as a margin note rather than as data. */
+.tip.mk{display:inline-flex;vertical-align:-1px;margin-left:4px}
+.tip.mk > label{border-bottom:0;display:inline-flex;align-items:center;
+  cursor:pointer;color:var(--ink-soft);opacity:.7}
+.tip.mk > label .ic{width:10px;height:10px}
+.tip.mk > label:hover,.tip.mk > input:focus-visible + label{color:var(--accent);opacity:1}
+.tip.mk .body{top:1.5em}
+/* In a table the mark sits at the end of a value, so the panel is measured from
+   the mark rather than from the cell and cannot push the column wider. */
+td .tip.mk .body,th .tip.mk .body{width:300px}
+
+/* ------------------------------------------------------ segmented control */
+/* Radios wearing badges. The input keeps its box in the flow if you only make it
+   transparent, and a native radio sits on the text baseline rather than on the
+   badge centre -- which put every badge in the strip half a line low and out of
+   line with its neighbours. It is taken out of flow instead of hidden, because a
+   display:none radio is not focusable and the strip stops working from the
+   keyboard. Checked state mirrors .gctl exactly: same border, same inset rule,
+   no second visual language for the same idea. */
+.seg-ctl{position:relative;display:flex;flex-wrap:wrap;align-items:center;
+  gap:5px;margin-top:10px}
+.seg-ctl input{position:absolute;width:1px;height:1px;margin:0;padding:0;
+  border:0;opacity:0;clip-path:inset(50%);pointer-events:none}
+.seg-ctl label{display:inline-flex;align-items:center;cursor:pointer}
+.seg-ctl label .badge{cursor:pointer}
+.seg-ctl input:checked + label .badge{border-color:var(--ink);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--ink)}
+.seg-ctl label:hover .badge{border-color:var(--ink-muted)}
+.seg-ctl input:focus-visible + label .badge{outline:2px solid var(--stroke-teal);
+  outline-offset:2px}
+
 /* --------------------------------------------------------- glyph controls */
 /* A row of icon buttons that behave like badges: same height, same border, same
    radius. They differ from .badge only in being pressable, so they must not
@@ -83,6 +119,96 @@ export const CSS_EXTRA = `
 .gctl button[aria-pressed="true"] .badge{border-color:var(--ink);color:var(--ink);
   box-shadow:inset 0 0 0 1px var(--ink)}
 .gctl button:hover .badge{border-color:var(--ink-muted)}
+
+/* ---------------------------------------------------------- viewports */
+/* A frame whose controls dock inside it. The frame is a positioning context and
+   nothing else; every dock is absolute against it, so the content keeps the
+   whole rectangle and a grid of four frames costs no toolbars at all. Docks are
+   9px off the edge -- the same inset as the .hud that predates them, because two
+   insets on one page reads as a mistake even when neither is wrong. */
+.vp{position:relative;border:1px solid var(--rule);border-radius:var(--radius);
+  background:var(--paper-alt);overflow:hidden}
+.vp-body{position:relative;aspect-ratio:16/10;display:block}
+.vp-body > svg,.vp-body > canvas,.vp-body > img{display:block;width:100%;height:100%}
+/* The options rail spans the top edge so its two ends anchor to the two corners.
+   A rail that shrink-wrapped its content would drift as the labels changed. */
+.vp-top{position:absolute;left:9px;right:9px;top:9px;display:flex;
+  align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
+.vp-top > .l,.vp-top > .r{display:flex;align-items:center;gap:5px;
+  flex-wrap:wrap;pointer-events:auto}
+.vp-top > .r{justify-content:flex-end}
+/* One row for all three bottom docks, so an empty centre still holds its column
+   and the left and right clusters cannot drift inward to meet each other. */
+.vp-bot{position:absolute;left:9px;right:9px;bottom:9px;display:grid;
+  grid-template-columns:1fr auto 1fr;align-items:end;gap:8px;pointer-events:none}
+.vp-bot > .d{display:flex;align-items:center;gap:5px;pointer-events:auto;min-width:0}
+.vp-bot > .bl{justify-content:flex-start}
+.vp-bot > .bc{justify-content:center}
+.vp-bot > .br{justify-content:flex-end}
+/* Controls sit on their own plate rather than directly on the content: over a
+   map or a rendered stage the badge border alone is not enough separation, and
+   a translucent plate keeps the frame legible underneath. */
+.vp-btns{display:flex;align-items:center;gap:4px;padding:3px;
+  background:var(--tip-paper);border:1px solid var(--rule-soft);
+  border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10)}
+.vp-btns button{background:none;border:0;padding:0;cursor:pointer;font:inherit}
+.vp-btns button .badge{cursor:pointer}
+.vp-btns button[aria-pressed="true"] .badge{border-color:var(--ink);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--ink)}
+.vp-btns button:hover .badge{border-color:var(--ink-muted)}
+/* The readout. Bigger than the body face, not smaller: it is the one figure on
+   the page meant to be read at a glance and from a distance. */
+.vp-read{display:flex;align-items:baseline;gap:4px;padding:4px 8px 5px;
+  background:var(--tip-paper);border:1px solid var(--rule-soft);
+  border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10)}
+.vp-read .v{font-family:var(--font-mono);font-size:19px;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--ink)}
+.vp-read .u{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.vp-read .s{font-size:9.5px;color:var(--ink-muted);margin-left:4px}
+/* The picker. Checkbox, label and a full-viewport scrim label behind the panel,
+   so outside-click dismissal is a real click on a real element and needs no
+   script. It opens away from the edge it is docked to. */
+.vp-pick{position:relative;display:inline-flex}
+.vp-pick > input{position:absolute;width:1px;height:1px;opacity:0;
+  clip-path:inset(50%);pointer-events:none}
+.vp-pick > .mk{display:inline-flex;cursor:pointer}
+.vp-pick > .mk .badge{cursor:pointer}
+.vp-pick > input:checked ~ .mk .badge{border-color:var(--ink);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--ink)}
+.vp-pick > .scrim{display:none;position:fixed;inset:0;z-index:14;cursor:default}
+.vp-pick > input:checked ~ .scrim{display:block}
+.vp-pick > .panel{display:none;position:absolute;z-index:15;left:0;top:calc(100% + 6px);
+  min-width:118px;padding:6px 0;background:var(--tip-paper);
+  border:1px solid var(--rule);border-radius:var(--radius);
+  box-shadow:0 6px 20px rgba(0,0,0,.14)}
+.vp-pick.up > .panel{top:auto;bottom:calc(100% + 6px)}
+.vp-pick.rt > .panel{left:auto;right:0}
+.vp-pick > input:checked ~ .panel{display:block}
+.vp-pick .panel .t{display:block;padding:1px 10px 5px;font-family:var(--font-mono);
+  font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.vp-pick .panel .opt{display:block;padding:4px 10px;font-size:10.5px;
+  color:var(--ink-muted);white-space:nowrap;cursor:pointer}
+.vp-pick .panel .opt:hover{background:var(--paper-alt);color:var(--ink)}
+.vp-pick .panel .opt.on{color:var(--ink);font-weight:600;
+  box-shadow:inset 2px 0 0 var(--accent)}
+/* The frame's own name, printed on the frame rather than under it: in a grid, a
+   caption below a viewport is nearer the next viewport than to its own. It is a
+   strip with its own rule rather than text floated over the content, and the
+   bottom docks lift clear of it -- overlaid, it ran straight through the
+   bottom-left cluster on the first frame that had both. */
+.vp-cap{position:absolute;left:0;right:0;bottom:0;padding:4px 10px 5px;
+  background:var(--paper);border-top:1px solid var(--rule-soft);
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-soft);pointer-events:none}
+.vp.has-cap .vp-bot{bottom:28px}
+/* A single frame at page width is 16:10 of a very wide column. A map or a track
+   is the one thing that reads better letterboxed, and it keeps the docks close
+   enough together to be seen as one system. */
+.vp.wide .vp-body{aspect-ratio:21/9}
+.vpgrid{display:grid;gap:12px;margin-top:10px;
+  grid-template-columns:repeat(auto-fit,minmax(268px,1fr))}
+@media (max-width:520px){.vpgrid{grid-template-columns:1fr}}
 
 /* ------------------------------------------------------------ spark grid */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));
@@ -120,10 +246,21 @@ export const CSS_EXTRA = `
   border:1px solid var(--rule);border-radius:2px;overflow:hidden}
 .meter i{display:block;height:100%;border-right:1px solid var(--rule-soft)}
 .meter.tall{height:13px}
-.meter-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;
-  margin-top:5px}
-.meter-row .lb{font-size:10px;color:var(--ink-muted)}
-.meter-row .vl{font-family:var(--font-mono);font-size:10.5px;color:var(--ink)}
+/* Label and figure on one baseline, bar spanning both columns under them. The
+   figure used to be centred against the whole two-row stack, which left it
+   hanging between the label and the bar and touching neither. Tabular figures
+   and a right edge so a column of these lines up down the page. */
+.meter-row{display:grid;grid-template-columns:1fr auto;column-gap:10px;row-gap:3px;
+  align-items:baseline;margin-top:7px;max-width:380px}
+.meter-row .lb{font-size:10px;color:var(--ink-muted);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meter-row .vl{font-family:var(--font-mono);font-size:10px;color:var(--ink);
+  font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.meter-row .meter,.meter-row .bullet{grid-column:1 / -1}
+/* The bullet is drawn 240x15 and stretched horizontally on purpose, so its
+   height must be pinned. Left to height:auto it keeps the 16:1 ratio of the
+   viewBox, and at page width a 15px bar came out 70px tall -- a pale block. */
+.meter-row .bullet{height:15px}
 
 /* --------------------------------------------------------------- charts */
 /* Every drawing is a block so it cannot pick up the inline-formatting leading of

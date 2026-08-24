@@ -48,10 +48,18 @@ export function meter(pct: number, tone: string, tall = false): string {
   )}" style="width:${round(w)}%"></i></div>`;
 }
 
+/**
+ * A labelled bar with its figure. Label and figure share one baseline on the
+ * first row and the bar spans both columns underneath, rather than the figure
+ * being centred against a two-row stack -- centred, it floats between the label
+ * and the bar and reads as belonging to neither. Right-aligned and tabular, the
+ * figures also line up down a column of these, which is the only way a reader
+ * compares them without measuring.
+ */
 export function meterRow(label: string, value: string, pct: number, tone: string): string {
-  return `<div class="meter-row"><div><div class="lb">${esc(
-    label,
-  )}</div>${meter(pct, tone)}</div><div class="vl">${esc(value)}</div></div>`;
+  return `<div class="meter-row"><div class="lb">${esc(label)}</div><div class="vl">${esc(
+    value,
+  )}</div>${meter(pct, tone)}</div>`;
 }
 
 /** A stack of labelled bars sharing one scale. The scale is printed, because a
@@ -132,13 +140,21 @@ export function bullet(
   const w = 240;
   const h = 15;
   const x = (n: number) => round((Math.max(0, Math.min(n, o.max)) / o.max) * w);
+  // preserveAspectRatio="none" stretches this 240-unit box across whatever width
+  // it is given, and it stretches the strokes with it: at 720px the target rule
+  // came out three times the weight it was drawn at and read as a black bar
+  // rather than a mark. non-scaling-stroke pins every line to its authored width,
+  // and the rule then only needs to be soft enough to sit behind the fill it
+  // measures instead of in front of it.
+  const ns = ` vector-effect="non-scaling-stroke"`;
   return (
-    `<div class="meter-row"><div><div class="lb">${esc(o.label)}</div>` +
+    `<div class="meter-row"><div class="lb">${esc(o.label)}</div>` +
+    `<div class="vl">${esc(o.disp)}</div>` +
     `<svg class="bullet" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" role="img">` +
-    `<rect x="0" y="0" width="${w}" height="${h}" fill="var(--paper-alt)" stroke="var(--rule)"></rect>` +
-    `<rect x="0" y="0" width="${x(o.v)}" height="${h}" fill="${o.t.fill}" stroke="${o.t.stroke}" stroke-opacity="0.5"></rect>` +
-    `<line x1="${x(o.target)}" y1="0" x2="${x(o.target)}" y2="${h}" stroke="var(--ink)" stroke-width="1.5"><title>target</title></line>` +
-    `</svg></div><div class="vl">${esc(o.disp)}</div></div>`
+    `<rect x="0" y="0" width="${w}" height="${h}" fill="var(--paper-alt)" stroke="var(--rule)"${ns}></rect>` +
+    `<rect x="0" y="0" width="${x(o.v)}" height="${h}" fill="${o.t.fill}" stroke="${o.t.stroke}" stroke-opacity="0.5"${ns}></rect>` +
+    `<line x1="${x(o.target)}" y1="0" x2="${x(o.target)}" y2="${h}" stroke="var(--ink-soft)" stroke-width="1.25"${ns}><title>target</title></line>` +
+    `</svg></div>`
   );
 }
 

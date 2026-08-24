@@ -94,6 +94,43 @@ document.querySelectorAll("table.sortable").forEach(function(tbl){
   });
 });
 
+/* --------------------------------------------------------- light dismiss */
+/* <details> gives the menus their semantics, their keyboard handling and their
+   JS-off behaviour, and then withholds exactly one thing: it will not close
+   when you click past it. Without this a menu opened on the way somewhere else
+   stays open over the page until you come back and click its own summary.
+   The element is still the source of truth -- this only closes what is open, so
+   with the script blocked every menu still opens and closes on its summary. */
+function closeMenus(except){
+  document.querySelectorAll("details.menu[open]").forEach(function(d){
+    if(d!==except) d.removeAttribute("open");
+  });
+}
+document.addEventListener("click",function(e){
+  var t=e.target;
+  closeMenus(t && t.closest ? t.closest("details.menu") : null);
+},true);
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Escape") return;
+  var open=document.querySelector("details.menu[open]");
+  if(!open) return;
+  closeMenus(null);
+  var sm=open.querySelector("summary");
+  if(sm) sm.focus();
+});
+/* A checkbox popover has the same problem and the opposite fix: it carries its
+   own full-viewport scrim label, so the outside click is a real click on a real
+   element and it works with no script at all. Menus cannot use that trick,
+   because there is no checkbox to untick. */
+document.addEventListener("click",function(e){
+  var t=e.target;
+  if(!t || !t.closest) return;
+  if(t.closest(".tip")) return;
+  document.querySelectorAll(".tip > input:checked").forEach(function(i){
+    i.checked=false;
+  });
+},true);
+
 /* ------------------------------------------------------------- copy code */
 document.querySelectorAll("pre.code").forEach(function(pre){
   pre.addEventListener("dblclick",function(){

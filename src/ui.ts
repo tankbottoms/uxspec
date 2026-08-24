@@ -176,9 +176,16 @@ export function swatches(
 
 /* --------------------------------------------------------------- lists */
 
-export function kv(rows: readonly [string, string][]): string {
+/** `wide` switches the value column to left-aligned sans, for a definition list
+ *  whose values are sentences. The default right-aligns mono figures, and a
+ *  sentence right-aligned against a ragged left edge is unreadable. */
+export function kv(
+  rows: readonly [string, string][],
+  o: { wide?: boolean } = {},
+): string {
+  const c = o.wide ? ` class="w"` : "";
   return `<dl class="kv">${rows
-    .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`)
+    .map(([k, v]) => `<dt>${esc(k)}</dt><dd${c}>${v}</dd>`)
     .join("")}</dl>`;
 }
 
@@ -241,8 +248,10 @@ export function scroll(inner: string): string {
   return `<div class="scroll">${inner}</div>`;
 }
 
+/** Raw HTML, like `note`. An empty state is authored copy and an em dash is the
+ *  usual punctuation in it -- escaped, the entity printed as itself on the page. */
 export function empty(msg: string): string {
-  return `<div class="empty">${esc(msg)}</div>`;
+  return `<div class="empty">${msg}</div>`;
 }
 
 /* ------------------------------------------------------ layout surfaces */
@@ -349,4 +358,142 @@ export function card(o: {
  *  grid does that on its own, so no component here has a breakpoint of its own. */
 export function cards(inner: string): string {
   return `<div class="cardgrid">${inner}</div>`;
+}
+
+/* ---------------------------------------------------------- viewports */
+
+/**
+ * A framed viewport with its controls docked to its own edges.
+ *
+ * A map, a chart at page size, a three.js stage and a live camera all have the
+ * same problem: the content wants the whole rectangle, and the controls have
+ * nowhere to go that is not on top of it. Putting them in a toolbar above the
+ * frame solves it by making the frame smaller, which is the one thing the
+ * content was asking you not to do -- and in a grid of four viewports it costs
+ * four toolbars for one set of controls.
+ *
+ * So the controls dock inside the frame, at five fixed anchors and nowhere else:
+ *
+ *   top edge      options -- what is being shown. Layer, mode, range, source.
+ *                 They change the content, so they sit above it, and they read
+ *                 left to right like a sentence about the frame.
+ *   bottom left   state the viewport is in. Play/pause, follow, lock.
+ *   bottom centre navigation of the content itself. Step, seek, home.
+ *   bottom right  what the frame does to itself. Zoom, reset, fullscreen, pick.
+ *
+ * The split is by what the control acts on, not by how it looks, so the same
+ * glyph never moves between two viewports on one page. A reader who finds reset
+ * at the bottom right of the map finds it at the bottom right of the model.
+ *
+ * The bottom row is one row across all three docks, so the three clusters share
+ * a baseline even when the centre one is empty -- an empty dock still holds its
+ * space rather than letting its neighbours drift inward.
+ */
+export function viewport(o: {
+  body: string;
+  topL?: string;
+  topR?: string;
+  bl?: string;
+  bc?: string;
+  br?: string;
+  cls?: string;
+  label?: string;
+}): string {
+  const top =
+    o.topL || o.topR
+      ? `<div class="vp-top"><div class="l">${o.topL ?? ""}</div><div class="r">${
+          o.topR ?? ""
+        }</div></div>`
+      : "";
+  const bot =
+    o.bl || o.bc || o.br
+      ? `<div class="vp-bot"><div class="d bl">${o.bl ?? ""}</div>` +
+        `<div class="d bc">${o.bc ?? ""}</div>` +
+        `<div class="d br">${o.br ?? ""}</div></div>`
+      : "";
+  // Raw HTML, because the name of a frame is a phrase with an em dash in it more
+  // often than not, and .vp-cap uppercases -- an escaped entity there prints as
+  // "&MIDDOT;" across the bottom of the frame.
+  const cap = o.label ? `<div class="vp-cap">${o.label}</div>` : "";
+  const cls = ["vp", o.cls ?? "", o.label ? "has-cap" : ""].filter(Boolean).join(" ");
+  return `<div class="${cls}"><div class="vp-body">${o.body}</div>${top}${bot}${cap}</div>`;
+}
+
+/** Several viewports on one page. Two across is the default; one across below
+ *  the fold of a phone, because a docked control cluster that has to overlap
+ *  its neighbour's content is worse than a scroll. */
+export function vpGrid(inner: string): string {
+  return `<div class="vpgrid">${inner}</div>`;
+}
+
+/** A control cluster: glyph badges on one plate. Geometry comes from `.badge`,
+ *  as everywhere else -- a control that redeclares badge height is how a page
+ *  ends up with two badge heights. */
+export function vpBtns(
+  items: readonly { ic: string; on?: boolean; title: string; w?: string }[],
+  icf: (n: string) => string,
+): string {
+  return `<div class="vp-btns">${items
+    .map(
+      (b) =>
+        `<button type="button" aria-pressed="${b.on === true}" title="${esc(
+          b.title,
+        )}"><span class="badge ${b.w ?? "w3"} idle">${icf(b.ic)}</span></button>`,
+    )
+    .join("")}</div>`;
+}
+
+/**
+ * The large figure a viewport is really for. Speed on a map, frame time on a
+ * stage, price on a chart. It is a readout and not a badge: it is bigger than
+ * the page's body face rather than smaller, because it is the one thing meant
+ * to be readable from across a room, and it carries a unit so the number is
+ * never ambiguous at a glance.
+ */
+export function vpRead(v: string, unit: string, sub?: string): string {
+  return (
+    `<div class="vp-read"><span class="v">${esc(v)}</span><span class="u">${esc(
+      unit,
+    )}</span>${sub ? `<span class="s">${esc(sub)}</span>` : ""}</div>`
+  );
+}
+
+let pickSeq = 0;
+
+/**
+ * A picker that opens from its own dock.
+ *
+ * Checkbox and label, with a full-viewport scrim behind the panel, so it opens,
+ * light-dismisses and closes with no script at all -- the scrim is a real label
+ * over a real element, which is the trick a `<details>` menu cannot borrow.
+ *
+ * It opens away from the edge it is docked to: a picker at the bottom right
+ * opens upwards and aligns its right edge, so it never grows off the frame.
+ * That is the whole placement rule, and it is the reason the direction is a
+ * parameter here rather than a guess made in CSS from the cluster's position.
+ */
+export function vpPick(o: {
+  mark: string;
+  title: string;
+  items: readonly { label: string; on?: boolean }[];
+  up?: boolean;
+  rt?: boolean;
+  w?: string;
+}): string {
+  pickSeq += 1;
+  const id = `vpk${pickSeq}`;
+  const cls = ["vp-pick", o.up ? "up" : "", o.rt ? "rt" : ""].filter(Boolean).join(" ");
+  return (
+    `<span class="${cls}"><input type="checkbox" id="${id}">` +
+    `<label class="mk" for="${id}"><span class="badge ${o.w ?? "w9"} idle">${
+      o.mark
+    }</span></label>` +
+    `<label class="scrim" for="${id}" aria-hidden="true"></label>` +
+    `<span class="panel"><span class="t">${esc(o.title)}</span>${o.items
+      .map(
+        (i) =>
+          `<span class="opt${i.on ? " on" : ""}">${esc(i.label)}</span>`,
+      )
+      .join("")}</span></span>`
+  );
 }

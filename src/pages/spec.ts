@@ -5,7 +5,7 @@
  * it obeys -- in that order, deliberately. A rule read before its example is an
  * abstraction; read after, it is a caption.
  */
-import { esc, tip, receipts, day, wcls, usd, pct } from "../html.ts";
+import { esc, tip, tipMark, receipts, day, wcls, usd, pct } from "../html.ts";
 import { icon } from "../icons.ts";
 import { SECTIONS } from "../shell.ts";
 import * as U from "../ui.ts";
@@ -786,6 +786,189 @@ function layout(): string {
 
 /* ---------------------------------------------------------------- 10 viewer */
 
+/* -------------------------------------------------- 11 viewports */
+
+/** A stand-in for whatever the frame is really showing. Deliberately abstract:
+ *  a real map screenshot in a spec teaches the map, not the placement. */
+function vpStub(kind: "map" | "chart" | "stage"): string {
+  const g =
+    kind === "map"
+      ? `<path d="M0 74 L44 58 L96 70 L150 44 L214 62 L268 40" fill="none" stroke="var(--rule)" stroke-width="1" vector-effect="non-scaling-stroke"></path>` +
+        `<path d="M0 30 L60 22 L118 40 L180 16 L268 34" fill="none" stroke="var(--rule-soft)" stroke-width="1" vector-effect="non-scaling-stroke"></path>` +
+        `<path d="M18 0 L38 46 L26 104 L58 168" fill="none" stroke="var(--rule-soft)" stroke-width="1" vector-effect="non-scaling-stroke"></path>` +
+        `<path d="M150 0 L166 52 L142 110 L178 168" fill="none" stroke="var(--rule-soft)" stroke-width="1" vector-effect="non-scaling-stroke"></path>` +
+        `<path d="M8 150 L70 128 L128 138 L188 108 L268 120" fill="none" stroke="var(--stroke-aqua)" stroke-width="1.6" vector-effect="non-scaling-stroke"></path>` +
+        `<circle cx="188" cy="108" r="3.5" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></circle>`
+      : kind === "chart"
+        ? `<path d="M0 132 L34 118 L68 126 L102 92 L136 100 L170 64 L204 76 L238 44 L268 52" fill="none" stroke="var(--stroke-indigo)" stroke-width="1.4" vector-effect="non-scaling-stroke"></path>` +
+          `<path d="M0 168 L0 132 L34 118 L68 126 L102 92 L136 100 L170 64 L204 76 L238 44 L268 52 L268 168 Z" fill="var(--pastel-indigo)" fill-opacity="0.5" stroke="none"></path>`
+        : `<path d="M134 34 L206 74 L206 128 L134 168 L62 128 L62 74 Z" fill="var(--pastel-orchid)" fill-opacity="0.55" stroke="var(--stroke-orchid)" stroke-width="1.2" vector-effect="non-scaling-stroke"></path>` +
+          `<path d="M134 34 L134 100 L62 74 M134 100 L206 74 M134 100 L134 168" fill="none" stroke="var(--stroke-orchid)" stroke-width="0.9" stroke-opacity="0.7" vector-effect="non-scaling-stroke"></path>`;
+  return `<svg viewBox="0 0 268 168" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true"><rect x="0" y="0" width="268" height="168" fill="var(--paper-alt)"></rect>${g}</svg>`;
+}
+
+function viewports(): string {
+  const btn = (ic: string) => icon(ic);
+  return (
+    sec("viewports") +
+    U.p(
+      `A map, a page-size chart, a WebGL stage and a live camera all pose the same problem: the content wants the whole rectangle, and the controls have nowhere to stand that is not on top of it. The usual answer is a toolbar above the frame, which solves it by making the frame smaller &mdash; the one thing the content was asking you not to do. In a grid of four frames it also buys four toolbars for one set of controls.`,
+    ) +
+    U.p(
+      `So the controls dock <em>inside</em> the frame, at five anchors and nowhere else. The split is by what a control acts on, not by what it looks like, which is what makes it hold across pages: a reader who finds reset at the bottom right of the map finds it at the bottom right of the model.`,
+    ) +
+    U.h3("The five docks", "docks") +
+    `<figure>` +
+    W.viewportDocks() +
+    `<figcaption><span class="badge w7 idle">Fig. E</span>Docks are 9px off the edge &mdash; the same inset as everything else that floats on this site. The bottom three share one grid row, so an empty centre dock still holds its column and the outer two cannot drift inward to meet each other.</figcaption>` +
+    `</figure>` +
+    U.kv([
+      ["top edge", "What is being shown. Layer, mode, range, source. These change the content, so they sit above it and read left to right."],
+      ["bottom left", "The state the viewport is in. Play/pause, follow, lock."],
+      ["bottom centre", "Movement within the content. Step, seek, home."],
+      ["bottom right", "What the frame does to itself. Zoom, reset, fullscreen, and the pickers."],
+      ["anywhere else", "Nothing. A fifth position is a sixth convention, and the reader stops predicting where a control will be."],
+    ], { wide: true }) +
+    U.h3("A frame, fully dressed", "dressed") +
+    U.p(
+      `Options on the top edge; the readout under them at the right, larger than the body face rather than smaller, because it is the one figure meant to be legible from across a room. State bottom left, movement bottom centre, frame controls bottom right. Every control is a badge and inherits its height from the badge contract &mdash; a control that redeclares badge geometry is the first step to two badge heights on one page.`,
+    ) +
+    U.viewport({
+      cls: "wide",
+      body: vpStub("map"),
+      topL: U.vpPick({
+        mark: `${btn("layer-group")}Satellite`,
+        title: "Map type",
+        items: [
+          { label: "Standard" },
+          { label: "Satellite", on: true },
+          { label: "Terrain" },
+          { label: "Traffic" },
+        ],
+        w: "w17",
+      }),
+      topR: U.vpPick({
+        mark: `${btn("chart-line")}90d`,
+        title: "Range",
+        items: [{ label: "30d" }, { label: "90d", on: true }, { label: "1y" }, { label: "All" }],
+        rt: true,
+        w: "w11",
+      }) + U.vpRead("88", "mph", "↑ 412 ft"),
+      bl: U.vpBtns(
+        [
+          { ic: "car", on: true, title: "Follow vehicle" },
+          { ic: "heart-pulse", title: "Live telemetry" },
+        ],
+        btn,
+      ),
+      bc: U.vpBtns(
+        [
+          { ic: "arrow-right-arrow-left", title: "Step back" },
+          { ic: "house", title: "Recentre" },
+          { ic: "chevron-down", title: "Step forward" },
+        ],
+        btn,
+      ),
+      br: U.vpBtns(
+        [
+          { ic: "arrow-rotate-left", title: "Reset view" },
+          { ic: "arrow-up-right-from-square", title: "Fullscreen" },
+        ],
+        btn,
+      ) +
+        U.vpPick({
+          mark: btn("gear"),
+          title: "Size",
+          items: [{ label: "Fit" }, { label: "100%", on: true }, { label: "200%" }],
+          up: true,
+          rt: true,
+          w: "w5",
+        }),
+      label: "Drive 4128 &middot; 12 Mar",
+    }) +
+    U.note(
+      `The readout sits under the options rather than beside them because it is not a control: mixing a figure into a row of switches invites a tap on it. Its unit is printed for the same reason a chart prints its scale &mdash; <span class="mono">88</span> alone is a number, not a speed.`,
+    ) +
+    U.h3("Pickers open away from their edge", "pickers") +
+    U.p(
+      `A picker docked at the bottom right opens upwards and aligns its right edge; one on the top edge opens down and aligns left. Stated as a parameter on the helper rather than inferred in CSS from where the cluster happens to sit, because the frame clips and a panel that guesses wrong grows off it &mdash; and the guess is only wrong on the frame nobody tested.`,
+    ) +
+    U.p(
+      `Each picker is a checkbox, a label, a panel and a full-viewport scrim label behind it. The scrim makes the outside click a real click on a real element, so the panel light-dismisses with no script at all. That is the trick a <span class="mono">&lt;details&gt;</span> menu cannot borrow, and the reason the nav menus in the bar above need ten lines of script for the one behaviour they lack.`,
+    ) +
+    U.code(
+      `U.vpPick({ mark: icon("gear"), title: "Size", up: true, rt: true,\n  items: [{ label: "Fit" }, { label: "100%", on: true }] })`,
+      { lang: "picker, bottom-right dock" },
+    ) +
+    U.h3("A grid of them", "vpgrid") +
+    U.p(
+      `The docks are what make a grid possible. Four frames, one convention, no toolbars: the controls cost the layout nothing because they are already inside the rectangle the content occupies. Below 520px it drops to one column &mdash; a docked cluster forced to overlap its neighbour's content is worse than a scroll.`,
+    ) +
+    U.vpGrid(
+      U.viewport({
+        body: vpStub("chart"),
+        topL: `<span class="badge w14 p11">Throughput</span>`,
+        topR: `<span class="badge w9 mono">90d</span>`,
+        br: U.vpBtns([{ ic: "arrow-up-right-from-square", title: "Fullscreen" }], btn),
+        label: "ingest &middot; spark-1",
+      }) +
+        U.viewport({
+          body: vpStub("stage"),
+          topL: `<span class="badge w14 p8">Model</span>`,
+          bl: U.vpBtns([{ ic: "sun", on: true, title: "Lighting" }], btn),
+          br: U.vpBtns([{ ic: "arrow-rotate-left", title: "Reset" }], btn),
+          label: "viewer &middot; three.js",
+        }),
+    ) +
+    U.note(
+      `Every frame in the grid puts fullscreen and reset at the bottom right, even the one that has only one of them. A control that moves between two frames on the same page costs the reader the prediction that made the convention worth having.`,
+      "good",
+    ) +
+    U.h3("Hover helpers", "hover") +
+    U.p(
+      `The frame's own name is printed on the frame rather than under it: in a grid, a caption below a viewport is nearer the next viewport than to its own. Everything longer than a name goes in a hover panel instead of on the frame, for the same reason a table cell does not wrap &mdash; a viewport that grows a second line of chrome has taken it from the content.`,
+    ) +
+    U.p(
+      `Panels open on hover <em>and</em> on the checkbox, so the same markup works with a pointer, with a keyboard, and on a phone where there is no hover at all. On hover alone they would be unreachable on exactly the devices these frames are most used on.`,
+    ) +
+    U.h3("The circle-i mark", "tipmark") +
+    U.p(
+      `A badge or a table cell has one line and no room to explain itself, and both of the usual repairs are bad. Let the cell wrap and one long value sets the height of every row beside it; truncate it and the reader is told there is more without being told what. A circle-i after the value costs the column nothing, holds as many lines as the fact needs, and leaves the default reading concise and unwrapped.`,
+    ) +
+    `<p class="note">Ledger reconciled ${U.badge("812 / 900", "w11", "p1")}${tipMark(
+      `Nine hundred entries were expected from the March statement; 812 matched a booked transaction on amount and date. The 88 unmatched are held in the review queue and are not counted anywhere on this page.`,
+    )} &mdash; the badge stays one line, the arithmetic behind it is one tap away.</p>` +
+    U.scroll(
+      `<table><thead><tr><th>Source</th><th>Rows</th><th>Latency</th><th>State</th></tr></thead><tbody>` +
+      `<tr><td>sqlite${tipMark(
+        `Local file, read directly. No pool, no network, and no failure mode other than the file being absent.`,
+      )}</td><td class="num">128,940</td><td class="num">2.0 ms</td><td>${U.badge("ok", "w9", "ok")}</td></tr>` +
+      `<tr><td>nfs${tipMark(
+        `unraid-one over NFSv4. Latency is the round trip including the server's own page cache; a cold read is roughly twenty times this and is not averaged in.`,
+      )}</td><td class="num">44,102</td><td class="num">5.9 ms</td><td>${U.badge("ok", "w9", "ok")}</td></tr>` +
+      `<tr><td>ipfs${tipMark(
+        `Gateway fetch with a 4 s ceiling. The figure is the median of the last hundred; the tail is long enough that a mean would be a different claim entirely.`,
+        { rt: true },
+      )}</td><td class="num">1,204</td><td class="num">378.2 ms</td><td>${U.badge(
+        "warn",
+        "w9",
+        "warn",
+      )}</td></tr>` +
+      `</tbody></table>`,
+    ) +
+    U.note(
+      `The mark on the last row is right-aligned. Near the right edge of a table a left-aligned panel opens off the page, and on a phone it opens off the page one column sooner than it does here &mdash; which is why the alignment is a parameter and not a media query.`,
+      "caution",
+    ) +
+    U.twoUp(
+      U.dont(
+        `<td>ipfs gateway fetch, 4s ceiling,\n    median of last 100</td>`,
+      ),
+      U.doThis(`<td>ipfs${"$"}{tipMark("Gateway fetch with a 4 s ceiling...")}</td>`),
+    )
+  );
+}
+
 function viewerSection(): string {
   return (
     sec("viewer") +
@@ -938,6 +1121,7 @@ export function specBody(): string {
     overlays() +
     wireframes() +
     layout() +
+    viewports() +
     viewerSection() +
     contract() +
     recipes()
