@@ -20,7 +20,7 @@
  */
 import { esc } from "./html.ts";
 import { nextFig } from "./charts.ts";
-import { glyph } from "./icons.ts";
+import { glyph, icon } from "./icons.ts";
 import type { Point, Tone } from "./types.ts";
 
 const round = (n: number) => Math.round(n * 100) / 100;
@@ -273,8 +273,9 @@ export function bullet(
 export function heat(
   days: readonly { day: string; bucket: number }[],
   ramp: readonly string[],
+  o: { cell?: number } = {},
 ): string {
-  const cell = 9;
+  const cell = o.cell ?? 9;
   const pitch = cell + 2;
   const gutter = 20; // weekday names
   const head = 12; // month names
@@ -318,6 +319,41 @@ export function heat(
   return (
     `<svg class="heat" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img">` +
     `${months}${wd}${cells}</svg>`
+  );
+}
+
+/**
+ * The band, plus the three controls that decide how big it is.
+ *
+ * A full year at a comfortable cell size is 600px of chart, which is right on a
+ * desk and wrong in a column; a compact default with a way out is better than
+ * either fixed size, because the reader is the one who knows which they are
+ * looking at. So the box opens compact and carries a rail in its top-left
+ * corner: plus, magnifying glass, minus, stacked the way tile stacks the
+ * controls over its viewport, over the corner of the thing they act on rather
+ * than in a toolbar somewhere above it.
+ *
+ * The middle control is the one that matters. Plus and minus change this band
+ * now; the magnifying glass says "and this is the size I meant" and writes it
+ * to localStorage, so the next page load opens there. A control that only
+ * changes the current view asks the reader to re-make the same decision every
+ * visit.
+ *
+ * The rail is hidden until the script marks the box live: three buttons that do
+ * nothing are worse than no buttons, and the band itself is correct with no
+ * script at all.
+ */
+export function heatBox(key: string, band: string): string {
+  const b = (a: string, ic: string, lbl: string) =>
+    `<button type="button" data-a="${a}" title="${esc(lbl)}" aria-label="${esc(lbl)}">` +
+    `${icon(ic)}</button>`;
+  return (
+    `<div class="heat-box" data-heat="${esc(key)}">` +
+    `<div class="heat-ctl gctl">` +
+    b("inc", "plus", "Larger cells") +
+    b("save", "magnifying-glass", "Remember this size") +
+    b("dec", "minus", "Smaller cells") +
+    `</div>${band}</div>`
   );
 }
 

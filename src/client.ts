@@ -137,6 +137,46 @@ document.addEventListener("click",function(e){
   });
 },true);
 
+/* ------------------------------------------------------------ heat sizing */
+/* Plus and minus scale the band; the magnifying glass writes the current step
+   to localStorage so the next load opens there. The SVG is scaled through its
+   width/height attributes and keeps its viewBox, so the cells stay square and
+   the pitch stays even -- re-drawing the band at a new cell size would be the
+   same picture and a great deal more code. Storage is wrapped because a browser
+   with cookies off throws on access, and a heat band is not worth an exception
+   that stops every script under it. */
+var HEAT_STEPS=[.7,.85,1,1.25,1.6,2];
+var heatGet=function(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } };
+var heatSet=function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} };
+document.querySelectorAll(".heat-box").forEach(function(box){
+  var svg=box.querySelector("svg.heat");
+  var vb=svg&&svg.getAttribute("viewBox");
+  if(!svg||!vb) return;
+  var p=vb.split(" "), W=parseFloat(p[2]), H=parseFloat(p[3]);
+  var key="uxspec.heat."+(box.getAttribute("data-heat")||"band");
+  var i=HEAT_STEPS.indexOf(parseFloat(heatGet(key)||"1"));
+  if(i<0) i=HEAT_STEPS.indexOf(1);
+  var btn=function(a){ return box.querySelector('[data-a="'+a+'"]'); };
+  var apply=function(){
+    svg.setAttribute("width",String(Math.round(W*HEAT_STEPS[i])));
+    svg.setAttribute("height",String(Math.round(H*HEAT_STEPS[i])));
+    btn("inc").disabled=i>=HEAT_STEPS.length-1;
+    btn("dec").disabled=i<=0;
+  };
+  var step=function(d){ return function(){
+    i=Math.min(HEAT_STEPS.length-1,Math.max(0,i+d)); apply();
+    btn("save").classList.remove("kept");
+  };};
+  btn("inc").addEventListener("click",step(1));
+  btn("dec").addEventListener("click",step(-1));
+  btn("save").addEventListener("click",function(){
+    heatSet(key,String(HEAT_STEPS[i]));
+    btn("save").classList.add("kept");
+  });
+  box.classList.add("live");
+  apply();
+});
+
 /* ------------------------------------------------- sideways scroll affordance */
 /* A table wider than its box is the one overflow a reader can miss entirely:
    nothing is clipped visibly, the last column simply is not there. The circle

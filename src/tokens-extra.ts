@@ -275,6 +275,28 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 .heat{width:auto;max-width:none;margin:0}
 .scroll > .heat{margin:2px 0 4px}
 
+/* The band and the rail that sizes it. The rail sits over the top-left corner
+   of the box, the way tile stacks its viewport controls over the corner of the
+   stage rather than in a strip above it -- the control belongs to the thing,
+   and a toolbar in the margin makes the reader look away from it to use it.
+   Hidden until the script marks the box live: three buttons that do nothing are
+   worse than no buttons. */
+.heat-box{position:relative}
+/* Straddling the left edge, the way the scroll hint straddles the right. Flush
+   inside, the rail covered the weekday gutter and took Mon off the band. */
+.heat-ctl{position:absolute;left:-10px;top:-1px;z-index:3;display:none;
+  flex-direction:column;gap:0;background:var(--paper-card);
+  border:1px solid var(--rule);border-radius:var(--radius);
+  box-shadow:0 2px 8px rgba(0,0,0,.10)}
+.heat-box.live .heat-ctl{display:flex}
+.heat-ctl button{padding:3px 4px;line-height:0}
+.heat-ctl button + button{border-top:1px solid var(--rule-soft)}
+.heat-ctl button svg{width:9px;height:9px;fill:var(--ink-muted)}
+.heat-ctl button[disabled] svg{fill:var(--rule)}
+/* The magnifying glass reports what it did. A write to localStorage is
+   invisible, and a control that gives no sign it worked gets pressed twice. */
+.heat-ctl button.kept svg{fill:var(--stroke-mint)}
+
 /* The canonical hint rotates its glyph, which assumes a caret drawn pointing
    down. Ours is a circle-chevron already pointing where the table goes. */
 .scroll-hint svg{transform:none}

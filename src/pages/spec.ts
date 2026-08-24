@@ -419,28 +419,44 @@ function sparks(): string {
     U.p(
       `Cells are drawn at 9px and the band carries its own width, so a year is about 600px of chart and overflows into a scroll box on a phone rather than shrinking. A calendar band stretched to fill its column stops being a band: at 60px a cell the reader counts squares instead of seeing a season, which is the only thing it is for.`,
     ) +
+    U.p(
+      `Compact is the default and the reader gets a way out of it. The rail in the top-left corner of the band &mdash; plus, magnifying glass, minus, stacked over the corner of the thing it acts on rather than in a toolbar above it &mdash; sizes the band now; the magnifying glass writes that size to <span class="mono">localStorage</span>, so the next visit opens there. A control that only changes the current view asks the reader to make the same decision again every time they arrive.`,
+    ) +
     S.fig(
-      U.scroll(
-        S.heat(
-          days(371).map((d, i) => {
-            const dow = new Date(`${d}T00:00:00Z`).getUTCDay();
-            const v = Math.abs(Math.sin(i * 1.7) + Math.sin(i * 0.31)) * 2.2;
-            return {
-              day: d,
-              bucket: Math.min(4, Math.round(dow === 0 || dow === 6 ? v * 0.3 : v)),
-            };
-          }),
-          [
-            "var(--paper-alt)",
-            "var(--pastel-mint)",
-            "var(--pastel-teal)",
-            "var(--pastel-aqua)",
-            "var(--pastel-cyan)",
-          ],
+      S.heatBox(
+        "year",
+        U.scroll(
+          S.heat(
+            days(371).map((d, i) => {
+              const dow = new Date(`${d}T00:00:00Z`).getUTCDay();
+              const v = Math.abs(Math.sin(i * 1.7) + Math.sin(i * 0.31)) * 2.2;
+              return {
+                day: d,
+                bucket: Math.min(4, Math.round(dow === 0 || dow === 6 ? v * 0.3 : v)),
+              };
+            }),
+            [
+              "var(--paper-alt)",
+              "var(--pastel-mint)",
+              "var(--pastel-teal)",
+              "var(--pastel-aqua)",
+              "var(--pastel-cyan)",
+            ],
+          ),
         ),
       ),
-      "Readings per day, fifty-three weeks. Rows are real weekdays, so the quiet weekend stripe needs no label.",
+      "Readings per day, fifty-three weeks. Rows are real weekdays, so the quiet weekend stripe needs no label. The corner rail sizes the band; the glass remembers the size.",
       "five buckets",
+    ) +
+    U.code(
+      `<div class="heat-box" data-heat="year">
+  <div class="heat-ctl gctl">...plus, glass, minus...</div>
+  <div class="scroll"><svg class="heat" viewBox="0 0 620 92" width="620" height="92">
+
+/* the band keeps its viewBox and is scaled through width/height, so the cells
+   stay square and the pitch stays even */
+svg.setAttribute("width", String(Math.round(W * HEAT_STEPS[i])));`,
+      { lang: "spark.ts + client.ts" },
     ) +
     U.h3("Timeline", "timeline") +
     U.p(
