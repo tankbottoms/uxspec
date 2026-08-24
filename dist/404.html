@@ -1233,7 +1233,7 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
   gap:5px;margin-top:10px}
 .seg-ctl input{position:absolute;width:1px;height:1px;margin:0;padding:0;
   border:0;opacity:0;clip-path:inset(50%);pointer-events:none}
-.seg-ctl label{display:inline-flex;align-items:center;cursor:pointer}
+.seg-ctl label{display:inline-flex;align-items:center;cursor:pointer;padding:2px 3px}
 .seg-ctl label .badge{cursor:pointer}
 .seg-ctl input:checked + label .badge{border-color:var(--ink);color:var(--ink);
   box-shadow:inset 0 0 0 1px var(--ink)}
@@ -1246,7 +1246,7 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    radius. They differ from .badge only in being pressable, so they must not
    redeclare geometry -- they carry .badge and add state. */
 .gctl{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
-.gctl button{background:none;border:0;padding:0;cursor:pointer;font:inherit}
+.gctl button{background:none;border:0;padding:2px 3px;cursor:pointer;font:inherit}
 .gctl button .badge{cursor:pointer}
 .gctl button[aria-pressed="true"] .badge{border-color:var(--ink);color:var(--ink);
   box-shadow:inset 0 0 0 1px var(--ink)}
@@ -1280,7 +1280,7 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 /* Controls sit on their own plate rather than directly on the content: over a
    map or a rendered stage the badge border alone is not enough separation, and
    a translucent plate keeps the frame legible underneath. */
-.vp-btns{display:flex;align-items:center;gap:4px;padding:3px;
+.vp-btns{display:flex;align-items:center;gap:5px;padding:5px 6px;
   background:var(--tip-paper);border:1px solid var(--rule-soft);
   border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10)}
 .vp-btns button{background:none;border:0;padding:0;cursor:pointer;font:inherit}
@@ -1293,11 +1293,11 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 .vp-read{display:flex;align-items:baseline;gap:4px;padding:4px 8px 5px;
   background:var(--tip-paper);border:1px solid var(--rule-soft);
   border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10)}
-.vp-read .v{font-family:var(--font-mono);font-size:19px;line-height:1;
+.vp-read .v{font-family:var(--font-mono);font-size:17px;line-height:1;
   font-variant-numeric:tabular-nums;color:var(--ink)}
-.vp-read .u{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;
+.vp-read .u{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.06em;
   text-transform:uppercase;color:var(--ink-soft)}
-.vp-read .s{font-size:9.5px;color:var(--ink-muted);margin-left:4px}
+.vp-read .s{font-size:8.5px;color:var(--ink-muted);margin-left:4px}
 /* The picker. Checkbox, label and a full-viewport scrim label behind the panel,
    so outside-click dismissal is a real click on a real element and needs no
    script. It opens away from the edge it is docked to. */
@@ -1410,6 +1410,29 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 .hbars{margin-top:8px}
 .donut-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px}
 .donut-row .lg{flex:1 1 190px;min-width:0}
+/* Two rings on one row, each in half the column with its legend under it. Side
+   by side the ring and its legend split the column and the ring loses half its
+   diameter for a list that reads perfectly well underneath. Below 460px the pair
+   stacks: two 132px rings in a phone column are two 60px rings. */
+.donut-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px 18px;margin-top:8px}
+.donut-pair .du{display:flex;flex-direction:column;align-items:center;gap:9px;
+  min-width:0}
+.donut-pair .du .lg{width:100%}
+.donut-pair .du .legend{justify-content:center;margin:0}
+@media (max-width:460px){.donut-pair{grid-template-columns:1fr}}
+
+/* ------------------------------------------------------------- hover pods */
+/* The readout a chart shows under the pointer. Hidden by default and revealed by
+   hovering or focusing the group that owns it, so the picture is complete with
+   scripting off and the detail is reachable from the keyboard. The plate is
+   drawn inside the SVG, so the root has to stop clipping: a pod on the last
+   point of a line sits past the right edge of the viewBox by design. */
+.lchart,.bchart,.schart{overflow:visible}
+.hv .pod,.hv .on{opacity:0;transition:opacity .1s ease}
+.hv:hover .pod,.hv:focus-visible .pod,.hv:hover .on,.hv:focus-visible .on{opacity:1}
+.hv{outline:none}
+.hv .hit{cursor:crosshair}
 
 /* ------------------------------------------------------- meter tone fills */
 /* Same twelve identity swatches and the same semantic six as .badge, so a bar
@@ -1607,7 +1630,13 @@ function closeMenus(except){
 }
 document.addEventListener("click",function(e){
   var t=e.target;
-  closeMenus(t && t.closest ? t.closest("details.menu") : null);
+  var m=t && t.closest ? t.closest("details.menu") : null;
+  /* Only the summary keeps its own menu open -- it is the toggle, and closing it
+     here would fight the browser's own toggle. Anything else inside the panel is
+     an action, and an action that has been taken should not leave its menu
+     standing over the page: picking a theme or following a section link closes
+     it, exactly as clicking past it does. */
+  closeMenus(m && t.closest("details.menu > summary") ? m : null);
 },true);
 document.addEventListener("keydown",function(e){
   if(e.key!=="Escape") return;

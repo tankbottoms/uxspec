@@ -5,7 +5,7 @@
  * it obeys -- in that order, deliberately. A rule read before its example is an
  * abstraction; read after, it is a caption.
  */
-import { esc, tip, tipMark, receipts, day, wcls, usd, pct } from "../html.ts";
+import { esc, tip, tipMark, receipts, day, wcls, usd, usd0, pct } from "../html.ts";
 import { icon } from "../icons.ts";
 import { SECTIONS } from "../shell.ts";
 import * as U from "../ui.ts";
@@ -459,11 +459,28 @@ function charts(): string {
       tip: `${block.length} account${block.length === 1 ? "" : "s"}, ${usd(v)}`,
     };
   });
+  /* The label is never abbreviated. A foot that reads "Investmen" is worse than
+     no foot at all, because the reader cannot tell what was cut -- so a bar too
+     narrow for its words carries its glyph instead and defers the words to the
+     hover pod, and the legend under the chart decodes the glyph. */
   const bars = GROUPS.map((g, i) => ({
-    label: (GNAME[g] ?? g).slice(0, 9),
+    label: GNAME[g] ?? g,
     v: sum(DATA.filter((r) => r.group === g)) / 1000,
+    disp: usd0(sum(DATA.filter((r) => r.group === g))),
+    glyph: GICON[g] ?? "circle-info",
     t: toneAt(i * 2 + 1),
   }));
+  const barLegend = legend(
+    GROUPS.map((g, i) => ({
+      label: GNAME[g] ?? g,
+      qty: 0,
+      fill: toneAt(i * 2 + 1).fill,
+      stroke: toneAt(i * 2 + 1).stroke,
+      caption: "",
+      tip: "",
+      glyph: icon(GICON[g] ?? "circle-info"),
+    })),
+  );
   const scatter = DATA.map((r, i) => ({
     x: r.pct,
     y: Math.abs(r.v) / 1000,
@@ -485,11 +502,17 @@ function charts(): string {
       `Five slices is the ceiling. Past that the labels stop fitting and the reader is comparing angles &mdash; use the stacked bar instead. The ring is drawn as one circle per slice with <span class="mono">stroke-dasharray</span>, so there is no large-arc-flag bug waiting at fifty percent.`,
     ) +
     S.fig(
-      `<div class="donut-row">${S.donut(
-        segs.map((s) => ({ label: s.label, v: s.qty, fill: s.fill, stroke: s.stroke })),
-        { centre: "4", sub: "types" },
-      )}<div class="lg">${legend(segs)}</div></div>`,
-      "The same four quantities as a ring",
+      `<div class="donut-pair">` +
+        `<div class="du">${S.donut(
+          segs.map((s) => ({ label: s.label, v: s.qty, fill: s.fill, stroke: s.stroke })),
+          { centre: "4", sub: "types" },
+        )}<div class="lg">${legend(segs)}</div></div>` +
+        `<div class="du">${S.donut(
+          segs.map((s) => ({ label: s.label, v: s.qty, fill: s.fill, stroke: s.stroke })),
+          { centre: "4", sub: "types", ring: 24, outline: true },
+        )}<div class="lg">${legend(segs)}</div></div>` +
+        `</div>`,
+      "The same four quantities, filled and outlined. Each ring takes half the column and its legend sits under it, not beside it &mdash; a legend in the second column halves the ring for no gain, and the reader reads down anyway.",
       "compare with Fig. above",
     ) +
     U.h3("Line", "line") +
@@ -504,7 +527,11 @@ function charts(): string {
     U.p(
       `A zero baseline is drawn even when nothing is negative, so a chart that later grows a negative bar does not change shape and quietly rescale everything the reader remembers.`,
     ) +
-    S.fig(S.barChart(bars), "Net by type, thousands", "invented data") +
+    S.fig(
+      S.barChart(bars) + barLegend,
+      "Net by type, thousands. Bars narrower than their label carry the type glyph; the dollar sum arrives on hover.",
+      "invented data",
+    ) +
     U.h3("Scatter, with a fit", "scatter") +
     U.p(
       `The regression line is drawn thin and in ink, never in a palette colour: it is a claim about the data, not one of the entities, and colouring it makes it look like another series.`,

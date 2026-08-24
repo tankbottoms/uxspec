@@ -20,9 +20,83 @@
  */
 import { esc } from "./html.ts";
 import { nextFig } from "./charts.ts";
+import { glyph } from "./icons.ts";
 import type { Point, Tone } from "./types.ts";
 
 const round = (n: number) => Math.round(n * 100) / 100;
+/** Thousands separated, no decimals. A readout is read at a glance and a chart
+ *  that prints 8412.3719 has spent its plate on digits nobody uses. */
+const num = (n: number) => Math.round(n).toLocaleString("en-GB");
+/** 5 Mar 26. The pod is 8.5px mono and an ISO date costs it four characters it
+ *  does not have to spare. */
+const dmy = (iso: string) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${d.getUTCDate()} ${M[d.getUTCMonth()] ?? ""} ${String(d.getUTCFullYear()).slice(2)}`;
+};
+
+/* ------------------------------------------------------------ hover pods */
+
+/**
+ * The readout a chart shows when the pointer is over one of its marks.
+ *
+ * It is drawn inside the chart's own coordinate system, on its own white plate,
+ * and revealed by a CSS rule on the enclosing `g.hv` -- no script, and no
+ * `title` attribute, which the browser draws in the system font at a size this
+ * page does not set and after a delay it cannot shorten.
+ *
+ * The plate carries a glyph rather than a badge. A badge is a fixed-width object
+ * with a border, and eleven of them scattered over a plot re-draw the chart as a
+ * table; the glyph says which series a mark belongs to and takes 9px to do it.
+ *
+ * Width is measured, not guessed: the mono face is close enough to 0.55em per
+ * character that a plate sized from the longest line never clips and never
+ * leaves a wide margin on one side.
+ */
+function pod(
+  x: number,
+  y: number,
+  lines: readonly string[],
+  o: {
+    glyph?: string; tone?: string; flip?: boolean; up?: boolean;
+    box?: { w: number; h: number };
+  } = {},
+): string {
+  const size = 8.5;
+  const ch = size * 0.55;
+  const padx = 7;
+  const g = o.glyph ? 13 : 0;
+  const w = round(Math.max(...lines.map((t) => t.length)) * ch + padx * 2 + g);
+  const h = round(lines.length * 11 + 9);
+  /* The plate is clamped into the chart's own box. Drawing it upward from a bar
+     that already reaches the top of the plot puts it over the paragraph above --
+     the root has overflow visible so the pod can overhang a little at the sides,
+     which is not licence to leave the figure entirely. */
+  const raw = o.flip ? x - w - 8 : x + 8;
+  const px = o.box ? Math.min(Math.max(raw, 2), o.box.w - w - 2) : raw;
+  const py = o.box
+    ? Math.min(Math.max(o.up ? y - h - 6 : y - h / 2, 2), o.box.h - h - 2)
+    : o.up
+      ? y - h - 6
+      : y - h / 2;
+  const tx = px + padx + g;
+  const body = lines
+    .map(
+      (t, i) =>
+        `<text x="${round(tx)}" y="${round(py + 14 + i * 11)}" font-family="var(--font-mono)" ` +
+        `font-size="${size}" fill="var(--ink${i ? "-muted" : ""})">${esc(t)}</text>`,
+    )
+    .join("");
+  const mark = o.glyph
+    ? glyph(o.glyph, px + padx + 4.5, py + h / 2, 9, o.tone ?? "var(--ink-soft)")
+    : "";
+  return (
+    `<g class="pod">` +
+    `<rect x="${round(px)}" y="${round(py)}" width="${w}" height="${h}" rx="3" ` +
+    `fill="var(--paper-card)" stroke="var(--rule)" vector-effect="non-scaling-stroke"></rect>` +
+    `${mark}${body}</g>`
+  );
+}
 
 /** Wrap any drawing in the standard numbered figure. */
 export function fig(inner: string, caption: string, scope = ""): string {
@@ -89,25 +163,42 @@ export function hbars(
  */
 export function donut(
   slices: readonly { label: string; v: number; fill: string; stroke: string }[],
-  o: { size?: number; centre?: string; sub?: string } = {},
+  o: { size?: number; centre?: string; sub?: string; ring?: number; outline?: boolean } = {},
 ): string {
   const size = o.size ?? 132;
-  const r = size / 2 - 13;
+  const ring = o.ring ?? 15;
+  const r = size / 2 - ring / 2 - 5;
   const c = 2 * Math.PI * r;
   const total = slices.reduce((a, s) => a + s.v, 0) || 1;
   let off = 0;
+  // Two ways to draw the same ring, and the page carries one of each so the
+  // choice is visible rather than argued. The filled ring is the default. The
+  // outline ring is for a figure printed beside another chart that already owns
+  // the page's colour: it keeps the same geometry and spends no fill on it, so
+  // two rings side by side do not read as two competing colour systems.
+  const arc = (rr: number, len: number, offset: number, stroke: string, wdt: number, op: string) =>
+    `<circle cx="${size / 2}" cy="${size / 2}" r="${round(rr)}" fill="none" ` +
+    `stroke="${stroke}" stroke-width="${wdt}"${op} ` +
+    `stroke-dasharray="${round(len)} ${round(c - len)}" ` +
+    `stroke-dashoffset="${round(-offset)}"></circle>`;
   const rings = slices
     .map((s) => {
       const len = (s.v / total) * c;
-      const el =
-        `<circle cx="${size / 2}" cy="${size / 2}" r="${round(r)}" fill="none" ` +
-        `stroke="${s.fill}" stroke-width="15" ` +
-        `stroke-dasharray="${round(len)} ${round(c - len)}" ` +
-        `stroke-dashoffset="${round(-off)}"></circle>` +
-        `<circle cx="${size / 2}" cy="${size / 2}" r="${round(r)}" fill="none" ` +
-        `stroke="${s.stroke}" stroke-width="15" stroke-opacity="0.34" ` +
-        `stroke-dasharray="${round(len)} ${round(c - len)}" ` +
-        `stroke-dashoffset="${round(-off)}"><title>${esc(s.label)}</title></circle>`;
+      const el = o.outline
+        ? // The band is bounded rather than filled: two hairline arcs at the ring's
+          // edges, on the same dash geometry, so the gaps between slices line up.
+          arc(r - ring / 2, len, off * ((r - ring / 2) / r), s.stroke, 1.2, "") +
+          arc(r + ring / 2, len, off * ((r + ring / 2) / r), s.stroke, 1.2, "") +
+          arc(r, len, off, s.fill, ring, ' stroke-opacity="0.28"') +
+          `<circle cx="${size / 2}" cy="${size / 2}" r="${round(r)}" fill="none" ` +
+          `stroke="transparent" stroke-width="${ring}" ` +
+          `stroke-dasharray="${round(len)} ${round(c - len)}" ` +
+          `stroke-dashoffset="${round(-off)}"><title>${esc(s.label)}</title></circle>`
+        : arc(r, len, off, s.fill, ring, "") +
+          arc(r, len, off, s.stroke, ring, ' stroke-opacity="0.34"').replace(
+            "></circle>",
+            `><title>${esc(s.label)}</title></circle>`,
+          );
       off += len;
       return el;
     })
@@ -251,7 +342,7 @@ export function timeline(
       if (show) lastLabel = px;
       return (
         `<line x1="${px}" y1="14" x2="${px}" y2="26" stroke="${e.t.fill}" stroke-width="3"></line>` +
-        `<circle cx="${px}" cy="20" r="3.2" fill="${e.t.fill}" stroke="${e.t.stroke}"><title>${esc(e.day)} ${esc(
+        `<circle cx="${px}" cy="20" r="3.2" fill="var(--paper-card)" stroke="${e.t.stroke}" stroke-width="1.4"><title>${esc(e.day)} ${esc(
           e.label,
         )}</title></circle>` +
         (show
@@ -306,37 +397,93 @@ export function lineChart(
   const py = (v: number) => round(h - pad / 2 - ((v - lo) / span) * (h - pad * 1.2));
   const d = pts.map((p, i) => `${i ? "L" : "M"}${px(i)} ${py(p.v)}`).join(" ");
   const area = `${d} L${px(pts.length - 1)} ${h - pad / 2} L${px(0)} ${h - pad / 2} Z`;
+  // One hover column per reading, the full height of the plot. Hovering the line
+  // itself would ask the reader to hit a 1.5px stroke; hovering the column above
+  // a point is the same gesture the reader already makes to look at that day.
+  const cw = (w - pad - 6) / Math.max(pts.length - 1, 1);
+  const hits = pts
+    .map((p, i) => {
+      const X = px(i);
+      const Y = py(p.v);
+      return (
+        `<g class="hv" tabindex="0">` +
+        `<rect class="hit" x="${round(X - cw / 2)}" y="0" width="${round(cw)}" height="${h}" ` +
+        `fill="transparent"></rect>` +
+        `<g class="on"><line x1="${X}" y1="${round(pad / 2)}" x2="${X}" y2="${h - pad / 2}" ` +
+        `stroke="var(--rule)" stroke-dasharray="2 2"></line>` +
+        `<circle cx="${X}" cy="${Y}" r="3.2" fill="var(--paper-card)" stroke="${stroke}" ` +
+        `stroke-width="1.6"></circle></g>` +
+        pod(X, Y, [num(p.v), dmy(p.day)], {
+          glyph: "chart-line",
+          tone: stroke,
+          flip: i > pts.length * 0.62,
+          up: true,
+          box: { w, h },
+        }) +
+        `</g>`
+      );
+    })
+    .join("");
   return (
     `<svg class="lchart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img">` +
     axes(w, h, pad / 2, o.ticks ?? []) +
     `<path d="${area}" fill="${fill}" fill-opacity="0.55"></path>` +
     `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.5" ` +
-    `stroke-linejoin="round" stroke-linecap="round"></path></svg>`
+    `stroke-linejoin="round" stroke-linecap="round"></path>${hits}</svg>`
   );
 }
 
 /** Vertical bars on a zero baseline. The baseline is drawn even when nothing is
  *  negative, so a chart that later grows a negative bar does not change shape. */
 export function barChart(
-  bars: readonly { label: string; v: number; t: Tone }[],
+  bars: readonly { label: string; v: number; t: Tone; disp?: string; glyph?: string }[],
   o: { w?: number; h?: number } = {},
 ): string {
   const w = o.w ?? 620;
   const h = o.h ?? 130;
   const pad = 22;
-  const max = Math.max(...bars.map((b) => Math.abs(b.v)), 1);
   const bw = (w - pad * 2) / Math.max(bars.length, 1);
-  const zero = h - pad;
+  /* The domain is the whole range, positive and negative, and the zero line is
+     placed inside the plot in proportion to it -- not pinned to the bottom. A
+     zero line at the floor leaves a negative bar nowhere to go: it draws past
+     the viewBox, and the only reason that ever looked survivable is that the
+     root was clipping it. The plot stops 16px short of the bottom so the feet
+     have a strip of their own that no bar can reach into. */
+  const foot0 = 16;
+  const top = 8;
+  const plotH = h - top - foot0;
+  const maxP = Math.max(0, ...bars.map((b) => b.v));
+  const maxN = Math.max(0, ...bars.map((b) => -b.v));
+  const span = maxP + maxN || 1;
+  const zero = round(top + plotH * (maxP / span));
+  // A label needs about six pixels a character. Under that the bar carries its
+  // glyph instead and the words arrive on hover -- an abbreviated label is worse
+  // than none, because the reader cannot tell what was cut.
   const body = bars
     .map((b, i) => {
-      const bh = round((Math.abs(b.v) / max) * (h - pad * 1.6));
+      const bh = round((Math.abs(b.v) / span) * plotH);
       const x = round(pad + i * bw + bw * 0.16);
       const y = b.v >= 0 ? zero - bh : zero;
+      const cx = round(x + bw * 0.34);
+      const fits = b.label.length * 5.2 < bw * 0.98;
+      const foot = fits
+        ? `<text x="${cx}" y="${h - 6}" text-anchor="middle" font-size="8" ` +
+          `fill="var(--ink-muted)">${esc(b.label)}</text>`
+        : glyph(b.glyph ?? "circle-info", cx, h - 9, 9, "var(--ink-soft)");
       return (
+        `<g class="hv" tabindex="0">` +
+        `<rect class="hit" x="${round(pad + i * bw)}" y="0" width="${round(bw)}" height="${h}" ` +
+        `fill="transparent"></rect>` +
         `<rect x="${x}" y="${round(y)}" width="${round(bw * 0.68)}" height="${bh}" ` +
-        `fill="${b.t.fill}" stroke="${b.t.stroke}"><title>${esc(b.label)}</title></rect>` +
-        `<text x="${round(x + bw * 0.34)}" y="${h - 6}" text-anchor="middle" ` +
-        `font-size="8" fill="var(--ink-muted)">${esc(b.label)}</text>`
+        `fill="${b.t.fill}" stroke="${b.t.stroke}"></rect>${foot}` +
+        pod(cx, b.v >= 0 ? round(y) : round(y + bh), [b.disp ?? String(b.v), b.label], {
+          glyph: b.glyph ?? "chart-line",
+          tone: b.t.stroke,
+          flip: i > bars.length * 0.62,
+          up: true,
+          box: { w, h },
+        }) +
+        `</g>`
       );
     })
     .join("");
@@ -367,12 +514,26 @@ export function scatterChart(
   const sx = (v: number) => round(pad + ((v - x0) / (x1 - x0 || 1)) * (w - pad * 1.4));
   const sy = (v: number) => round(h - pad - ((v - y0) / (y1 - y0 || 1)) * (h - pad * 1.7));
   const dots = pts
-    .map(
-      (p) =>
-        `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="3.4" fill="${p.t.fill}" stroke="${p.t.stroke}">${
-          p.label ? `<title>${esc(p.label)}</title>` : ""
-        }</circle>`,
-    )
+    .map((p) => {
+      const X = sx(p.x);
+      const Y = sy(p.y);
+      return (
+        `<g class="hv" tabindex="0">` +
+        // The hit area is three times the dot. A 3.4px target is a fair drawing
+        // and an unfair control; the transparent disc costs nothing and makes the
+        // readout reachable without turning every point into a bigger mark.
+        `<circle class="hit" cx="${X}" cy="${Y}" r="10" fill="transparent"></circle>` +
+        `<circle cx="${X}" cy="${Y}" r="3.4" fill="${p.t.fill}" stroke="${p.t.stroke}"></circle>` +
+        pod(X, Y, p.label ? [p.label, `x ${round(p.x)}  y ${round(p.y)}`] : [`x ${round(p.x)}`], {
+          glyph: "circle-info",
+          tone: p.t.stroke,
+          flip: X > w * 0.6,
+          up: true,
+          box: { w, h },
+        }) +
+        `</g>`
+      );
+    })
     .join("");
   let line = "";
   if (o.fitLine !== false && pts.length > 2) {

@@ -321,7 +321,7 @@ export function bands(
           .map(
             (i) =>
               `<div class="band-fs"><span class="nm">${esc(i.title)}</span>` +
-              i.meta.map((m) => badge(m.label, mw, m.tone)).join("") +
+              i.meta.map((m) => badge(m.label, mw, m.tone + " hollow")).join("") +
               `</div>`,
           )
           .join("") +

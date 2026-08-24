@@ -88,7 +88,7 @@ export function label(
 ): string {
   return (
     `<text x="${x}" y="${y}" text-anchor="${o.anchor ?? "start"}" ` +
-    `font-family="${MONO}" font-size="${o.size ?? 8.5}" fill="${
+    `font-family="${MONO}" font-size="${o.size ?? 6.5}" fill="${
       o.fill ?? INK
     }">${svgText(t)}</text>`
   );
@@ -115,7 +115,7 @@ export function dim(
     }" y2="${y2 + (vertical ? 0 : 3)}" stroke="${DIM}" stroke-width="0.8"></line>` +
     `<text x="${vertical ? mx + 5 : mx}" y="${vertical ? my + 3 : my - 4}" ` +
     `text-anchor="${vertical ? "start" : "middle"}" font-family="${MONO}" ` +
-    `font-size="8" fill="${DIM}">${svgText(t)}</text>`
+    `font-size="6" fill="${DIM}">${svgText(t)}</text>`
   );
 }
 
@@ -135,7 +135,7 @@ export function callout(
     `<circle cx="${x}" cy="${y}" r="1.8" fill="${c}"></circle>` +
     `<text x="${tx + (tx > x ? 4 : -4)}" y="${ty + 3}" text-anchor="${
       tx > x ? "start" : "end"
-    }" font-family="${MONO}" font-size="8" fill="${c}">${svgText(t)}</text>`
+    }" font-family="${MONO}" font-size="6" fill="${c}">${svgText(t)}</text>`
   );
 }
 
@@ -179,7 +179,7 @@ export function badgeAnatomy(): string {
     callout(178, y + 7, 300, y + 40, "content-box: padding does not widen it") +
     label(60, y + 74, "one width for the whole column, empty and error rows included") +
     box(60, y + 82, 118, 15, { fill: PAPER, dash: true }) +
-    label(66, y + 93, "(empty)", { size: 9 }) +
+    label(66, y + 93, "(empty)", { size: 7 }) +
     box(60, y + 104, 118, 15, { fill: "var(--pastel-coral)", stroke: "var(--stroke-coral)" }) +
     label(66, y + 115, "no data", { size: 9, fill: "var(--stroke-coral)" });
   return wf(g, 620, 190);
@@ -256,11 +256,11 @@ export function overlayAnatomy(): string {
     box(214, 16, 190, 96, { fill: PAPER }) +
     label(222, 30, "receipt sheet") +
     lines(222, 38, [150, 150, 110]) +
-    label(222, 84, "9.5px table &middot; the rows behind a number", { fill: HAIR, size: 7.5 }) +
+    label(222, 84, "9.5px table &middot; the rows behind a number", { fill: HAIR, size: 5.5 }) +
     box(428, 16, 190, 96, { fill: PAPER }) +
     label(436, 30, "dialog") +
     lines(436, 38, [160, 130, 150]) +
-    label(436, 84, "13.5px head &middot; the only shadow", { fill: HAIR, size: 7.5 }) +
+    label(436, 84, "13.5px head &middot; the only shadow", { fill: HAIR, size: 5.5 }) +
     label(0, 132, "overlay type is one step below the page, never above it: 13.5 / 11 / 9.5, floor 9px");
   return wf(g, 620, 146);
 }
@@ -276,18 +276,18 @@ export function viewportDocks(): string {
   const F = { x: 8, y: 26, w: 396, h: 196 };
   const dock = (x: number, y: number, w: number, t: string) =>
     box(x, y, w, 16, { fill: ALT, dash: true, r: 2 }) +
-    label(x + 5, y + 11, t, { fill: HAIR, size: 7.5 });
+    label(x + 5, y + 11, t, { fill: HAIR, size: 5.5 });
   // Every annotation leaves to the right of the frame. An earlier version ran a
   // leader from each dock to a stack of captions, and the two from the left-hand
   // docks crossed the whole rectangle -- the drawing then demonstrated the exact
   // thing it is arguing against, which is chrome laid over content.
   const foot = (cx: number, t: string, anchor: string) =>
-    label(cx, F.y + F.h + 15, t, { anchor, fill: HAIR, size: 7.5 });
+    label(cx, F.y + F.h + 15, t, { anchor, fill: HAIR, size: 5.5 });
   const g =
     box(F.x, F.y, F.w, F.h, { fill: PAPER }) +
     label(F.x + 4, F.y - 6, "viewport &mdash; content owns the whole rectangle", {
       fill: HAIR,
-      size: 7.5,
+      size: 5.5,
     }) +
     dock(F.x + 9, F.y + 9, 104, "layer / mode") +
     dock(F.x + F.w - 9 - 66, F.y + 9, 66, "range") +

@@ -108,7 +108,13 @@ function closeMenus(except){
 }
 document.addEventListener("click",function(e){
   var t=e.target;
-  closeMenus(t && t.closest ? t.closest("details.menu") : null);
+  var m=t && t.closest ? t.closest("details.menu") : null;
+  /* Only the summary keeps its own menu open -- it is the toggle, and closing it
+     here would fight the browser's own toggle. Anything else inside the panel is
+     an action, and an action that has been taken should not leave its menu
+     standing over the page: picking a theme or following a section link closes
+     it, exactly as clicking past it does. */
+  closeMenus(m && t.closest("details.menu > summary") ? m : null);
 },true);
 document.addEventListener("keydown",function(e){
   if(e.key!=="Escape") return;
