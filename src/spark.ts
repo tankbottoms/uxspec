@@ -29,7 +29,9 @@ export function fig(inner: string, caption: string, scope = ""): string {
   const n = nextFig();
   return (
     `<figure>${inner}<figcaption><span class="fig">${n}</span>${caption}` +
-    (scope ? `<span class="scope">${esc(scope)}</span>` : "") +
+    // Raw HTML, like the caption. A scope is a date range and its dash is an
+    // entity more often than not; escaped, "1 Mar &ndash; 30 May" printed itself.
+    (scope ? `<span class="scope">${scope}</span>` : "") +
     `</figcaption></figure>`
   );
 }
@@ -160,30 +162,72 @@ export function bullet(
 
 /* ------------------------------------------------------------------ heat */
 
-/** A calendar band: one cell a day, tone by bucket. Buckets, not a gradient --
- *  a continuous ramp asks the eye to read an absolute value out of a shade,
- *  which it cannot do without the legend it is trying to replace. */
+/**
+ * A calendar band: one cell a day, tone by bucket.
+ *
+ * Buckets, not a gradient -- a continuous ramp asks the eye to read an absolute
+ * value out of a shade, which it cannot do without the legend it is trying to
+ * replace.
+ *
+ * The cells are drawn at their authored size and the drawing carries that size
+ * in pixels, so a year of them is a dense band roughly 600px wide rather than a
+ * grid stretched to whatever the column happens to be. Stretched to page width a
+ * 9px cell came out at 64px and thirteen weeks filled a screen: at that size the
+ * reader counts squares instead of seeing a season, which is the one thing a
+ * calendar band is for. Put it in a scroll box; it is meant to overflow.
+ *
+ * Rows are real weekdays, so a column is a real week and the weekend stripe is
+ * visible without being labelled.
+ */
 export function heat(
   days: readonly { day: string; bucket: number }[],
   ramp: readonly string[],
 ): string {
   const cell = 9;
-  const gap = 2;
-  const rows = 7;
-  const cols = Math.ceil(days.length / rows);
+  const pitch = cell + 2;
+  const gutter = 20; // weekday names
+  const head = 12; // month names
+  const at = (s: string) => new Date(`${s}T00:00:00Z`);
+  const dow0 = days[0] ? at(days[0].day).getUTCDay() : 0;
+  const colOf = (i: number) => Math.floor((i + dow0) / 7);
+  const cols = days.length ? colOf(days.length - 1) + 1 : 0;
+  const w = gutter + cols * pitch;
+  const h = head + 7 * pitch;
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const tx = (x: number, y: number, t: string, anchor = "start") =>
+    `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="var(--font-mono)" ` +
+    `font-size="7.5" fill="var(--ink-soft)">${esc(t)}</text>`;
+
+  // Monday, Wednesday, Friday only. Seven labels beside nine-pixel rows do not
+  // fit, and three are enough to orient the other four.
+  const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const wd = [1, 3, 5]
+    .map((r) => tx(gutter - 4, head + r * pitch + cell - 1, DOW[r] ?? "", "end"))
+    .join("");
+
+  // One name per month, over the column its first week starts in. Anything
+  // narrower than a month gets no label rather than an abbreviated one.
+  const months = days
+    .map((d, i) => ({ d: at(d.day), i }))
+    .filter((x) => x.d.getUTCDate() <= 7 && colOf(x.i) > 0 && x.d.getUTCDay() === dow0)
+    .map((x) => tx(gutter + colOf(x.i) * pitch, head - 4, MON[x.d.getUTCMonth()] ?? ""))
+    .join("");
+
   const cells = days
     .map((d, i) => {
-      const x = Math.floor(i / rows) * (cell + gap);
-      const y = (i % rows) * (cell + gap);
+      const x = gutter + colOf(i) * pitch;
+      const y = head + ((i + dow0) % 7) * pitch;
       const t = ramp[Math.min(d.bucket, ramp.length - 1)] ?? "var(--paper-alt)";
       return `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="1" fill="${t}" stroke="var(--rule-soft)"><title>${esc(
         d.day,
       )}</title></rect>`;
     })
     .join("");
-  return `<svg class="heat" viewBox="0 0 ${cols * (cell + gap)} ${
-    rows * (cell + gap)
-  }" width="100%" height="${rows * (cell + gap)}" role="img">${cells}</svg>`;
+
+  return (
+    `<svg class="heat" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img">` +
+    `${months}${wd}${cells}</svg>`
+  );
 }
 
 /* -------------------------------------------------------------- timeline */

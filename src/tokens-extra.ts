@@ -269,6 +269,11 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 .donut,.bullet,.heat,.tline,.lchart,.bchart,.schart{display:block;max-width:100%;
   height:auto;margin:0 auto}
 .lchart,.bchart,.schart,.tline{width:100%}
+/* The calendar band is the one drawing that keeps its authored pixel size. It
+   is sized in cells, not in columns, so it overflows its scroll box rather than
+   scaling a 9px cell up to whatever width the page happens to have. */
+.heat{width:auto;max-width:none;margin:0}
+.scroll > .heat{margin:2px 0 4px}
 .donut{margin:6px auto 2px}
 .hbars{margin-top:8px}
 .donut-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px}

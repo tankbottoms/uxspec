@@ -42,7 +42,9 @@ export function table(o: {
   const cls = ["sortable", o.grouped ? "grouped" : ""].filter(Boolean).join(" ");
   return `<div class="scroll"><table class="${cls}">
 <caption><span class="fig">${esc(o.fig)}</span>${o.caption}${
-    o.scope ? `<span class="scope">${esc(o.scope)}</span>` : ""
+    // Raw HTML, like every other scope on the page: a scope is a period and its
+    // separator is an entity.
+    o.scope ? `<span class="scope">${o.scope}</span>` : ""
   }</caption>
 ${thead(o.cols)}
 <tbody>${o.body}</tbody>${o.foot ? `\n<tfoot>${o.foot}</tfoot>` : ""}

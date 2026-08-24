@@ -396,22 +396,31 @@ function sparks(): string {
     U.p(
       `One cell a day, tone by bucket &mdash; buckets, not a gradient. A continuous ramp asks the eye to read an absolute value out of a shade, which it cannot do without the legend the ramp was supposed to replace.`,
     ) +
+    U.p(
+      `Cells are drawn at 9px and the band carries its own width, so a year is about 600px of chart and overflows into a scroll box on a phone rather than shrinking. A calendar band stretched to fill its column stops being a band: at 60px a cell the reader counts squares instead of seeing a season, which is the only thing it is for.`,
+    ) +
     S.fig(
-      S.heat(
-        days(91).map((d, i) => ({
-          day: d,
-          bucket: Math.floor(Math.abs(Math.sin(i * 0.7)) * 4),
-        })),
-        [
-          "var(--paper-alt)",
-          "var(--pastel-mint)",
-          "var(--pastel-teal)",
-          "var(--pastel-aqua)",
-          "var(--pastel-cyan)",
-        ],
+      U.scroll(
+        S.heat(
+          days(371).map((d, i) => {
+            const dow = new Date(`${d}T00:00:00Z`).getUTCDay();
+            const v = Math.abs(Math.sin(i * 1.7) + Math.sin(i * 0.31)) * 2.2;
+            return {
+              day: d,
+              bucket: Math.min(4, Math.round(dow === 0 || dow === 6 ? v * 0.3 : v)),
+            };
+          }),
+          [
+            "var(--paper-alt)",
+            "var(--pastel-mint)",
+            "var(--pastel-teal)",
+            "var(--pastel-aqua)",
+            "var(--pastel-cyan)",
+          ],
+        ),
       ),
-      "Readings per day, thirteen weeks",
-      "four buckets",
+      "Readings per day, fifty-three weeks. Rows are real weekdays, so the quiet weekend stripe needs no label.",
+      "five buckets",
     ) +
     U.h3("Timeline", "timeline") +
     U.p(

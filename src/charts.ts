@@ -92,7 +92,7 @@ export function figure(segs: Seg[], caption: string, scope: string): string {
   return (
     `<figure>${stackedBar(segs)}${legend(segs)}` +
     `<figcaption><span class="fig">${n}</span>${caption}` +
-    `<span class="scope">${esc(scope)}</span></figcaption></figure>`
+    `<span class="scope">${scope}</span></figcaption></figure>`
   );
 }
 
@@ -173,7 +173,7 @@ export function sparkFigure(pts: Point[], fill: string, stroke: string, caption:
     `<div class="sparkstats">${stat("First", fmt(first.v), first.day)}${stat("Low", fmt(lo), pts[vs.indexOf(lo)]?.day ?? "")}` +
     `${stat("High", fmt(hi), pts[vs.indexOf(hi)]?.day ?? "")}${stat("Last", fmt(last.v), last.day)}</div>` +
     `<figcaption><span class="fig">${n}</span>${caption}` +
-    `<span class="scope">${esc(scope)}</span></figcaption></figure>`
+    `<span class="scope">${scope}</span></figcaption></figure>`
   );
 }
 
@@ -209,7 +209,7 @@ export function multiSpark(
   return (
     `<figure><div class="multi">${cells.join("")}</div>` +
     `<figcaption><span class="fig">${n}</span>${caption}` +
-    `<span class="scope">${esc(scope)}</span></figcaption></figure>`
+    `<span class="scope">${scope}</span></figcaption></figure>`
   );
 }
 
