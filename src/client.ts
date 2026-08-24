@@ -40,9 +40,15 @@ function cellKey(tr,i){
   if(!td) return "";
   var v=td.getAttribute("data-s");
   if(v!==null) return v;
-  var t=(td.textContent||"").trim().replace(/[$,%\\s]/g,"");
+  var raw=(td.textContent||"").trim();
+  /* Accounting notation puts the sign in the brackets, so a sort that strips
+     punctuation and parses what is left reads (1,200.00) as positive 1200 and
+     files the largest loss at the top of the gains. The brackets are read first
+     and the sign is put back after the parse. */
+  var neg=raw.charAt(0)==="(" && raw.charAt(raw.length-1)===")";
+  var t=raw.replace(/[$,%()\\s]/g,"");
   var n=parseFloat(t);
-  return isNaN(n) ? (td.textContent||"").trim().toLowerCase() : n;
+  return isNaN(n) ? raw.toLowerCase() : (neg ? -n : n);
 }
 function recutSpans(tbody){
   var trs=[].slice.call(tbody.rows);
@@ -65,7 +71,7 @@ document.querySelectorAll("table.sortable").forEach(function(tbl){
   var tbody=tbl.tBodies[0];
   if(!tbody) return;
   var isGrouped=tbl.classList.contains("grouped");
-  tbl.querySelectorAll("thead th.s").forEach(function(th){
+  tbl.querySelectorAll("thead th.sortable").forEach(function(th){
     var col=[].indexOf.call(th.parentNode.children,th);
     th.tabIndex=0;
     th.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){e.preventDefault();th.click();} });

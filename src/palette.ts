@@ -32,6 +32,18 @@ const RESERVED = new Set(Object.values(TYPE_TONE));
 /** The swatches identity may still draw on -- eight of the twelve. */
 const IDENTITY = TONES.filter(([cls]) => !RESERVED.has(cls));
 
+/**
+ * The stroke value behind a badge class.
+ *
+ * A chart drawn beside a badge has to be the badge's colour, and SVG cannot take the
+ * class -- it needs the value. Deriving it from the same tuple is what keeps the two
+ * from drifting; a hand-written second map is the drift.
+ */
+export function strokeOf(cls: string): string {
+  const t = TONES.find(([c]) => c === cls);
+  return t ? `var(--stroke-${t[1]})` : "var(--ink-muted)";
+}
+
 /** Badge class for an account type, or the neutral one for a type not in the list. */
 export function typeClass(type: string): string {
   return TYPE_TONE[type] ?? "idle";

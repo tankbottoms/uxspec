@@ -22,7 +22,10 @@ export type Col = {
 export function thead(cols: readonly Col[]): string {
   return `<thead><tr>${cols
     .map((c) => {
-      const cls = [c.cls, c.k ? "s" : ""].filter(Boolean).join(" ");
+      /* `sortable` is the canonical hook -- tokens.ts hangs the cursor, the hover
+         and the direction arrow off it. An abbreviated class of our own would have
+         been a header that sorts and never says so. */
+      const cls = [c.cls, c.k ? "sortable" : ""].filter(Boolean).join(" ");
       return `<th${cls ? ` class="${cls}"` : ""}${
         c.k ? ` data-k="${esc(c.k)}"` : ""
       }>${esc(c.h)}</th>`;

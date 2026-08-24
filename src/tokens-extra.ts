@@ -297,6 +297,19 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    invisible, and a control that gives no sign it worked gets pressed twice. */
 .heat-ctl button.kept svg{fill:var(--stroke-mint)}
 
+/* ------------------------------------------------------- history column */
+/* A history column is one shape wide and must not be allowed to set the row
+   height, so the cell is sized and the SVG fills it. preserveAspectRatio is
+   none on this spark, which is what lets 68x18 hold twelve months without the
+   line going flat. */
+td.hs{width:76px;padding-top:2px;padding-bottom:2px}
+.hcell{display:block;height:18px;line-height:0}
+.hcell .spark{display:block;width:68px;height:18px}
+/* The residual line. Muted rather than badged: it is the same kind of thing as
+   the rows above it, only unnamed, and a badge would make it a category. */
+tr .rest{color:var(--ink-faint);font-style:italic}
+tr .rest .n{font-style:normal;font-family:var(--font-mono)}
+
 /* ---------------------------------------------------------------- schema */
 /* An entity-relationship diagram: HTML cards over one SVG wire layer. The frame
    scrolls rather than shrinking the cards, because a schema read at 60% is a

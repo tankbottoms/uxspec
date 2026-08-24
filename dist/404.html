@@ -1534,6 +1534,19 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    invisible, and a control that gives no sign it worked gets pressed twice. */
 .heat-ctl button.kept svg{fill:var(--stroke-mint)}
 
+/* ------------------------------------------------------- history column */
+/* A history column is one shape wide and must not be allowed to set the row
+   height, so the cell is sized and the SVG fills it. preserveAspectRatio is
+   none on this spark, which is what lets 68x18 hold twelve months without the
+   line going flat. */
+td.hs{width:76px;padding-top:2px;padding-bottom:2px}
+.hcell{display:block;height:18px;line-height:0}
+.hcell .spark{display:block;width:68px;height:18px}
+/* The residual line. Muted rather than badged: it is the same kind of thing as
+   the rows above it, only unnamed, and a badge would make it a category. */
+tr .rest{color:var(--ink-faint);font-style:italic}
+tr .rest .n{font-style:normal;font-family:var(--font-mono)}
+
 /* ---------------------------------------------------------------- schema */
 /* An entity-relationship diagram: HTML cards over one SVG wire layer. The frame
    scrolls rather than shrinking the cards, because a schema read at 60% is a
@@ -1750,9 +1763,15 @@ function cellKey(tr,i){
   if(!td) return "";
   var v=td.getAttribute("data-s");
   if(v!==null) return v;
-  var t=(td.textContent||"").trim().replace(/[$,%\s]/g,"");
+  var raw=(td.textContent||"").trim();
+  /* Accounting notation puts the sign in the brackets, so a sort that strips
+     punctuation and parses what is left reads (1,200.00) as positive 1200 and
+     files the largest loss at the top of the gains. The brackets are read first
+     and the sign is put back after the parse. */
+  var neg=raw.charAt(0)==="(" && raw.charAt(raw.length-1)===")";
+  var t=raw.replace(/[$,%()\s]/g,"");
   var n=parseFloat(t);
-  return isNaN(n) ? (td.textContent||"").trim().toLowerCase() : n;
+  return isNaN(n) ? raw.toLowerCase() : (neg ? -n : n);
 }
 function recutSpans(tbody){
   var trs=[].slice.call(tbody.rows);
@@ -1775,7 +1794,7 @@ document.querySelectorAll("table.sortable").forEach(function(tbl){
   var tbody=tbl.tBodies[0];
   if(!tbody) return;
   var isGrouped=tbl.classList.contains("grouped");
-  tbl.querySelectorAll("thead th.s").forEach(function(th){
+  tbl.querySelectorAll("thead th.sortable").forEach(function(th){
     var col=[].indexOf.call(th.parentNode.children,th);
     th.tabIndex=0;
     th.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){e.preventDefault();th.click();} });

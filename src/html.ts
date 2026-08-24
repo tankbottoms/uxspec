@@ -12,6 +12,15 @@ export function usd(v: number): string {
   return `${sign}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// Accounting notation: the minus sign is a single glyph a column-scan can miss, so a
+// negative is written in parentheses and coloured, and the two carry the same fact twice.
+// The parentheses are the load-bearing half -- colour alone fails for a reader who cannot
+// separate coral from ink, and fails again in print.
+export function usdA(v: number): string {
+  const n = Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return v < 0 ? `<span class="neg">($${n})</span>` : `$${n}`;
+}
+
 export function usd0(v: number): string {
   const sign = v < 0 ? "-" : "";
   return `${sign}$${Math.abs(Math.round(v)).toLocaleString("en-US")}`;

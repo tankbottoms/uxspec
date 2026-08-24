@@ -5,7 +5,7 @@
  * it obeys -- in that order, deliberately. A rule read before its example is an
  * abstraction; read after, it is a caption.
  */
-import { esc, tip, tipMark, receipts, day, wcls, usd, usd0, pct } from "../html.ts";
+import { esc, tip, tipMark, receipts, day, wcls, usd, usdA, usd0, pct } from "../html.ts";
 import { icon } from "../icons.ts";
 import { SECTIONS } from "../shell.ts";
 import * as U from "../ui.ts";
@@ -16,8 +16,8 @@ import { stage } from "../viewer.ts";
 import * as D from "../dialogs.ts";
 import { erd, type Entity } from "../schema.ts";
 import { sparkline, stackedBar, legend, ppBar, dmy, type Seg } from "../charts.ts";
-import { toneAt, typeClass, TYPE_TONE } from "../palette.ts";
-import { rows, walk, days, sum, type Row } from "../data.ts";
+import { toneAt, typeClass, strokeOf, TYPE_TONE } from "../palette.ts";
+import { rows, walk, days, sum, rng, type Row } from "../data.ts";
 
 const sec = (id: string) => {
   const s = SECTIONS.find((x) => x.id === id);
@@ -247,6 +247,37 @@ function statusBadge(r: Row): string {
   return U.badge(r.status, STATUS_W, r.status);
 }
 
+/* Twelve months of the same account, drawn once from the row's own name so the
+   line is the same line on every build. A history column is the one thing a
+   balance cannot say: two accounts at the same number got there from opposite
+   directions, and the column that tells them apart costs 68px. */
+function hist(key: string, v: number): { day: string; v: number }[] {
+  let seed = 11;
+  for (let i = 0; i < key.length; i++) seed = (seed * 31 + key.charCodeAt(i)) % 100003;
+  const g = rng(seed);
+  const out: { day: string; v: number }[] = [];
+  let x = Math.abs(v) * (0.55 + g() * 0.35);
+  for (let i = 0; i < 12; i++) {
+    x = Math.max(1, x * (0.93 + g() * 0.19));
+    out.push({ day: `2025-${String(i + 1).padStart(2, "0")}-01`, v: x });
+  }
+  return out;
+}
+
+/* The spark takes its colour from the group, like everything else in the row, so
+   the history column reads as part of the block rather than as a chart parked
+   beside it. No badge: a line is already a shape, and a box around a shape is a
+   second border for one fact. */
+function histCell(key: string, v: number, tone: string): string {
+  const stroke = strokeOf(tone);
+  return T.td(
+    `<span class="hcell" title="Twelve months to date">` +
+      sparkline(hist(key, v), "var(--pastel-vanilla)", stroke, 68, 18) +
+      `</span>`,
+    "hs",
+  );
+}
+
 function rowCells(r: Row): string {
   /* The account name is the column that would wrap first, so it is the column
      that carries the hover plate: one line in the table, the rest above it. */
@@ -259,8 +290,9 @@ function rowCells(r: Row): string {
     T.td(U.badge(r.kind, KIND_W, typeClass(r.group))) +
     T.td(statusBadge(r)) +
     T.td(day(r.day), "n") +
-    T.td(usd(r.v), "n") +
-    T.td(pct(r.pct), "n")
+    T.td(usdA(r.v), "n") +
+    T.td(pct(r.pct), "n") +
+    histCell(r.name, r.v, typeClass(r.group))
   );
 }
 
@@ -273,6 +305,7 @@ function tables(): string {
     { h: "Last seen", cls: "n", k: "day" },
     { h: "Balance", cls: "n", k: "v" },
     { h: "Share", cls: "n", k: "pct" },
+    { h: "12 mo" },
   ];
   const body = T.grouped<Row>({
     items: DATA,
@@ -292,11 +325,12 @@ function tables(): string {
           T.td("") +
           T.td("") +
           T.td("", "n") +
-          T.td(usd(sum(block)), "n") +
+          T.td(usdA(sum(block)), "n") +
           T.td(
             pct(block.reduce((a, x) => a + x.pct, 0)),
             "n",
-          ),
+          ) +
+          histCell(k, sum(block), m.tone),
       );
     },
   });
@@ -306,8 +340,9 @@ function tables(): string {
       T.td("") +
       T.td("") +
       T.td("", "n") +
-      T.td(usd(sum(DATA)), "n") +
-      T.td(pct(DATA.reduce((a, x) => a + x.pct, 0)), "n"),
+      T.td(usdA(sum(DATA)), "n") +
+      T.td(pct(DATA.reduce((a, x) => a + x.pct, 0)), "n") +
+      T.td(""),
   );
   return (
     sec("tables") +
@@ -325,6 +360,19 @@ function tables(): string {
       grouped: true,
       scope: "invented data &middot; 90 days",
     }) +
+    U.h3("Sign, sort, and the twelve months behind the number", "reading") +
+    U.p(
+      `Three things are happening in that table that a reader will use and never name.`,
+    ) +
+    U.p(
+      `<strong>The sign is in the brackets.</strong> A negative balance is written <span class="mono">($1,200.00)</span> and coloured coral, not <span class="mono">-$1,200.00</span>. The minus is one glyph at the far left of a right-aligned column, which is the one place a column-scan is not looking; the brackets change the shape of the whole number, and the shape is what the scan reads. The colour is the second copy of the same fact and never the only one &mdash; coral against ink fails for a reader who cannot separate them, and fails again in print. Anything that parses these cells has to read the brackets first and put the sign back after: <span class="mono">cellKey</span> in <span class="mono">client.ts</span> does exactly that, which is why a descending sort files the largest loss at the bottom rather than the top.`,
+    ) +
+    U.p(
+      `<strong>A sortable heading is said by the cursor, not by a glyph.</strong> Every column with a <span class="mono">k</span> gets <span class="mono">th.sortable</span>, which is a pointer cursor and a hover; click sorts, and only then does an arrow appear &mdash; <span class="mono">&uarr;</span> or <span class="mono">&darr;</span>, on that one heading. The neutral double arrow on every heading at once was tried and removed: it put nine glyphs on the page carrying no information so that the tenth, which carried all of it, had to be found among them. The keyboard gets the same control, because the header takes focus and Enter and Space are wired to the same handler.`,
+    ) +
+    U.p(
+      `<strong>The last column is the history.</strong> Two accounts at the same balance arrived from opposite directions, and that is the one thing the balance cannot say. Twelve months at 68&times;18 costs less width than the number beside it and settles the question at a glance. It takes the group's own colour, so it reads as part of the block rather than as a chart parked next to it, and it carries no badge and no box &mdash; a line is already a shape, and a border around a shape is a second frame for one fact. The subtotal row gets the block's line for the same reason the subtotal gets a number.`,
+    ) +
     U.h3("No wrap, and where the rest of it goes", "nowrap") +
     U.p(
       `Cells do not wrap. A wrapped cell makes its row taller than its neighbours, and the moment rows stop being one height the eye loses the column it was reading down &mdash; which is the only reason to draw a table rather than a list. So the table is set to <span class="mono">width:max-content</span> inside a scroll box and takes the width it needs.`,
