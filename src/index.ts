@@ -16,8 +16,19 @@ import { CLIENT } from "./client.ts";
 import { VIEWER_JS } from "./viewer.ts";
 import { specBody } from "./pages/spec.ts";
 import { viewerBody } from "./pages/viewer.ts";
+import { pageHead, p } from "./ui.ts";
 
 const BUILT = process.env.BUILT ?? "23 August 2026";
+
+const U404 =
+  pageHead({
+    eyebrow: ["404", "no such page"],
+    h1: "Not here",
+    lede:
+      "This site has two pages: the spec and the viewer. Whatever was linked is " +
+      "neither of them, and there is no history of it having been.",
+  }) +
+  p(`<a href="/">The spec</a> &middot; <a href="/viewer.html">The viewer</a>`);
 
 const DESC =
   "The house design system: badge contract, grouped rows, spark charts and wireframes, " +
@@ -38,6 +49,19 @@ const pages: { file: string; nav: string; html: string }[] = [
       head("UX spec - the house design system", meta("UX spec", "")) +
       nav("index") +
       specBody() +
+      foot(BUILT) +
+      `<script>${CLIENT}</script>`,
+  },
+  {
+    // not_found_handling = "404-page" in wrangler.toml serves this. Without it a
+    // missing path returns a zero-byte body, which reads to a visitor as the site
+    // being broken rather than the address being wrong.
+    file: "404.html",
+    nav: "index",
+    html:
+      head("Not found - UX spec", meta("Not found", "404.html")) +
+      nav("index") +
+      U404 +
       foot(BUILT) +
       `<script>${CLIENT}</script>`,
   },
