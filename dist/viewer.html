@@ -1419,7 +1419,7 @@ footer strong { color: var(--ink-muted); }
    was the old answer to on and it is not an answer: it turns the glyph into
    a hole and puts a third, meaningless colour on a frame with two. */
 .vp .vt:hover .badge,.vp .vp-pick > .mk:hover .badge{color:var(--accent)}
-.vp .vt[aria-pressed="true"] .badge:not(.bare),
+.vp .vt:not([data-layer])[aria-pressed="true"] .badge,
 .vp .vp-pick > input:checked ~ .mk .badge{color:var(--ink);
   background:var(--pastel-amber);border-color:var(--stroke-amber)}
 .vp .vt[disabled]{opacity:.34;cursor:default}
@@ -1721,11 +1721,12 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 .vp-bot > .bc{justify-content:center}
 .vp-bot > .br{justify-content:flex-end}
 /* Controls sit on their own plate rather than directly on the content: over a
-   map or a rendered stage the badge border alone is not enough separation, and
-   a translucent plate keeps the frame legible underneath. */
+   map or a rendered stage a glyph alone is not enough separation, and a
+   translucent plate keeps the frame legible underneath. The plate is the
+   cluster's; the marks inside it are bare, and hover is told by the cell
+   lighting up and the glyph taking the accent, never by a border appearing. */
 .vp-btns button{background:none;border:0;padding:0;cursor:pointer;font:inherit}
 .vp-btns button .badge{cursor:pointer}
-.vp-btns button:hover .badge{border-color:var(--ink-muted)}
 /* The readout. Bigger than the body face, not smaller: it is the one figure on
    the page meant to be read at a glance and from a distance. */
 .vp-read{display:flex;align-items:baseline;gap:4px;padding:4px 8px 5px;
