@@ -223,6 +223,80 @@ export function stageFallback(): string {
   );
 }
 
+/* ------------------------------------------------------------- the panel */
+
+/**
+ * The floating panel: the decision in hand, said in words, with the tool that
+ * decision actually takes.
+ *
+ * It is docked over the frame rather than beside it, and that is the whole
+ * reason it exists as its own thing. A control that changes the subject has to
+ * be readable at the same time as the subject, or the reader is carrying a
+ * value across the width of the page in their head. A viewport wide enough to
+ * be worth having is wide enough that a side inspector is a different glance.
+ *
+ * Three rules it demonstrates, all of them taken from a dock that had to work
+ * on a phone where the subject was forty characters four pixels apart:
+ *
+ *  - The head states the DECISION, not the encoding. Not "plate 2, tone p4" --
+ *    that is what is stored. An imperative with a subject, so a reader who
+ *    arrived at this panel cold knows what is being asked of them.
+ *  - The tool wears the value's own face. A colour is chosen from colours; a
+ *    shape from shapes. A text field or a number is the right control only
+ *    where the value genuinely has no other face, and reaching for one before
+ *    that is how an editor ends up being a form about a picture.
+ *  - Putting it away is a STATE, not a removal. It leaves a way back -- a
+ *    single badge in the corner it left from. A panel that closes to nothing
+ *    is a panel the reader cannot get back without knowing what opened it.
+ */
+function panel(): string {
+  const rows = PLATES.map(
+    (pl, i) =>
+      '<button type="button" class="dk-tone" data-plate="' +
+      i +
+      '"' +
+      (i === 1 ? ' aria-pressed="true"' : ' aria-pressed="false"') +
+      ' aria-label="' +
+      esc("Tint the plate in hand with " + pl.name + "'s swatch") +
+      '" title="' +
+      esc(pl.tone + " -- " + pl.name) +
+      '"><span class="band ' +
+      pl.tone +
+      '"></span></button>',
+  ).join("");
+
+  return (
+    '<div class="vp-dock" id="vw-dock">' +
+    /* The reopen badge lives outside the panel, not inside it: it has to
+       survive the panel being shut, which is the one moment it matters. */
+    '<button type="button" class="badge auto act dk-open" data-act="dock" hidden>' +
+    icon("sliders") +
+    "What is in hand</button>" +
+    '<div class="dk-panel">' +
+    '<div class="dk-hd"><span class="dk-ask" id="dk-ask">' +
+    "Choose the tint for the Form plate. One swatch is one identity colour, and the plate keeps it through every other control." +
+    "</span>" +
+    '<button type="button" class="dk-shut" data-act="dock" ' +
+    'aria-label="Put it away -- the panel goes, the plate stays" ' +
+    'title="Put it away">' +
+    icon("xmark") +
+    "</button></div>" +
+    '<div class="dk-bd">' +
+    /* The subject the panel acts on, repeated inside it. The plate in hand is
+       four rails away on the right edge; a reader setting a tint should not
+       have to look back across the frame to check which one they are setting. */
+    '<div class="dk-tools" role="group" aria-label="Identity swatches">' +
+    rows +
+    "</div>" +
+    '<p class="dk-ft"><span class="badge auto hollow" id="dk-val">' +
+    icon("layer-group") +
+    '<span id="dk-val-t">Form</span> <span class="mono" id="dk-val-n">p4</span></span>' +
+    '<span class="dk-note">Stored as the plate index and a swatch name. ' +
+    "The hex is in the stylesheet, not here.</span></p>" +
+    "</div></div></div>"
+  );
+}
+
 /**
  * The stage, in a viewport with every dock filled.
  *
@@ -262,6 +336,7 @@ export function stage(): string {
     `<div class="vp-read"><span class="v" id="hud-fps">&mdash;</span>` +
     `<span class="u">fps</span><span class="s" id="hud-tri">&mdash;</span></div>` +
     `</div></div>` +
+    panel() +
     `<div class="vp-cap">${nextFig()} &middot; four plates, one tile &middot; ` +
     `<span class="mono" id="vw-state">4 up &middot; apart 0 &middot; rung 2</span></div>` +
     `</div>`
@@ -326,6 +401,11 @@ function start(host){
   // prevents is the one where "reset" is written as a spread of defaults over
   // the whole state and quietly puts the layer rail back too -- which no
   // reader asked for and none of them notice until their work disappears.
+  // The plates by name and swatch. Written once here rather than read back
+  // out of the markup: a readout that parses its own page is a readout that
+  // breaks the first time the markup is reworded.
+  const NAMES = ["Ground", "Form", "Mark", "Gloss"];
+  const SWATCH = ["p1", "p4", "p7", "p10"];
   const STOPS = 5;   // apart: 0 closed .. 4 fully open
   const RUNGS = 5;   // camera distance
   const FILLS = [0.62, 0.82, 1.0];
@@ -337,7 +417,10 @@ function start(host){
   let spin = true;
   let wire = false;
   let editing = false;
-  const up = [true, true, true, true];
+  // The plate in hand, and whether the panel is up. Two variables and not
+  // one: shutting the panel must not drop what was being worked on, or
+  // reopening it lands the reader somewhere they did not leave.
+  let hand = 1; let dockUp = true;  const up = [true, true, true, true];
 
   const PLATE = [
     { fill: "--pastel-aqua",  edge: "--stroke-aqua"  },
@@ -472,6 +555,27 @@ function start(host){
     dis("sp+", stop === STOPS - 1);
     dis("cam+", rung === RUNGS - 1);
     dis("cam-", rung === 0);
+
+    // The panel is an editor's control, so it is up only while the frame is
+    // one. Read-only frames keep every rail -- looking is a thing a reader
+    // does too -- and lose only the tool that writes.
+    const dk = document.getElementById("vw-dock");
+    if (dk) {
+      dk.hidden = !editing;
+      dk.classList.toggle("shut", !dockUp);
+      const ob = dk.querySelector(".dk-open");
+      if (ob) ob.hidden = dockUp;
+      // The head is rewritten with the decision, not the encoding. It names
+      // the plate because the plate is the subject of the sentence.
+      const nm = NAMES[hand], tn = SWATCH[hand];
+      t("dk-ask", "Choose the tint for the " + nm + " plate. One swatch is one " +
+        "identity colour, and the plate keeps it through every other control.");
+      t("dk-val-t", nm);
+      t("dk-val-n", tn);
+      dk.querySelectorAll("[data-plate]").forEach(b => {
+        b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-plate")) === hand));
+      });
+    }
   }
 
   const ACTS = {
@@ -484,7 +588,8 @@ function start(host){
     "tone": () => { toneAt = (toneAt + 1) % 4; build(); },
     "spin": () => { spin = !spin; },
     "wire": () => { wire = !wire; build(); },
-    "edit": () => { editing = !editing; host.classList.toggle("editing", editing); }
+    "edit": () => { editing = !editing; host.classList.toggle("editing", editing); },
+    "dock": () => { dockUp = !dockUp; }
   };
   const TOGGLE = { spin: 1, wire: 1, edit: 1 };
 
@@ -499,6 +604,16 @@ function start(host){
           a === "spin" ? spin : a === "wire" ? wire : editing
         ));
       }
+      report();
+    });
+  });
+
+  // Picking a swatch takes the plate in hand. In a real editor it would also
+  // write the tint; here the swatch IS the identity colour, so what the
+  // control demonstrates is the face rule, not a mutation.
+  document.querySelectorAll("[data-plate]").forEach(b => {
+    b.addEventListener("click", () => {
+      hand = Number(b.getAttribute("data-plate")) || 0;
       report();
     });
   });

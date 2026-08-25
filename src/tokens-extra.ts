@@ -73,6 +73,53 @@ export const CSS_EXTRA = `
 .stage .hud{position:absolute;left:9px;bottom:9px;display:flex;gap:5px;
   font-family:var(--font-mono);font-size:9.5px;color:var(--ink-soft)}
 
+/* -------------------------------------------------------- the floating panel */
+/* Docked over the frame, not beside it. A control that changes the subject has
+   to be readable at the same time as the subject; a viewport wide enough to be
+   worth having is wide enough that a side inspector is a separate glance. It
+   sits above the bottom docks rather than in the row with them, because it is
+   the only thing on the frame that is about one part of the subject rather than
+   about the view. */
+.vp-dock{position:absolute;left:9px;right:9px;bottom:52px;z-index:6;
+  display:flex;justify-content:flex-start;pointer-events:none}
+.vp-dock>*{pointer-events:auto}
+.dk-panel{width:100%;max-width:352px;background:var(--tip-paper);
+  border:1px solid var(--rule);border-radius:var(--radius);
+  box-shadow:0 8px 26px rgba(0,0,0,.16);padding:8px 10px 9px}
+/* Shut is a state. The panel goes; a badge in the corner it left from stays,
+   because a panel that closes to nothing cannot be reopened by a reader who
+   did not see what opened it. */
+.vp-dock.shut .dk-panel{display:none}
+.dk-open{cursor:pointer;border:0;font:inherit}
+.dk-hd{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
+/* The decision, said as a decision. It wraps to two lines and that is the
+   budget -- a third line is a paragraph, and a panel is not where prose goes. */
+.dk-ask{flex:1;font-size:10px;line-height:1.42;color:var(--ink-muted)}
+.dk-shut{flex:none;background:none;border:0;padding:2px;cursor:pointer;
+  color:var(--ink-faint);line-height:0}
+.dk-shut:hover{color:var(--ink)}
+.dk-shut .ic{width:10px;height:10px}
+/* The tools wear the value's own face. A tint is chosen from tints -- the
+   button IS the swatch, at the size of a word, and carries no text at all.
+   A name here would be the encoding wearing the value's clothes. */
+.dk-tools{display:flex;gap:5px;flex-wrap:wrap}
+.dk-tone{padding:2px;background:var(--paper-card);border:1px solid var(--rule);
+  border-radius:3px;cursor:pointer;line-height:0}
+.dk-tone .band{display:block;width:30px;height:13px;border-radius:2px}
+/* The chosen one is ringed, not filled darker. Filling it would change the one
+   thing on the control the reader is judging it by. */
+.dk-tone[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent);
+  border-color:var(--accent)}
+.dk-ft{display:flex;align-items:center;gap:8px;margin:8px 0 0;flex-wrap:wrap}
+.dk-ft .badge{font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:5px}
+.dk-ft .badge .ic{width:9px;height:9px}
+.dk-note{font-size:9px;line-height:1.4;color:var(--ink-faint)}
+/* The panel is the first thing to give up its room. On a narrow frame it takes
+   the full width and the swatches fold; below that the frame is too small for
+   an editor at all and the panel is simply not put up. */
+@media (max-width:560px){.vp-dock{bottom:48px}.dk-panel{max-width:none}}
+
 /* ------------------------------------------------------- the side rails */
 /* Two docks the other viewports do not have, because two of the axes a 3D view
    offers do not exist on a map or a chart: where the eye stands, and which of

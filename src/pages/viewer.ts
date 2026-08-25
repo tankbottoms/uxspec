@@ -311,7 +311,74 @@ dis("sp+", stop === STOPS - 1);`,
       `The temptation is to copy the six hexes into the module &ldquo;just for the 3D&rdquo;. That is exactly the fork that <span class="mono">design-lint.ts</span> exists to catch, and the linter reads the module too.`,
     ) +
     /* ----------------------------------------------------------------- 10 */
-    U.h2(10, "budget", "What it costs", icon("chart-line"), {
+    U.h2(10, "panel", "The floating panel", icon("sliders"), {
+      hint: "over, not beside",
+      hintIc: icon("circle-info"),
+      stmt:
+        "The decision in hand, stated as a decision, with the tool that decision actually takes.",
+    }) +
+    U.p(
+      `Rails act on the view. A panel acts on <em>part of the subject</em>, and that is a different job with a different rule: it has to be readable at the same time as the thing it changes. Press <span class="gl">${icon(
+        "pen-to-square",
+      )}Editing</span> on <a href="#stage">the stage</a> and one appears over the frame&rsquo;s lower left.`,
+    ) +
+    U.p(
+      `A side inspector is the obvious alternative and it is worse for one measurable reason: a viewport wide enough to be worth having is wide enough that the panel and the subject are two glances apart, so the reader carries the value across the page in their head. Over the frame costs some of the subject; beside it costs the connection between the control and the thing controlled.`,
+    ) +
+    T.table({
+      fig: "Table 9",
+      caption: "Three rules a panel keeps that a rail does not have to",
+      cols: [{ h: "Rule" }, { h: "Because" }],
+      body:
+        row(
+          T.td("<strong>The head states the decision, not the encoding</strong>") +
+            T.td(
+              `An imperative with a subject &mdash; &ldquo;choose the tint for the Form plate&rdquo; &mdash; so a reader arriving cold knows what is being asked of them. <span class="mono">plate 2, tone p4</span> is what gets stored, which is a different sentence and not one anybody asked for.`,
+            ),
+        ) +
+        row(
+          T.td("<strong>The tool wears the value&rsquo;s own face</strong>") +
+            T.td(
+              `A colour is chosen from colours; a shape from shapes. A text field or a number is the right control only where the value genuinely has no other face, and reaching for one before that is how an editor ends up being a form about a picture.`,
+            ),
+        ) +
+        row(
+          T.td("<strong>Putting it away is a state, not a removal</strong>") +
+            T.td(
+              `Shutting it leaves a badge in the corner it left from, and leaves the plate in hand alone. A panel that closes to nothing cannot be reopened by a reader who did not see what opened it.`,
+            ),
+        ),
+      scope: "the contract &middot; every panel on a frame",
+      mark: {
+        ic: "circle-info",
+        label: "a panel is not a rail",
+        title:
+          "A rail acts on the view and is always available. A panel acts on one part of the subject, is up only while the frame can be edited, and can be put away.",
+      },
+    }) +
+    U.p(
+      `The swatches are the second rule made literal: the button <em>is</em> the colour, at the size of a word, carrying no text at all. The chosen one is ringed rather than filled darker &mdash; filling it would change the one property the reader is judging it by.`,
+    ) +
+    U.code(
+      `.dk-tone .band{display:block;width:30px;height:13px;border-radius:2px}
+.dk-tone[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent);
+  border-color:var(--accent)}`,
+      { lang: "tokens-extra.ts" },
+    ) +
+    U.noteBox({
+      kind: "caution",
+      title: "Shut and empty are not the same state",
+      body: `Two variables, not one. The panel being down and the plate in hand are independent, so shutting the panel does not drop what was being worked on &mdash; otherwise reopening it lands the reader somewhere they did not leave. Same argument as the reset that must not put the layer rail back.`,
+    }) +
+    U.p(
+      `The panel is also where the read-only case is settled. A frame that cannot be edited keeps <strong>every rail</strong> &mdash; looking is something a reader does too &mdash; and loses only the tool that writes. That is why the panel is bound to <span class="mono">editing</span> and nothing else is.`,
+    ) +
+    U.banner(
+      "warn",
+      `A control should say what it is about to do, not what is currently true. The label on a toggle reads &ldquo;Stop the plates breathing&rdquo;, not &ldquo;animation: on&rdquo; &mdash; plain English, verb first, and it changes with the state.`,
+    ) +
+    /* ----------------------------------------------------------------- 11 */
+    U.h2(11, "budget", "What it costs", icon("chart-line"), {
       hint: "2 draws/square",
       hintIc: icon("circle-info"),
       stmt:
