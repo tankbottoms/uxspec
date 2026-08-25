@@ -170,6 +170,11 @@ export function glabelCell(
   n: number,
   labW: string,
   m: GroupMeta,
+  /* Attributes for the ribbon itself, not the cell. A rail that opens something
+     has to be the thing clicked -- the cell is mostly empty space beside a 22px
+     ribbon, and an affordance on the cell is an affordance the reader misses by
+     ten pixels. Empty by default: most rails open nothing. */
+  ribbon = "",
 ): string {
   const f = fit(m.name, n);
   return (
@@ -178,7 +183,7 @@ export function glabelCell(
     } title="${esc(k)}">` +
     `<span class="gstack"><span class="badge vert ${labW} ${m.tone}${
       f.sm ? " sm" : ""
-    }">` +
+    }"${ribbon ? " " + ribbon : ""}>` +
     `<span class="gm" role="img" aria-label="${esc(k)}">${icon(m.ic)}</span>` +
     `<span class="gn">${esc(m.name)}</span></span></span></td>`
   );

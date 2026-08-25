@@ -6,7 +6,7 @@
  * renderer inherits the markup and not the exception, and ships ragged.
  */
 import { esc } from "./html.ts";
-import { faviconDataUri, icon } from "./icons.ts";
+import { faviconDataUri, icon, SHEET_MARK } from "./icons.ts";
 import { CSS } from "./tokens.ts";
 import { CSS_EXTRA } from "./tokens-extra.ts";
 
@@ -122,7 +122,8 @@ export function head(title: string, extraMeta = ""): string {
     // default first. It is three lines and it runs inline on purpose.
     `<script>(function(){var t=localStorage.getItem('uxTheme');` +
     `if(t&&t!=='auto'){document.documentElement.setAttribute('data-theme',t);}})();</script>` +
-    `<style>${CSS}${CSS_EXTRA}</style></head><body>`
+    `<style>${CSS}${CSS_EXTRA}</style></head><body>` +
+    SHEET_MARK
   );
 }
 

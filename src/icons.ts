@@ -82,13 +82,51 @@ const ICONS = {
   "arrows-up-down-left-right": { vb: "0 0 512 512", d: "M173.7 410.3c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3l88 88c3.1 3.1 8.2 3.1 11.3 0l88-88c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L264 484.7V264H484.7l-74.3 74.3c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0l88-88c3.1-3.1 3.1-8.2 0-11.3l-88-88c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3L484.7 248H264V27.3l74.3 74.3c3.1 3.1 8.2 3.1 11.3 0s3.1-8.2 0-11.3l-88-88c-3.1-3.1-8.2-3.1-11.3 0l-88 88c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0L248 27.3V248H27.3l74.3-74.3c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0l-88 88c-3.1 3.1-3.1 8.2 0 11.3l88 88c3.1 3.1 8.2 3.1 11.3 0s3.1-8.2 0-11.3L27.3 264H248l0 220.7-74.3-74.3z" },
 } satisfies Record<string, Icon>;
 
-/** One inline SVG glyph, sized by the surrounding font-size and inheriting its colour. */
+/**
+ * One glyph, sized by the surrounding font-size and inheriting its colour.
+ *
+ * A reference into the sheet at the top of the document rather than a copy of
+ * the path. These glyphs repeat: a table of fifty rows with a method column has
+ * fifty of them, and the drill has several hundred across its panels. Inlined,
+ * that was three hundred kilobytes of the same dozen outlines written over and
+ * over -- on a single-file page reviewed from a phone, which is what this one
+ * is, the copies are the whole difference between fast and not.
+ *
+ * `currentColor` still resolves at the use site, so the colour still comes from
+ * whatever the glyph is sitting inside. That is the property worth keeping and
+ * the reason a symbol sheet is the right shape here rather than a font.
+ */
 export function icon(name: string, cls = ""): string {
   const g = (ICONS as Record<string, { vb: string; d: string } | undefined>)[name];
   if (g === undefined) return "";
   return (
-    `<svg class="ic${cls === "" ? "" : ` ${cls}`}" viewBox="${g.vb}" aria-hidden="true" focusable="false">` +
-    `<path fill="currentColor" d="${g.d}"></path></svg>`
+    `<svg class="ic${cls === "" ? "" : ` ${cls}`}" aria-hidden="true" focusable="false">` +
+    `<use href="#i-${name}"></use></svg>`
+  );
+}
+
+/**
+ * The sheet itself, emitted once at the top of the body.
+ *
+ * Hidden with a zero-size absolutely-positioned element rather than
+ * `display:none`: a `display:none` sheet is not rendered, and in some engines a
+ * `<use>` pointing into one that was never rendered resolves to nothing. The
+ * failure is silent and total -- every glyph on the page disappears -- so the
+ * hiding is done the way that cannot cause it.
+ */
+export function iconSheet(used?: ReadonlySet<string>): string {
+  const syms = Object.entries(ICONS)
+    .filter(([k]) => used === undefined || used.has(k))
+    .map(
+      ([k, g]) =>
+        `<symbol id="i-${k}" viewBox="${g.vb}">` +
+        `<path fill="currentColor" d="${g.d}"></path></symbol>`,
+    )
+    .join("");
+  return (
+    `<svg aria-hidden="true" focusable="false" width="0" height="0" ` +
+    `style="position:absolute;width:0;height:0;overflow:hidden">` +
+    `<defs>${syms}</defs></svg>`
   );
 }
 
@@ -128,3 +166,22 @@ export function glyph(name: string, x: number, y: number, size: number, fill: st
   const dy = y - (h * k) / 2;
   return `<g transform="translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(${k.toFixed(4)})"><path fill="${fill}" d="${g.d}"></path></g>`;
 }
+
+/**
+ * The sheet, cut down to what a finished page actually references.
+ *
+ * Run over the assembled HTML rather than tracked while building it: a counter
+ * threaded through every call site is a counter that goes wrong the first time
+ * someone emits a glyph from a new module and forgets it. The document is the
+ * record of what the document uses, so the document is what gets read.
+ */
+export function fitSheet(html: string): string {
+  const used = new Set<string>();
+  const re = /href="#i-([a-z0-9-]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) used.add(m[1] as string);
+  return html.replace(SHEET_MARK, iconSheet(used));
+}
+
+/** Where the sheet goes. Replaced once, after the page is whole. */
+export const SHEET_MARK = "<!--icon-sheet-->";

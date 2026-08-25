@@ -266,6 +266,55 @@ document.querySelectorAll("tr.clickable[data-row]").forEach(function(tr){
   });
 });
 
+/* ------------------------------------------------------------- the drill */
+/* Four depths behind one dialog. The panels are all on the page already, keyed
+   by their path, so opening a depth is choosing which key is not hidden -- the
+   same trick as the inspector, extended by the fact that the key is a path and
+   therefore also the crumb rail and also the back button. There is no stack
+   variable: the path IS the state, and it is in the DOM. A stack kept beside the
+   DOM is a second copy of the truth, and the two disagree the first time someone
+   closes the dialog from the corner instead of the crumb. */
+var drDlg=document.getElementById("drill-dialog");
+var drOpen=function(key){
+  if(!drDlg) return;
+  var found=false;
+  drDlg.querySelectorAll(".dp").forEach(function(p){
+    var on=p.getAttribute("data-key")===key;
+    p.hidden=!on;
+    if(on) found=true;
+  });
+  if(!found) return;
+  if(drDlg.showModal && !drDlg.open) drDlg.showModal();
+  drDlg.scrollTop=0;
+};
+if(drDlg){
+  /* One listener on the dialog rather than one per row. There are several
+     hundred rows across the panels and all of them do the same thing with a
+     different string; binding each would be several hundred closures kept alive
+     for a control the reader may never open. */
+  drDlg.addEventListener("click",function(e){
+    var t=e.target.closest?e.target.closest("[data-go]"):null;
+    if(!t||!drDlg.contains(t)) return;
+    e.preventDefault(); drOpen(t.getAttribute("data-go"));
+  });
+  drDlg.addEventListener("keydown",function(e){
+    if(e.key!=="Enter"&&e.key!==" ") return;
+    var t=e.target.closest?e.target.closest("tr.dr[data-go]"):null;
+    if(!t) return;
+    e.preventDefault(); drOpen(t.getAttribute("data-go"));
+  });
+}
+/* The way in, from the table on the page. Group rows and member rows both open
+   the drill; they just open it at different depths, which is the whole point of
+   keying panels by path rather than by row index. */
+document.querySelectorAll("[data-drill]").forEach(function(el){
+  var go=function(e){ e.preventDefault(); drOpen(el.getAttribute("data-drill")); };
+  el.addEventListener("click",go);
+  el.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){ go(e); }
+  });
+});
+
 /* The picker. A button, a panel of buttons, and a hidden input holding the
    value -- so everything downstream still reads .value and hears change. */
 var closePickers=function(){

@@ -297,6 +297,43 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    invisible, and a control that gives no sign it worked gets pressed twice. */
 .heat-ctl button.kept svg{fill:var(--stroke-mint)}
 
+/* ----------------------------------------------------------- the drill */
+/* The crumb rail sits in the corner the reader looks at first when an overlay
+   opens over something they were already reading, and it is boxed because at
+   this size an unboxed row of small words reads as a sentence rather than as a
+   control. Its own top-left corner is the dialog's, less the padding -- the box
+   is the first thing in the panel, not a thing floated over it, so it cannot
+   collide with the close control on the opposite corner. */
+.crumbs{display:inline-flex;align-items:center;gap:5px;margin:0 0 10px;
+  padding:3px 7px;border:1px solid var(--ink);border-radius:var(--radius-sm);
+  background:var(--paper);font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.06em;text-transform:uppercase;max-width:100%;flex-wrap:wrap}
+.crumbs .cb{border:0;background:none;padding:0;font:inherit;letter-spacing:inherit;
+  color:var(--ink-muted);cursor:pointer;text-transform:inherit}
+.crumbs .cb:hover{color:var(--ink);text-decoration:underline}
+/* The last crumb is where the reader is. It is not a button, because a control
+   that returns you to where you already are teaches that the rail does nothing. */
+.crumbs .cb.on{color:var(--ink);font-weight:600;cursor:default}
+.crumbs .cs{display:inline-flex;color:var(--ink-faint)}
+.crumbs .cs .ic{width:7px;height:7px}
+/* A row that opens a depth. Same affordance as tr.clickable, kept separate
+   because these live inside the overlay and the overlay is set one step smaller
+   than the page. */
+dialog.rows.drill tr.dr{cursor:pointer}
+dialog.rows.drill tr.dr:hover > td{background:var(--paper-alt)}
+dialog.rows.drill tr.dr:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+/* A glyph and a word, and no box. Inside a row the box is the thing that reads
+   as a value -- a badge in a cell of a table made of badges is another badge to
+   compare, and the method of a charge is not something anyone compares. The
+   glyph carries it and the word says it. */
+.gl{display:inline-flex;align-items:center;gap:5px;color:var(--ink-muted);white-space:nowrap}
+.gl .ic{width:10px;height:10px;flex:0 0 auto;opacity:.9}
+/* The record. Two columns, the labels quiet, the values at the panel's weight. */
+dl.pt{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;
+  margin:0 0 12px;font-size:10px}
+dl.pt dt{color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;font-size:9px}
+dl.pt dd{margin:0;color:var(--ink)}
+
 /* ------------------------------------------------------- history column */
 /* A history column is one shape wide and must not be allowed to set the row
    height, so the cell is sized and the SVG fills it. preserveAspectRatio is

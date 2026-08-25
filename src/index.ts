@@ -12,6 +12,7 @@
  * usable review of what a change actually did to the page.
  */
 import { head, nav, foot } from "./shell.ts";
+import { fitSheet } from "./icons.ts";
 import { CLIENT } from "./client.ts";
 import { VIEWER_JS } from "./viewer.ts";
 import { specBody } from "./pages/spec.ts";
@@ -82,8 +83,13 @@ const pages: { file: string; nav: string; html: string }[] = [
 
 await Bun.$`mkdir -p dist/vendor`.quiet();
 for (const p of pages) {
-  await Bun.write(`dist/${p.file}`, p.html);
-  console.log(`  dist/${p.file}  ${(p.html.length / 1024).toFixed(1)} KB`);
+  /* The glyph sheet is cut to the page last, once the page is whole: the viewer
+     uses a dozen outlines and the spec uses all of them, and shipping the whole
+     sheet to both put twenty-odd kilobytes of unreferenced paths on the smaller
+     one. */
+  const html = fitSheet(p.html);
+  await Bun.write(`dist/${p.file}`, html);
+  console.log(`  dist/${p.file}  ${(html.length / 1024).toFixed(1)} KB`);
 }
 
 // Vendored three.js is copied rather than symlinked so `dist/` is a complete,

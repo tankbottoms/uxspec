@@ -14,6 +14,7 @@ import * as S from "../spark.ts";
 import * as W from "../wireframes.ts";
 import { stage } from "../viewer.ts";
 import * as D from "../dialogs.ts";
+import * as DR from "../drill.ts";
 import { erd, type Entity } from "../schema.ts";
 import { sparkline, stackedBar, legend, ppBar, dmy, type Seg } from "../charts.ts";
 import { toneAt, typeClass, strokeOf, TYPE_TONE } from "../palette.ts";
@@ -54,6 +55,46 @@ const DRILL = GROUPS.map((g) => DATA.find((r) => r.group === g)).filter(
   (r): r is Row => r !== undefined,
 );
 const KINDS = [...new Set(DATA.map((r) => r.kind))];
+
+/* The drill's own book. Four groups deep enough to be worth opening and shallow
+   enough that every panel behind them can be rendered: thirteen accounts, five
+   charges each, sixty-five records at the bottom. */
+const DRILL_BLOCKS = DR.blocks([
+  {
+    key: "Depository", name: "Depository", ic: "building-columns", tone: "p1",
+    accts: [
+      ["Everyday", "Checking", "wallet", 41_200],
+      ["Reserve", "Savings", "piggy-bank", 34_890],
+      ["Payroll", "Checking", "wallet", 28_580],
+      ["Escrow", "Held", "scale-balanced", 12_240],
+    ],
+  },
+  {
+    key: "CreditCard", name: "Credit card", ic: "bag-shopping", tone: "p4",
+    accts: [
+      ["Travel", "Revolving", "plane", -2_140],
+      ["Household", "Revolving", "house", -2_955],
+      ["Fuel", "Revolving", "gas-pump", -3_770],
+    ],
+  },
+  {
+    key: "Investment", name: "Investment", ic: "chart-line", tone: "p7",
+    accts: [
+      ["Brokerage", "Taxable", "chart-line", 128_400],
+      ["Roth", "Retirement", "book", 56_900],
+      ["Saltmarsh", "Managed", "briefcase", 4_262],
+    ],
+  },
+  {
+    key: "Crypto", name: "Deferred compensation", ic: "bitcoin-sign", tone: "p10",
+    accts: [
+      ["Vantage", "Custodial", "vault", 7_912],
+      ["Kestrel", "Self-custody", "link", 19_501],
+      ["Ninebark", "Gnosis Safe", "layer-group", 5_189],
+    ],
+  },
+]);
+const DRILL_RAIL = T.railW(DRILL_BLOCKS.map((b) => b.name));
 
 /* An invented schema, laid out by hand. Four entities is under the size where a
    layout algorithm earns its keep, and a hand placement is stable across builds
@@ -937,6 +978,63 @@ function overlays(): string {
       ).join(""),
     }) +
     D.inspector("row-dialog", DRILL, GNAME) +
+    U.h3("Filtering down to the data point", "levels") +
+    U.p(
+      `One depth answers "which accounts". It does not answer which charges, or which charge, or where that number came from &mdash; and a reader who has opened a subtotal is usually on their way to the last of those. Each of the four is the same view filtered one step further, so they are one overlay with a path rather than four overlays that happen to be about the same money.`,
+    ) +
+    U.p(
+      `The path is the state, and it is in the corner. Every panel on the page carries its own key &mdash; <span class="mono">g|Investment</span>, <span class="mono">a|Investment|Roth</span>, <span class="mono">t|Investment|Roth|3</span> &mdash; and opening a depth is deciding which key is not hidden. Nothing is built by script, so there is one set of escaping rules on the page, and no stack variable kept beside the DOM to disagree with it the first time someone closes the dialog from the corner instead of the crumb.`,
+    ) +
+    U.p(
+      `Both kinds of row on the table below open it, at different depths: the group label enters at its composition, a member row enters at its charges. That is only possible because the panels are keyed by path and not by row index.`,
+    ) +
+    T.table({
+      fig: "TBL. 5",
+      caption:
+        "Four groups. The rail opens the composition; a row opens that account's charges; a charge opens the record behind it.",
+      cols: [
+        { h: "Group" },
+        { h: "Account" },
+        { h: "Kind" },
+        { h: "Balance", cls: "n" },
+      ],
+      body: DRILL_BLOCKS.map((b) =>
+        b.accts
+          .map(
+            (a, j) =>
+              `<tr>` +
+              (j === 0
+                ? T.glabelCell(
+                    b.name,
+                    b.accts.length,
+                    DRILL_RAIL,
+                    { name: b.name, tone: b.tone, ic: b.ic },
+                    `data-drill="g|${esc(b.key)}" role="button" tabindex="0"`,
+                  )
+                : "") +
+              `<td><a class="dl" href="#levels" data-drill="a|${esc(b.key)}|${esc(a.name)}">${esc(a.name)}</a></td>` +
+              `<td><span class="gl">${icon(a.kic)}${esc(a.kind)}</span></td>` +
+              `<td class="n">${usdA(a.v)}</td></tr>`,
+          )
+          .join(""),
+      ).join(""),
+      grouped: true,
+    }) +
+    U.noteBox({
+      kind: "",
+      title: "The last crumb is not a button",
+      body: `A control that returns the reader to where they already are teaches that the rail does nothing, and the next time they want to go up two levels they will reach for the close box instead.`,
+    }) +
+    DR.drill("drill-dialog", DRILL_BLOCKS) +
+    U.code(
+      `// drill.ts \u2014 the key is the path, and the path is the crumb rail
+panel("t|Investment|Roth|3", [group, account, record], ...)
+
+// Both row kinds open it; they differ only in where they enter.
+glabelCell(name, n, railW, meta, 'data-drill="g|Investment"')
+<a class="dl" data-drill="a|Investment|Roth">`,
+      { lang: "DRILL.TS" },
+    ) +
     U.h3("Editing without the platform's furniture", "picker") +
     U.p(
       `Editing a row means choosing from a list, and a <span class="mono">&lt;select&gt;</span> hands that list to the operating system. Beside a dialog set in 10px mono, the macOS popup arrives in 13px Helvetica: it is the one control on the page that does not look like the page, and no amount of styling on the closed control fixes the open one. So the list is drawn here &mdash; a button, a panel of buttons, and a hidden input holding the value. Everything downstream still reads <span class="mono">.value</span> and still hears <span class="mono">change</span>, which is the part worth protecting.`,
