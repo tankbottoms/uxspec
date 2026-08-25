@@ -91,7 +91,7 @@ function tool(
     (o.on === undefined ? "" : ` aria-pressed="${o.on}"`) +
     (o.off === true ? " disabled" : "") +
     ` aria-label="${esc(o.name)}">` +
-    `<span class="badge w3 idle">${icon(o.ic)}</span></button>`
+    `<span class="badge w3 bare">${icon(o.ic)}</span></button>`
   );
 }
 
@@ -160,7 +160,7 @@ function layerRail(): string {
       return (
         `<button type="button" class="vt" data-layer="${esc(p.k)}" aria-pressed="true"` +
         ` aria-label="${esc(p.name)}">` +
-        `<span class="badge w3 ${p.tone}">${icon("layer-group")}</span></button>`
+        `<span class="badge w3 bare ${p.tone}">${icon("layer-group")}</span></button>`
       );
     }).join("") +
     `</div>`;
@@ -302,23 +302,75 @@ function frameDock(): string {
   );
 }
 
-/** The circle-i, and the legend it raises.
+/** Where each cluster sits on the frame, for the wireframe. Keyed by the name
+ *  the cluster registered, so a cluster that moves has to move here too. */
+const POS: Record<string, { x: number; y: number; w: number; h: number }> = {
+  Frame: { x: 138, y: 7, w: 94, h: 17 },
+  Camera: { x: 8, y: 42, w: 17, h: 56 },
+  Layers: { x: 215, y: 42, w: 17, h: 56 },
+  Mode: { x: 8, y: 124, w: 64, h: 17 },
+  Spread: { x: 92, y: 124, w: 50, h: 17 },
+};
+
+/**
+ * The wireframe. Not a screenshot and not a diagram of the subject: an outline
+ * of the frame itself with every cluster drawn where it actually docks.
  *
- * A checkbox and two labels, so help mode is a real state in the markup and
- * survives scripting being off -- the numbers and the legend are the one part
- * of this frame that has to work in the still, because the still is exactly
- * where a reader has the least idea what they are looking at.
+ * This is the half a legend cannot do. A list can say "Camera, left rail"; it
+ * cannot answer "which of the two columns is the left rail" for a reader who
+ * has not yet looked away from the middle of the picture. The map answers that
+ * in one glance and then the numbered rows say what each one owns.
  *
- * Per tile's rule, the tour holds normally-hidden controls out for as long as
- * it lasts and puts them back afterwards, without switching any of them: a
- * reader who opens the help and closes it again must find the frame in the
- * state they left it, or the help has edited their work.
+ * No <style> element inside the svg -- an inline svg style is document-global.
+ * Everything here is either an attribute or a rule scoped to `.hl-wire`.
+ */
+function helpWire(): string {
+  const boxes = REG.map((g) => {
+    const p = POS[g.name];
+    if (!p) return "";
+    return (
+      `<g class="b">` +
+      `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="3"></rect>` +
+      `<circle class="n" cx="${p.x + 1}" cy="${p.y + 1}" r="6.5"></circle>` +
+      `<text x="${p.x + 1}" y="${p.y + 3.6}" text-anchor="middle">${g.n}</text>` +
+      `</g>`
+    );
+  }).join("");
+  return (
+    `<svg class="hl-wire" viewBox="0 0 240 150" width="240" height="150"` +
+    ` role="img" aria-label="A map of the frame: five clusters, drawn where they dock">` +
+    `<rect class="fr" x="2" y="2" width="236" height="146" rx="4"></rect>` +
+    `<rect class="st" x="30" y="30" width="180" height="88" rx="2"></rect>` +
+    `<rect class="nm" x="8" y="7" width="46" height="17" rx="3"></rect>` +
+    `<rect class="nm" x="180" y="124" width="52" height="17" rx="3"></rect>` +
+    boxes +
+    `</svg>`
+  );
+}
+
+/** The circle-i, as a three-state cycle rather than a switch.
+ *
+ * Off, then numbers, then the map. The middle state is the one that was
+ * missing: a reader who wants to know what the fourth button does needs the
+ * numbers over the live frame, not a card sitting on top of the thing they are
+ * asking about. So the first press changes nothing except that every cluster
+ * grows a number, and the controls keep working underneath it.
+ *
+ * Three radios and three labels, each pointing at the next state, with only the
+ * current state's label displayed. It costs one more input than a checkbox and
+ * it means the cycle runs with scripting off, which is where a still frame with
+ * no captions is hardest to read.
  */
 function helpMark(): string {
+  const mk = (to: string, cls: string, label: string, ic: string): string =>
+    `<label class="vp-helpmk ${cls}" for="vw-hm${to}" title="${esc(label)}"` +
+    ` aria-label="${esc(label)}">${icon(ic)}</label>`;
   return (
-    `<label class="vp-helpmk" for="vw-helpck" title="What am I looking at"` +
-    ` aria-label="Help mode -- number every cluster and say what it owns">` +
-    `${icon("circle-info")}</label>`
+    `<span class="vp-helpmks">` +
+    mk("1", "m0", "Number the clusters", "circle-info") +
+    mk("2", "m1", "Show the map of the frame", "circle-info") +
+    mk("0", "m2", "Put the help away", "circle-info") +
+    `</span>`
   );
 }
 
@@ -332,11 +384,12 @@ function helpLegend(): string {
   ).join("");
   return (
     `<div class="vp-help" id="vw-help">` +
-    `<label class="scrim" for="vw-helpck" aria-hidden="true"></label>` +
+    `<label class="scrim" for="vw-hm0" aria-hidden="true"></label>` +
     `<div class="hl-card" role="group" aria-label="What each cluster owns">` +
     `<div class="hl-hd"><span>${REG.length} clusters, and the axis each one owns</span>` +
-    `<label class="dk-shut" for="vw-helpck" aria-label="Put the numbers away"` +
-    ` title="Put the numbers away">${icon("xmark")}</label></div>` +
+    `<label class="dk-shut" for="vw-hm0" aria-label="Put the help away"` +
+    ` title="Put the help away">${icon("xmark")}</label></div>` +
+    `<div class="hl-map">${helpWire()}</div>` +
     `<ol class="hl-rows">${rows}</ol>` +
     `<p class="hl-ft">The numbers are furniture, not controls. Nothing is pressed while ` +
     `they are up, and closing them leaves the frame exactly as it was.</p>` +
@@ -482,7 +535,9 @@ export function stage(): string {
   const sp = spreadDock();
   return (
     `<div class="vp vw has-cap">`
-    + `<input type="checkbox" class="vp-helpck" id="vw-helpck">` +
+    + `<input type="radio" name="vw-hm" class="vp-hm h0" id="vw-hm0" checked>` +
+      `<input type="radio" name="vw-hm" class="vp-hm h1" id="vw-hm1">` +
+      `<input type="radio" name="vw-hm" class="vp-hm h2" id="vw-hm2">` +
     `<div class="vp-body"><div class="stage" id="gl-stage">${stageFallback()}</div></div>` +
     `<div class="vp-top"><div class="l">` +
     `<span class="vp-name"><span class="badge auto hollow" id="vw-mode">${icon(
@@ -758,7 +813,7 @@ function start(host){
     // that disagrees with the thing it is a legend for, and it is believed.
     document.querySelectorAll("[data-layer]").forEach((b, i) => {
       const g = b.querySelector(".badge");
-      if (g) g.className = "badge w3 " + SW[(baseAt + i * 3) % 12];
+      if (g) g.className = "badge w3 bare " + SW[(baseAt + i * 3) % 12];
     });
 
     // The panel is an editor's control, so it is up only while the frame is

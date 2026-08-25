@@ -1411,7 +1411,6 @@ footer strong { color: var(--ink-muted); }
 /* A rail is the same plate as any other cluster, turned. It does not get its
    own background, padding or radius -- two plate treatments on one frame is
    how a viewport starts looking like two applications. */
-.vp-btns.col{flex-direction:column;align-items:center;gap:var(--vp-gap);padding:4px}
 /* The rail's own position, under its buttons. It is not a badge: a badge here
    would be a sixth pressable-looking thing in a column of five real ones. */
 .vp-rung{font-family:var(--font-mono);font-size:8px;letter-spacing:.04em;
@@ -1432,33 +1431,88 @@ footer strong { color: var(--ink-muted); }
    about what they are looking at, and the least helpful place to lose the help.
    Nothing is switched while the numbers are up, so closing them leaves the
    frame in the state the reader left it. */
-.vp-helpck{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%);
+/* --- The controls themselves ------------------------------------------
+   A glyph, and nothing behind it. A filled badge is how this site says
+   "this is a value with a state" -- a tool is not that, and forty filled
+   lozenges scattered over a picture read as data laid on the subject.
+   Colour is kept for the one place on the frame where it means something:
+   the layer rail, where the tint IS the plate's identity. There the fill
+   goes and the colour stays, on the mark, exactly as it does on tile. */
+.vp .badge.bare{background:none;border-color:transparent;box-shadow:none}
+.vp [data-act] .badge,.vp .vp-pick > .mk .badge{background:none;
+  border-color:transparent;color:var(--ink-muted)}
+/* A glyph with nothing behind it has to carry the whole control, so it is
+   drawn a size up from the mark that used to sit inside a filled badge. */
+.vp-btns .badge .ic,.vp-helpmk .ic{width:12px;height:12px}
+.vp .vt:hover .badge,.vp .vp-pick > .mk:hover .badge{color:var(--ink)}
+.vp .vt[aria-pressed="true"] .badge{color:var(--accent)}
+.vp .vt[disabled]{opacity:.34;cursor:default}
+.vp .vp-pick > input:checked ~ .mk .badge{color:var(--accent)}
+/* One outline round the cluster, hairlines between the tools. Adjacent
+   controls that act on one axis are one object; five separately bordered
+   pills say five axes and make the reader count them to find out. */
+.vp-btns{display:inline-flex;align-items:center;gap:0;padding:0;
+  background:var(--tip-paper);border:1px solid var(--rule-soft);
+  border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.10);overflow:hidden}
+.vp-btns.col{flex-direction:column}
+.vp-btns > * + *{border-left:1px solid var(--rule-soft)}
+.vp-btns.col > * + *{border-left:0;border-top:1px solid var(--rule-soft)}
+.vp-btns .vt,.vp-btns .vp-pick > .mk{display:inline-flex;align-items:center;
+  justify-content:center;width:var(--vp-gl);height:var(--vp-gl)}
+.vp-btns .vt:hover,.vp-btns .vp-pick > .mk:hover{background:var(--paper-alt)}
+.vp-btns .vp-rung{padding:0 5px}
+/* --- Help, in two stages ----------------------------------------------
+   Off, numbers, map. The middle stage is the one a checkbox could not
+   express: numbers over the live frame, with every control still working,
+   for the reader whose question is "which of these is the fourth one".
+   Only the second press raises a card, because only then is the question
+   about the frame as a whole rather than about a control in it. */
+.vp-hm{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%);
   pointer-events:none}
-.vp-helpmk{flex:none;display:inline-flex;align-items:center;justify-content:center;
+.vp-helpmks{flex:none;display:inline-flex}
+.vp-helpmk{display:none;align-items:center;justify-content:center;
   width:var(--vp-gl);height:var(--vp-gl);border-radius:50%;cursor:pointer;
   background:var(--tip-paper);border:1px solid var(--rule-soft);
   box-shadow:0 1px 4px rgba(0,0,0,.10);color:var(--ink-soft);line-height:0}
+.h0:checked ~ .vp-top .vp-helpmk.m0,
+.h1:checked ~ .vp-top .vp-helpmk.m1,
+.h2:checked ~ .vp-top .vp-helpmk.m2{display:inline-flex}
 .vp-helpmk:hover{color:var(--ink);border-color:var(--ink-muted)}
-.vp-helpck:checked ~ .vp-top .vp-helpmk{color:var(--ink);border-color:var(--ink);
-  box-shadow:inset 0 0 0 1px var(--ink)}
-.vp-helpmk .ic{width:11px;height:11px}
+.vp-helpmk.m1,.vp-helpmk.m2{color:var(--accent);border-color:var(--accent)}
 /* The number sits on the cluster, not on each tool: five circles is a map,
-   fourteen is a second interface laid over the first. */
+   fourteen is a second interface laid over the first. Outlined, never
+   filled -- a solid disc is a badge, and a badge on a picture reads as a
+   value belonging to the picture rather than as a caption about the frame. */
 .vp-grp{position:relative;display:inline-flex}
-.hn{display:none;position:absolute;left:-6px;top:-6px;z-index:19;
-  width:15px;height:15px;border-radius:50%;background:var(--ink);
-  color:var(--paper);font-family:var(--font-mono);font-size:8.5px;
+.hn{display:none;position:absolute;left:-7px;top:-7px;z-index:19;
+  width:15px;height:15px;border-radius:50%;background:var(--tip-paper);
+  border:1px solid var(--ink-muted);color:var(--ink);
+  font-family:var(--font-mono);font-size:8.5px;
   align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
-.vp-helpck:checked ~ .vp-top .hn,.vp-helpck:checked ~ .vp-lm .hn,
-.vp-helpck:checked ~ .vp-rm .hn,.vp-helpck:checked ~ .vp-bot .hn{display:flex}
-/* Inert, not hidden. A reader counting clusters against the legend has to see
-   them where they really are, and must not switch one by pointing at it. */
-.vp-helpck:checked ~ .vp-top .vt,.vp-helpck:checked ~ .vp-lm .vt,
-.vp-helpck:checked ~ .vp-rm .vt,.vp-helpck:checked ~ .vp-bot .vt,
-.vp-helpck:checked ~ .vp-top .vp-pick > .mk{pointer-events:none}
+.h1:checked ~ .vp-top .hn,.h1:checked ~ .vp-lm .hn,
+.h1:checked ~ .vp-rm .hn,.h1:checked ~ .vp-bot .hn,
+.h2:checked ~ .vp-top .hn,.h2:checked ~ .vp-lm .hn,
+.h2:checked ~ .vp-rm .hn,.h2:checked ~ .vp-bot .hn{display:flex}
+/* Dust, not paint. While the numbers are up each cluster carries the
+   faintest wash so the eye can find the five of them against a moving
+   picture; pointing at one brings it up to a readable outline. */
+.h1:checked ~ .vp-top .vp-grp,.h1:checked ~ .vp-lm .vp-grp,
+.h1:checked ~ .vp-rm .vp-grp,.h1:checked ~ .vp-bot .vp-grp,
+.h2:checked ~ .vp-top .vp-grp,.h2:checked ~ .vp-lm .vp-grp,
+.h2:checked ~ .vp-rm .vp-grp,.h2:checked ~ .vp-bot .vp-grp{
+  border-radius:5px;box-shadow:0 0 0 3px var(--rule)}
+.h1:checked ~ .vp-top .vp-grp:hover,.h1:checked ~ .vp-lm .vp-grp:hover,
+.h1:checked ~ .vp-rm .vp-grp:hover,.h1:checked ~ .vp-bot .vp-grp:hover{
+  box-shadow:0 0 0 3px var(--accent)}
+.h1:checked ~ .vp-top .vp-grp:hover .hn,.h1:checked ~ .vp-lm .vp-grp:hover .hn,
+.h1:checked ~ .vp-rm .vp-grp:hover .hn,.h1:checked ~ .vp-bot .vp-grp:hover .hn{
+  border-color:var(--accent);color:var(--ink)}
+/* Stage one leaves every tool live. It is the whole point of having it:
+   the reader is reading the numbers in order to use the controls, not
+   instead of using them. Only the map, which covers the frame, is modal. */
 .vp-help{display:none;position:absolute;inset:0;z-index:17}
-.vp-helpck:checked ~ .vp-help{display:block}
-.vp-help > .scrim{position:absolute;inset:0;background:rgba(255,255,255,.60);
+.h2:checked ~ .vp-help{display:block}
+.vp-help > .scrim{position:absolute;inset:0;background:var(--paper-alt);opacity:.92;
   cursor:default}
 .hl-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:min(400px,calc(100% - 78px));max-height:calc(100% - 30px);overflow:auto;
@@ -1469,6 +1523,20 @@ footer strong { color: var(--ink-muted); }
   font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;
   text-transform:uppercase;color:var(--ink-soft)}
 .hl-hd > span{flex:1}
+/* The map. Scoped to .hl-wire, in the page stylesheet and not in an svg
+   <style>, which would be document-global and would restyle every rect on
+   the page that happens to share a class name. */
+.hl-map{display:flex;justify-content:center;padding:2px 0 9px;
+  border-bottom:1px solid var(--rule-soft);margin-bottom:9px}
+.hl-wire{max-width:100%;height:auto}
+.hl-wire rect{fill:none;stroke:var(--rule);stroke-width:1}
+.hl-wire rect.fr{stroke:var(--ink-muted)}
+.hl-wire rect.st{fill:var(--paper-alt);stroke:var(--rule-soft);
+  stroke-dasharray:3 3}
+.hl-wire .b rect{stroke:var(--ink-muted);fill:var(--paper-card)}
+.hl-wire circle.n{fill:var(--tip-paper);stroke:var(--ink-muted);stroke-width:1}
+.hl-wire text{font-family:var(--font-mono);font-size:8px;fill:var(--ink);
+  font-variant-numeric:tabular-nums}
 .hl-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .hl-rows li{display:flex;align-items:flex-start;gap:7px}
 .hl-rows .hn.s{display:flex;position:static;flex:none;margin-top:1px}
@@ -1586,13 +1654,8 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 /* Controls sit on their own plate rather than directly on the content: over a
    map or a rendered stage the badge border alone is not enough separation, and
    a translucent plate keeps the frame legible underneath. */
-.vp-btns{display:flex;align-items:center;gap:var(--vp-gap);padding:4px 5px;
-  background:var(--tip-paper);border:1px solid var(--rule-soft);
-  border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10)}
 .vp-btns button{background:none;border:0;padding:0;cursor:pointer;font:inherit}
 .vp-btns button .badge{cursor:pointer}
-.vp-btns button[aria-pressed="true"] .badge{border-color:var(--ink);color:var(--ink);
-  box-shadow:inset 0 0 0 1px var(--ink)}
 .vp-btns button:hover .badge{border-color:var(--ink-muted)}
 /* The readout. Bigger than the body face, not smaller: it is the one figure on
    the page meant to be read at a glance and from a distance. */

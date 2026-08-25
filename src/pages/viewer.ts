@@ -201,6 +201,24 @@ dis("sp+", stop === STOPS - 1);`,
       title: "The last layer cannot be put away",
       body: `Turning off every plate leaves an empty stage, which is a state with no way out that looks exactly like a crash. The layer rail refuses the last one standing. Refusing is better than confirming: a dialog to ask whether the reader meant to empty the frame is a dialog about a thing nobody wants.`,
     }) +
+    U.h3("A tool is a glyph, and the cluster is one object", "toolface") +
+    U.p(
+      `None of these marks carries a fill. A filled badge is how the rest of this site says <em>here is a value, and it has a state</em>; a tool is not a value, and thirty filled lozenges scattered over a picture read as data laid on the subject rather than as controls belonging to the frame. So the fill and the border go, the glyph stays, and the states are told in the mark itself: <span class="mono">ink-muted</span> at rest, ink under the pointer, <span class="mono">accent</span> when pressed.`,
+    ) +
+    U.p(
+      `The one exception is the layer rail, and it is the exception that proves the rule &mdash; there the colour <strong>is</strong> the plate's identity, so the fill goes and the tint stays, on the glyph. That is the same trade tile makes: a neutral frame, and the selected mark carrying the colour.`,
+    ) +
+    U.p(
+      `Tools that act on one axis are then drawn as <strong>one object</strong>: a single outline round the cluster with hairlines between the marks, not five separately bordered pills. Five outlines say five axes and leave the reader counting to find out otherwise; one outline says <em>this is the camera</em> and the divisions inside it say <em>and it has three hands</em>. It is also what makes the help numbers cheap &mdash; there are five things on the frame to number, because there are five objects.`,
+    ) +
+    U.code(
+      `.vp .badge.bare{background:none;border-color:transparent;box-shadow:none}
+.vp [data-act] .badge{color:var(--ink-muted)}
+.vp .vt[aria-pressed="true"] .badge{color:var(--accent)}
+.vp-btns{gap:0;border:1px solid var(--rule-soft);border-radius:4px}
+.vp-btns > * + *{border-left:1px solid var(--rule-soft)}`,
+      { lang: "tokens-extra.ts" },
+    ) +
     /* ------------------------------------------------------------------ 5 */
     U.h2(5, "glyphonly", "Help is a mode, not a hover", icon("circle-question"), {
       hint: "the circle-i, top right",
@@ -239,10 +257,26 @@ dis("sp+", stop === STOPS - 1);`,
       { lang: "viewer.ts" },
     ) +
     U.code(
-      `.hn{display:none;position:absolute;left:-6px;top:-6px;z-index:19}
-.vp-helpck:checked ~ .vp-lm .hn{display:flex}
-.vp-helpck:checked ~ .vp-lm .vt{pointer-events:none}`,
+      `.hn{display:none;position:absolute;left:-7px;top:-7px;z-index:19;
+  background:var(--tip-paper);border:1px solid var(--ink-muted)}
+.h1:checked ~ .vp-lm .hn,.h2:checked ~ .vp-lm .hn{display:flex}
+.h1:checked ~ .vp-lm .vp-grp{box-shadow:0 0 0 3px var(--rule)}`,
       { lang: "tokens-extra.ts" },
+    ) +
+    U.h3("Two presses, because there are two questions", "helpstages") +
+    U.p(
+      `The circle-i is a <strong>cycle of three</strong>, not a switch. Press it once and every cluster grows an outlined number over the live frame &mdash; nothing is covered, nothing is dimmed, and <strong>every control still works</strong>. That is the state for the reader whose question is <em>which of these is the fourth one</em>: they are reading the numbers in order to use the tools, not instead of using them.`,
+    ) +
+    U.p(
+      `Press it again and the map comes up over the frame. That is a different question &mdash; <em>what is this thing, and where does each part live</em> &mdash; and it is the one a list alone cannot answer. A legend can say &ldquo;Camera, left rail&rdquo;; it cannot tell a reader who has not yet looked away from the middle of the picture <em>which</em> of the two columns the left rail is. The wireframe answers that in a glance, and the numbered rows underneath then say what each cluster owns. A third press puts it away.`,
+    ) +
+    U.noteBox({
+      kind: "good",
+      title: "Outlined, never filled",
+      body: `A solid disc on this site is a badge, and a badge is a value that belongs to the thing it sits on. Fill the help numbers and they read as data about the subject rather than as a caption about the frame &mdash; so they are hollow, and while they are up each cluster carries the faintest wash to be findable against a moving picture, coming up to a readable outline only under the pointer.`,
+    }) +
+    U.p(
+      `Three radios and three labels, each pointing at the next state, with only the current state's label rendered. It costs one input more than a checkbox and it buys a cycle that runs with scripting off &mdash; which is the case that matters, because a still frame with no captions is exactly where a reader knows least.`,
     ) +
     /* ------------------------------------------------------------------ 6 */
     U.h2(6, "modes", "Editor and viewer are the same frame", icon("pen-to-square"), {
