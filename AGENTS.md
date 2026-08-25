@@ -109,6 +109,51 @@ the start and is only hidden once the renderer has produced a real frame — nev
 the other way round, or a slow module leaves a blank rectangle and a failed one
 leaves it forever.
 
+## Rules the code enforces and nothing wrote down
+
+Each of these is checked by a linter, a type, or a browser, and each was
+rediscovered at least once because it lived only in the code.
+
+**`viewport()` has five docks, not four.** `src/ui.ts:392` takes `topL`, `topR`,
+`bl`, `bc`, `br`. The bottom three are one row, so an empty centre dock still
+holds its space instead of letting its neighbours drift inward. Fill a dock with
+`vpBtns()` (`src/ui.ts:432`), which emits `.vp-btns` and takes its geometry from
+`.badge` — a control cluster that redeclares badge height is how a page ends up
+with two badge heights.
+
+**`tipMark()` is the in-table detail mark.** `src/html.ts:67`, signature
+`(body, {rt?, label?})`. A 10px circle-i after a value, costing the column no
+width, opening as many lines as the fact needs. Pass `rt: true` near the right
+edge of a table or the panel opens off the page. Checkbox-driven, so it works
+with scripting off.
+
+**`.seg-ctl` is a segmented control with no script.** `src/tokens-extra.ts:397`.
+Radio inputs are moved off-screen at 1×1px rather than `display:none`, because a
+hidden input is not focusable and the control loses the keyboard. The checked
+state is `input:checked + label .badge` — amber border, ink glyph. Never a fill.
+
+**`vector-effect="non-scaling-stroke"` is required on every spark line.**
+`src/spark.ts:242`. A spark is drawn in data coordinates and scaled to its box,
+so without it the viewBox transform scales the stroke too and a 1px hairline
+becomes a 4px slab on a wide chart — a line reads as a mark.
+
+**`aspect-ratio` with `max-height` shrinks the *width*.** The browser preserves
+the ratio by whichever axis binds first, so a `max-height` on a ratio-sized box
+narrows it instead of cropping it. A definite `width:100%` must sit alongside —
+see `.vw .vp-body` at `src/tokens-extra.ts:361`.
+
+**`.badge.bare` keeps the class's colour with no fill.** `src/tokens-extra.ts:134`.
+It is the layer rail's documented exception: the glyph stays tinted while the
+plate disappears. Any blanket pressed-state fill therefore needs `:not(.bare)`,
+as at line 148 — without it the rail's bare badges acquire a background the
+moment a sibling is pressed.
+
+**`[hidden]` loses to `display:flex`.** Setting a display value on an element
+overrides the UA's `[hidden]{display:none}`, so anything given a display must
+answer `[hidden]` explicitly — `.vp-tour[hidden]{display:none}` and friends at
+`src/tokens-extra.ts:302,307,909,1076`. A tour panel that will not close is this
+bug every time.
+
 ## Before you commit
 
 ```bash
