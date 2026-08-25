@@ -36,6 +36,7 @@
 import { esc } from "./html.ts";
 import { icon } from "./icons.ts";
 import { nextFig } from "./charts.ts";
+import * as U from "./ui.ts";
 
 /** The four plates, named. The stack is a tile: nine squares, drawn four times,
  *  each pass adding to what the pass below it left. The names are the point of
@@ -49,27 +50,65 @@ export const PLATES: readonly { k: string; name: string; tone: string }[] = [
 ];
 
 /**
- * A glyph-only control.
+ * A glyph-only control, and where its note went.
  *
- * Every one of these carries a name and a note, not a bare `title`. A rail of
- * unlabelled marks is readable to whoever built it and to nobody else, and the
- * browser's own tooltip arrives after a delay long enough that a reader who is
- * hesitating has already moved on. `.tip` is the page's own, opens on hover and
- * on focus, and says both what the control is called and what pressing it does.
+ * These carried a hover plate saying what each one was called and what pressing
+ * it did. That plate answered the question a reader asks about a control they
+ * are already pointing at -- and to answer it, it opened beside the rail, under
+ * the pointer, across the route to the control next to the one being read. A
+ * note that has to be dodged to reach the tool has made the tool worse.
+ *
+ * So the note came off the control. Every cluster registers itself as it is
+ * built and takes the next number, and the numbers are raised only in help
+ * mode: the circle-i in the top right brings them up together with one legend
+ * saying what each cluster owns and what is in it. Out of help mode there is
+ * nothing between the pointer and the glyph, which is the state the frame is in
+ * for all of the time any work is being done in it.
+ *
+ * This is the split tile draws. A tooltip answers a question about one control
+ * the reader has already found. It does not answer the one they ask first,
+ * standing back from the frame: what am I looking at, and where is the thing I
+ * want. Those are different questions and they want different furniture.
  */
+type Grp = {
+  n: number;
+  name: string;
+  owns: string;
+  tools: { name: string; note: string }[];
+};
+
+/** The clusters of this frame, in build order. `stage()` clears it per frame. */
+let REG: Grp[] = [];
+/** Tools built since the last cluster closed. `tool()` fills it, `grp()` drains it. */
+let PEND: { name: string; note: string }[] = [];
+
 function tool(
   o: { ic: string; name: string; note: string; act: string; on?: boolean; off?: boolean },
 ): string {
+  PEND.push({ name: o.name, note: o.note });
   return (
     `<button type="button" class="vt" data-act="${esc(o.act)}"` +
     (o.on === undefined ? "" : ` aria-pressed="${o.on}"`) +
     (o.off === true ? " disabled" : "") +
     ` aria-label="${esc(o.name)}">` +
-    `<span class="badge w3 idle">${icon(o.ic)}</span>` +
-    `<span class="tip-plate" role="tooltip">` +
-    `<span class="n">${esc(o.name)}</span><span class="d">${esc(o.note)}</span>` +
-    `</span></button>`
+    `<span class="badge w3 idle">${icon(o.ic)}</span></button>`
   );
+}
+
+/**
+ * Close a cluster: take the next number, and hang it on the cluster's plate.
+ *
+ * The number goes on the cluster and not on each tool. Fourteen circles over
+ * five plates is a second interface laid across the first one; five circles is
+ * a map. It is also the honest unit -- a dock owns an axis, and what a reader
+ * standing back has to learn is which axis lives where, not which of two
+ * adjacent buttons is the plus.
+ */
+function grp(name: string, owns: string, inner: string): string {
+  const n = REG.length + 1;
+  REG.push({ n, name, owns, tools: PEND });
+  PEND = [];
+  return `<span class="vp-grp"><span class="hn" aria-hidden="true">${n}</span>${inner}</span>`;
 }
 
 /** A rail: a column of tools on one plate, docked to a side of the frame. */
@@ -80,56 +119,61 @@ function rail(side: "lm" | "rm", label: string, inner: string): string {
 /** The camera rail. Distance only -- what the eye does, never what the subject
  *  does. See the note in `viewer.ts` on why the magnifier is reserved. */
 function cameraRail(): string {
+  const btns =
+    `<div class="vp-btns col">` +
+    tool({
+      ic: "magnifying-glass-plus",
+      name: "Closer",
+      note: "Moves the eye in one rung. Five rungs; the subject does not change size.",
+      act: "cam+",
+    }) +
+    tool({
+      ic: "magnifying-glass-minus",
+      name: "Further",
+      note: "Moves the eye out one rung.",
+      act: "cam-",
+    }) +
+    tool({
+      ic: "arrow-rotate-left",
+      name: "Home",
+      note: "Puts the eye back where the frame opened. Spread and layers are left alone.",
+      act: "cam0",
+    }) +
+    `<span class="vp-rung" id="vw-rung" aria-hidden="true">2/5</span>` +
+    `</div>`;
   return rail(
     "lm",
     "Camera",
-    `<div class="vp-btns col">` +
-      tool({
-        ic: "magnifying-glass-plus",
-        name: "Closer",
-        note: "Moves the eye in one rung. Five rungs; the subject does not change size.",
-        act: "cam+",
-      }) +
-      tool({
-        ic: "magnifying-glass-minus",
-        name: "Further",
-        note: "Moves the eye out one rung.",
-        act: "cam-",
-      }) +
-      tool({
-        ic: "arrow-rotate-left",
-        name: "Home",
-        note: "Puts the eye back where the frame opened. Spread and layers are left alone.",
-        act: "cam0",
-      }) +
-      `<span class="vp-rung" id="vw-rung" aria-hidden="true">2/5</span>` +
-      `</div>`,
+    grp("Camera", "Where the eye stands. Never the subject: nothing here resizes a plate.", btns),
   );
 }
 
 /** The layer rail. One badge per plate, pressed when the plate is standing. */
 function layerRail(): string {
+  const btns =
+    `<div class="vp-btns col">` +
+    PLATES.map((p, i) => {
+      PEND.push({
+        name: p.name,
+        note: `Plate ${i + 1} of ${PLATES.length}. Hidden plates keep their place in the stack.`,
+      });
+      return (
+        `<button type="button" class="vt" data-layer="${esc(p.k)}" aria-pressed="true"` +
+        ` aria-label="${esc(p.name)}">` +
+        `<span class="badge w3 ${p.tone}">${icon("layer-group")}</span></button>`
+      );
+    }).join("") +
+    `</div>`;
   return rail(
     "rm",
     "Layers",
-    `<div class="vp-btns col">` +
-      PLATES.map(
-        (p, i) =>
-          `<button type="button" class="vt" data-layer="${esc(p.k)}" aria-pressed="true"` +
-          ` aria-label="${esc(p.name)}">` +
-          `<span class="badge w3 ${p.tone}">${icon("layer-group")}</span>` +
-          `<span class="tip-plate lt" role="tooltip">` +
-          `<span class="n">${esc(p.name)}</span>` +
-          `<span class="d">Plate ${i + 1} of ${PLATES.length}. Hidden plates keep their place in the stack.</span>` +
-          `</span></button>`,
-      ).join("") +
-      `</div>`,
+    grp("Layers", "Which of the subject's plates are standing. One control per plate, named.", btns),
   );
 }
 
 /** Apart and together: the subject's own geometry, not the camera's. */
 function spreadDock(): string {
-  return (
+  const btns =
     `<div class="vp-btns">` +
     tool({
       ic: "minus",
@@ -145,13 +189,13 @@ function spreadDock(): string {
       note: "Lifts the plates one stop so what each one contributes can be seen on its own.",
       act: "sp+",
     }) +
-    `</div>`
-  );
+    `</div>`;
+  return grp("Spread", "The subject's own geometry, opened and closed. The eye does not move.", btns);
 }
 
 /** What the frame is doing, as distinct from what it is looking at. */
 function stateDock(): string {
-  return (
+  const btns =
     `<div class="vp-btns">` +
     tool({
       ic: "arrows-up-down-left-right",
@@ -174,7 +218,129 @@ function stateDock(): string {
       act: "edit",
       on: false,
     }) +
-    `</div>`
+    `</div>`;
+  return grp("Mode", "What the frame is doing, as distinct from what it is looking at.", btns);
+}
+
+/** The six shapes a plate can be cut to. Drawn, not named: a list reading
+ *  "hexagon, diamond, chamfer" asks the reader to picture six things and then
+ *  match them, when showing six things costs the same twenty pixels each. */
+const SHAPES: readonly { k: string; name: string; pts: string; on?: boolean }[] = [
+  { k: "sq", name: "Square", pts: "1,1 19,1 19,15 1,15" },
+  { k: "di", name: "Diamond", pts: "10,1 19,8 10,15 1,8", on: true },
+  { k: "hx", name: "Hex", pts: "5,1 15,1 19,8 15,15 5,15 1,8" },
+  { k: "ch", name: "Chamfer", pts: "4,1 19,1 19,12 16,15 1,15 1,4" },
+  { k: "tr", name: "Wedge", pts: "1,15 10,1 19,15" },
+  { k: "pl", name: "Plate", pts: "3,1 19,4 17,15 1,12" },
+];
+
+/** The identity swatches a frame may tint from. Twelve, because that is what
+ *  the stylesheet holds -- the picker does not get to invent a thirteenth. */
+const SWATCHES: readonly string[] = [
+  "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12",
+];
+
+/** Shape and tone, as popup pickers on the top rail rather than as two more
+ *  glyphs cycling silently. A control that cycles is fine where the reader can
+ *  see all of its states in the subject; shape and tone have twelve and six,
+ *  and cycling through them is a guessing game with a redraw after each guess. */
+function shapePick(): string {
+  const body =
+    `<span class="pk-grid sh">` +
+    SHAPES.map(
+      (s) =>
+        `<button type="button" class="pk-sw${s.on ? " on" : ""}" data-shape="${esc(s.k)}"` +
+        ` aria-pressed="${s.on ? "true" : "false"}" title="${esc(s.name)}"` +
+        ` aria-label="${esc("Cut the plates to " + s.name.toLowerCase())}">` +
+        `<svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true">` +
+        `<polygon points="${s.pts}" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon>` +
+        `</svg></button>`,
+    ).join("") +
+    `</span>`;
+  return U.vpPick({ mark: icon("layer-group"), title: "Plate shape", body, rt: true, w: "w3" });
+}
+
+function tonePick(): string {
+  const body =
+    `<span class="pk-grid tn">` +
+    SWATCHES.map(
+      (t, i) =>
+        `<button type="button" class="pk-sw${i === 3 ? " on" : ""}" data-tone="${esc(t)}"` +
+        ` aria-pressed="${i === 3 ? "true" : "false"}" title="${esc(t)}"` +
+        ` aria-label="${esc("Tint the plates from swatch " + t)}">` +
+        `<span class="badge w3 ${t}"></span></button>`,
+    ).join("") +
+    `</span>`;
+  return U.vpPick({ mark: icon("palette"), title: "Identity swatch", body, rt: true, w: "w3" });
+}
+
+/** The top-right cluster: what the frame does to the subject's presentation.
+ *  Fill and tone are cycles because the reader can see every state they have in
+ *  the subject itself; shape and swatch are pickers because they cannot. */
+function frameDock(): string {
+  const btns =
+    `<div class="vp-btns">` +
+    tool({
+      ic: "up-right-and-down-left-from-center",
+      name: "Fill",
+      note: "How much of the frame the subject takes. Three settings; it moves the subject, not the eye.",
+      act: "fill",
+    }) +
+    tool({
+      ic: "palette",
+      name: "Tone",
+      note: "Cycles the identity swatch the plates are tinted from. Read live out of the stylesheet.",
+      act: "tone",
+    }) +
+    shapePick() +
+    tonePick() +
+    `</div>`;
+  return grp(
+    "Frame",
+    "What the frame does to the subject's presentation. Never its geometry.",
+    btns,
+  );
+}
+
+/** The circle-i, and the legend it raises.
+ *
+ * A checkbox and two labels, so help mode is a real state in the markup and
+ * survives scripting being off -- the numbers and the legend are the one part
+ * of this frame that has to work in the still, because the still is exactly
+ * where a reader has the least idea what they are looking at.
+ *
+ * Per tile's rule, the tour holds normally-hidden controls out for as long as
+ * it lasts and puts them back afterwards, without switching any of them: a
+ * reader who opens the help and closes it again must find the frame in the
+ * state they left it, or the help has edited their work.
+ */
+function helpMark(): string {
+  return (
+    `<label class="vp-helpmk" for="vw-helpck" title="What am I looking at"` +
+    ` aria-label="Help mode -- number every cluster and say what it owns">` +
+    `${icon("circle-info")}</label>`
+  );
+}
+
+function helpLegend(): string {
+  const rows = REG.map(
+    (g) =>
+      `<li><span class="hn s" aria-hidden="true">${g.n}</span>` +
+      `<span class="t"><b>${esc(g.name)}</b>${esc(g.owns)}` +
+      `<span class="k">${g.tools.map((t) => esc(t.name)).join(" &middot; ")}</span>` +
+      `</span></li>`,
+  ).join("");
+  return (
+    `<div class="vp-help" id="vw-help">` +
+    `<label class="scrim" for="vw-helpck" aria-hidden="true"></label>` +
+    `<div class="hl-card" role="group" aria-label="What each cluster owns">` +
+    `<div class="hl-hd"><span>${REG.length} clusters, and the axis each one owns</span>` +
+    `<label class="dk-shut" for="vw-helpck" aria-label="Put the numbers away"` +
+    ` title="Put the numbers away">${icon("xmark")}</label></div>` +
+    `<ol class="hl-rows">${rows}</ol>` +
+    `<p class="hl-ft">The numbers are furniture, not controls. Nothing is pressed while ` +
+    `they are up, and closing them leaves the frame exactly as it was.</p>` +
+    `</div></div>`
   );
 }
 
@@ -260,7 +426,7 @@ function panel(): string {
       esc("Tint the plate in hand with " + pl.name + "'s swatch") +
       '" title="' +
       esc(pl.tone + " -- " + pl.name) +
-      '"><span class="band ' +
+      '"><span class="badge w6 ' +
       pl.tone +
       '"></span></button>',
   ).join("");
@@ -305,38 +471,37 @@ function panel(): string {
  * the site has, and the body is a live canvas rather than a still.
  */
 export function stage(): string {
+  /* One frame, one numbering. Cleared here rather than at module load so a
+     second frame on the same page starts at one and not at six. */
+  REG = [];
+  PEND = [];
+  const frm = frameDock();
+  const cam = cameraRail();
+  const lay = layerRail();
+  const st = stateDock();
+  const sp = spreadDock();
   return (
-    `<div class="vp vw has-cap">` +
+    `<div class="vp vw has-cap">`
+    + `<input type="checkbox" class="vp-helpck" id="vw-helpck">` +
     `<div class="vp-body"><div class="stage" id="gl-stage">${stageFallback()}</div></div>` +
     `<div class="vp-top"><div class="l">` +
     `<span class="vp-name"><span class="badge auto hollow" id="vw-mode">${icon(
       "eye",
     )}Viewing</span></span>` +
     `</div><div class="r">` +
-    `<div class="vp-btns">` +
-    tool({
-      ic: "up-right-and-down-left-from-center",
-      name: "Fill",
-      note: "How much of the frame the subject takes. Three settings; it moves the subject, not the eye.",
-      act: "fill",
-    }) +
-    tool({
-      ic: "palette",
-      name: "Tone",
-      note: "Cycles the identity swatch the plates are tinted from. Read live out of the stylesheet.",
-      act: "tone",
-    }) +
-    `</div>` +
+    frm +
+    helpMark() +
     `</div></div>` +
-    cameraRail() +
-    layerRail() +
-    `<div class="vp-bot"><div class="d bl">${stateDock()}</div>` +
-    `<div class="d bc">${spreadDock()}</div>` +
+    cam +
+    lay +
+    `<div class="vp-bot"><div class="d bl">${st}</div>` +
+    `<div class="d bc">${sp}</div>` +
     `<div class="d br">` +
     `<div class="vp-read"><span class="v" id="hud-fps">&mdash;</span>` +
     `<span class="u">fps</span><span class="s" id="hud-tri">&mdash;</span></div>` +
     `</div></div>` +
     panel() +
+    helpLegend() +
     `<div class="vp-cap">${nextFig()} &middot; four plates, one tile &middot; ` +
     `<span class="mono" id="vw-state">4 up &middot; apart 0 &middot; rung 2</span></div>` +
     `</div>`
@@ -413,7 +578,11 @@ function start(host){
   let stop = 0;
   let rung = 2;
   let fillAt = 1;
-  let toneAt = 0;
+  // The base identity swatch, and the shape the plates are cut to. Both are
+  // picked from a grid rather than cycled: the reader can see every state Fill
+  // has in the subject, and cannot see the other eleven swatches at all.
+  let baseAt = 3;      // p4 -- the Form plate's swatch, and the panel's default
+  let shape = "di";
   let spin = true;
   let wire = false;
   let editing = false;
@@ -422,13 +591,41 @@ function start(host){
   // reopening it lands the reader somewhere they did not leave.
   let hand = 1; let dockUp = true;  const up = [true, true, true, true];
 
-  const PLATE = [
-    { fill: "--pastel-aqua",  edge: "--stroke-aqua"  },
-    { fill: "--pastel-peach", edge: "--stroke-peach" },
-    { fill: "--pastel-lilac", edge: "--stroke-lilac" },
-    { fill: "--pastel-teal",  edge: "--stroke-teal"  }
-  ];
-  const TONES = [0, 1, 2, 3];
+  // The twelve identity swatches, measured off the stylesheet rather than
+  // copied into this file. A hex written here is a hex that disagrees with the
+  // stylesheet after the first change to it, and nothing on the page compares
+  // the two, so the disagreement is never reported.
+  const SW = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12"];
+  const swCache = {};
+  function swatch(cls){
+    if (swCache[cls]) return swCache[cls];
+    const el = document.createElement("span");
+    el.className = "badge w3 " + cls;
+    el.style.position = "absolute";
+    el.style.visibility = "hidden";
+    document.body.appendChild(el);
+    const cs = getComputedStyle(el);
+    const v = { fill: cs.backgroundColor, edge: cs.borderTopColor };
+    el.remove();
+    swCache[cls] = v;
+    return v;
+  }
+
+  // One geometry per shape, cut on demand and kept. Six buffers at most, and a
+  // reader going back and forth between two shapes pays for each of them once.
+  const geoCache = {};
+  function plateGeo(){
+    if (geoCache[shape]) return geoCache[shape];
+    let g;
+    if (shape === "sq") g = new THREE.BoxGeometry(0.9, 0.16, 0.9);
+    else if (shape === "hx") g = new THREE.CylinderGeometry(0.56, 0.56, 0.16, 6);
+    else if (shape === "ch") g = new THREE.CylinderGeometry(0.58, 0.58, 0.16, 8);
+    else if (shape === "tr") g = new THREE.CylinderGeometry(0.66, 0.66, 0.16, 3);
+    else if (shape === "pl") g = new THREE.CylinderGeometry(0.44, 0.62, 0.16, 4);
+    else g = new THREE.CylinderGeometry(0.62, 0.62, 0.16, 4);
+    geoCache[shape] = { m: g, e: new THREE.EdgesGeometry(g) };
+    return geoCache[shape];
+  }
 
   // --------------------------------------------------------------- scene
   //
@@ -451,11 +648,6 @@ function start(host){
   }
   scene.add(ground);
 
-  // One box geometry and one edge geometry for all thirty-six squares. The
-  // count of squares is what changes when a plate is turned off; the count of
-  // buffers never does.
-  const box = new THREE.BoxGeometry(0.9, 0.16, 0.9);
-  const boxEdge = new THREE.EdgesGeometry(box);
 
   // Which of the nine squares each plate contributes to. Fixed, not random:
   // the same tile every build, so a screenshot in a commit means something.
@@ -476,17 +668,21 @@ function start(host){
     }
     plateG.length = 0;
     for (let L = 0; L < 4; L++) {
-      const t = PLATE[TONES[(L + toneAt) % 4]];
+      // Three steps between plates, so four plates off one base land on four
+      // different families and never on two neighbours a reader has to tell
+      // apart by saturation alone.
+      const t = swatch(SW[(baseAt + L * 3) % 12]);
+      const G = plateGeo();
       const mat = new THREE.MeshLambertMaterial({
-        color: tokenColour(t.fill), wireframe: wire
+        color: new THREE.Color(t.fill), wireframe: wire
       });
-      const em = new THREE.LineBasicMaterial({ color: tokenColour(t.edge) });
+      const em = new THREE.LineBasicMaterial({ color: new THREE.Color(t.edge) });
       const g = new THREE.Group();
       for (const c of CELLS[L]) {
         const x = (c % 3) - 1, z = Math.floor(c / 3) - 1;
-        const m = new THREE.Mesh(box, mat);
+        const m = new THREE.Mesh(G.m, mat);
         m.position.set(x * 1.0, 0, z * 1.0);
-        const ln = new THREE.LineSegments(boxEdge, em);
+        const ln = new THREE.LineSegments(G.e, em);
         ln.position.copy(m.position);
         g.add(m, ln);
       }
@@ -556,6 +752,15 @@ function start(host){
     dis("cam+", rung === RUNGS - 1);
     dis("cam-", rung === 0);
 
+    // The layer rail wears the plates' colours, so it has to be repainted when
+    // the base swatch moves. A rail that keeps the colours the subject had ten
+    // seconds ago is worse than a rail with no colour at all: it is a legend
+    // that disagrees with the thing it is a legend for, and it is believed.
+    document.querySelectorAll("[data-layer]").forEach((b, i) => {
+      const g = b.querySelector(".badge");
+      if (g) g.className = "badge w3 " + SW[(baseAt + i * 3) % 12];
+    });
+
     // The panel is an editor's control, so it is up only while the frame is
     // one. Read-only frames keep every rail -- looking is a thing a reader
     // does too -- and lose only the tool that writes.
@@ -585,7 +790,7 @@ function start(host){
     "sp+":  () => { stop = Math.min(STOPS - 1, stop + 1); layout(); },
     "sp-":  () => { stop = Math.max(0, stop - 1); layout(); },
     "fill": () => { fillAt = (fillAt + 1) % FILLS.length; layout(); },
-    "tone": () => { toneAt = (toneAt + 1) % 4; build(); },
+    "tone": () => { baseAt = (baseAt + 1) % 12; build(); },
     "spin": () => { spin = !spin; },
     "wire": () => { wire = !wire; build(); },
     "edit": () => { editing = !editing; host.classList.toggle("editing", editing); },
@@ -617,6 +822,29 @@ function start(host){
       report();
     });
   });
+
+  // The two grid pickers. One selected member per grid, and the panel shuts
+  // on the choice: a picker that stays open after being used covers the thing
+  // the reader opened it to look at, which is the subject it just changed.
+  function grid(attr, set){
+    document.querySelectorAll("[" + attr + "]").forEach(b => {
+      b.addEventListener("click", () => {
+        set(b.getAttribute(attr));
+        const own = b.closest(".pk-grid");
+        if (own) own.querySelectorAll("[" + attr + "]").forEach(o => {
+          o.setAttribute("aria-pressed", String(o === b));
+          o.classList.toggle("on", o === b);
+        });
+        const pick = b.closest(".vp-pick");
+        const ck = pick ? pick.querySelector("input") : null;
+        if (ck) ck.checked = false;
+        build();
+        report();
+      });
+    });
+  }
+  grid("data-shape", v => { shape = v; });
+  grid("data-tone", v => { baseAt = Math.max(0, SW.indexOf(v)); });
 
   document.querySelectorAll("[data-layer]").forEach((b, i) => {
     b.addEventListener("click", () => {

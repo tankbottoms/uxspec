@@ -80,6 +80,9 @@ export const CSS_EXTRA = `
    sits above the bottom docks rather than in the row with them, because it is
    the only thing on the frame that is about one part of the subject rather than
    about the view. */
+/* [hidden] loses to display:flex, so a read-only frame went on showing the
+   editor's panel. The attribute has to be answered wherever display is set. */
+.vp-dock[hidden]{display:none}
 .vp-dock{position:absolute;left:9px;right:9px;bottom:52px;z-index:6;
   display:flex;justify-content:flex-start;pointer-events:none}
 .vp-dock>*{pointer-events:auto}
@@ -105,7 +108,6 @@ export const CSS_EXTRA = `
 .dk-tools{display:flex;gap:5px;flex-wrap:wrap}
 .dk-tone{padding:2px;background:var(--paper-card);border:1px solid var(--rule);
   border-radius:3px;cursor:pointer;line-height:0}
-.dk-tone .band{display:block;width:30px;height:13px;border-radius:2px}
 /* The chosen one is ringed, not filled darker. Filling it would change the one
    thing on the control the reader is judging it by. */
 .dk-tone[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent);
@@ -130,12 +132,12 @@ export const CSS_EXTRA = `
    is what tells the reader which axis a control belongs to; that is the whole
    argument for docking controls inside a frame in the first place. */
 .vp-lm,.vp-rm{position:absolute;top:50%;transform:translateY(-50%);z-index:4}
-.vp-lm{left:9px}
-.vp-rm{right:9px}
+.vp-lm{left:var(--vp-in)}
+.vp-rm{right:var(--vp-in)}
 /* A rail is the same plate as any other cluster, turned. It does not get its
    own background, padding or radius -- two plate treatments on one frame is
    how a viewport starts looking like two applications. */
-.vp-btns.col{flex-direction:column;align-items:center;padding:5px}
+.vp-btns.col{flex-direction:column;align-items:center;gap:var(--vp-gap);padding:4px}
 /* The rail's own position, under its buttons. It is not a badge: a badge here
    would be a sixth pressable-looking thing in a column of five real ones. */
 .vp-rung{font-family:var(--font-mono);font-size:8px;letter-spacing:.04em;
@@ -146,29 +148,75 @@ export const CSS_EXTRA = `
    under the pointer is a control pressed twice by accident. */
 .vp-btns button[disabled]{cursor:default}
 .vp-btns button[disabled] .badge{opacity:.34}
-.vp-btns button[disabled] .tip-plate{display:none}
 
-/* -------------------------------------------------- the glyph-only tooltip */
-/* A name and a note, on hover and on focus, opening away from the rail it is
-   docked to. The browser's own tooltip was tried first and is not enough: it
-   waits about a second, which is longer than a reader hesitating over an
-   unfamiliar mark will wait, and it cannot hold two lines of different weight.
-   It is positioned inside the button, so it follows the rail rather than being
-   placed against the frame. */
-.vt{position:relative}
-.tip-plate{display:none;position:absolute;left:calc(100% + 7px);top:50%;
-  transform:translateY(-50%);z-index:16;width:186px;padding:6px 9px 7px;
+/* --------------------------------------------------------------- help mode */
+/* The note used to hang off each control on hover, which put a plate under the
+   pointer on the way to the control beside it. It is now one state of the
+   frame: the circle-i in the top right raises a number on every cluster and one
+   legend that says what each cluster owns. A checkbox and two labels, so it
+   works with scripting off -- the still is exactly where a reader knows least
+   about what they are looking at, and the least helpful place to lose the help.
+   Nothing is switched while the numbers are up, so closing them leaves the
+   frame in the state the reader left it. */
+.vp-helpck{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%);
+  pointer-events:none}
+.vp-helpmk{flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:var(--vp-gl);height:var(--vp-gl);border-radius:50%;cursor:pointer;
+  background:var(--tip-paper);border:1px solid var(--rule-soft);
+  box-shadow:0 1px 4px rgba(0,0,0,.10);color:var(--ink-soft);line-height:0}
+.vp-helpmk:hover{color:var(--ink);border-color:var(--ink-muted)}
+.vp-helpck:checked ~ .vp-top .vp-helpmk{color:var(--ink);border-color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--ink)}
+.vp-helpmk .ic{width:11px;height:11px}
+/* The number sits on the cluster, not on each tool: five circles is a map,
+   fourteen is a second interface laid over the first. */
+.vp-grp{position:relative;display:inline-flex}
+.hn{display:none;position:absolute;left:-6px;top:-6px;z-index:19;
+  width:15px;height:15px;border-radius:50%;background:var(--ink);
+  color:var(--paper);font-family:var(--font-mono);font-size:8.5px;
+  align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.vp-helpck:checked ~ .vp-top .hn,.vp-helpck:checked ~ .vp-lm .hn,
+.vp-helpck:checked ~ .vp-rm .hn,.vp-helpck:checked ~ .vp-bot .hn{display:flex}
+/* Inert, not hidden. A reader counting clusters against the legend has to see
+   them where they really are, and must not switch one by pointing at it. */
+.vp-helpck:checked ~ .vp-top .vt,.vp-helpck:checked ~ .vp-lm .vt,
+.vp-helpck:checked ~ .vp-rm .vt,.vp-helpck:checked ~ .vp-bot .vt,
+.vp-helpck:checked ~ .vp-top .vp-pick > .mk{pointer-events:none}
+.vp-help{display:none;position:absolute;inset:0;z-index:17}
+.vp-helpck:checked ~ .vp-help{display:block}
+.vp-help > .scrim{position:absolute;inset:0;background:rgba(255,255,255,.60);
+  cursor:default}
+.hl-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(400px,calc(100% - 78px));max-height:calc(100% - 30px);overflow:auto;
   background:var(--tip-paper);border:1px solid var(--rule);
-  border-radius:var(--radius);box-shadow:0 6px 20px rgba(0,0,0,.14);
-  text-align:left;pointer-events:none}
-/* The right-hand rail opens left, or the note is drawn off the frame. */
-.tip-plate.lt{left:auto;right:calc(100% + 7px)}
-.vt:hover .tip-plate,.vt:focus-visible .tip-plate{display:block}
-.tip-plate .n{display:block;font-family:var(--font-mono);font-size:9px;
-  letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
-.tip-plate .d{display:block;margin-top:3px;font-size:10px;line-height:1.45;
-  color:var(--ink-muted)}
+  border-radius:var(--radius);box-shadow:0 8px 26px rgba(0,0,0,.16);
+  padding:8px 10px 9px}
+.hl-hd{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.hl-hd > span{flex:1}
+.hl-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.hl-rows li{display:flex;align-items:flex-start;gap:7px}
+.hl-rows .hn.s{display:flex;position:static;flex:none;margin-top:1px}
+.hl-rows .t{flex:1;font-size:10px;line-height:1.42;color:var(--ink-muted)}
+.hl-rows .t b{display:block;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink);font-weight:400}
+.hl-rows .t .k{display:block;margin-top:2px;font-family:var(--font-mono);
+  font-size:8.5px;color:var(--ink-faint)}
+.hl-ft{margin:8px 0 0;font-size:9px;line-height:1.4;color:var(--ink-faint)}
 
+/* ------------------------------------------------ options that have a face */
+/* Shape and swatch cannot be cycled blind and cannot be listed as words: no
+   reader converts "p7" back into a colour, and six shape names are six things
+   to picture and then match. Both are drawn at the size they are chosen at. */
+.pk-grid{display:grid;gap:4px;padding:2px 8px 6px}
+.pk-grid.sh{grid-template-columns:repeat(3,auto)}
+.pk-grid.tn{grid-template-columns:repeat(4,auto)}
+.pk-sw{padding:2px;background:var(--paper-card);border:1px solid var(--rule);
+  border-radius:3px;cursor:pointer;line-height:0}
+.pk-sw:hover{border-color:var(--ink-muted)}
+.pk-sw.on,.pk-sw[aria-pressed="true"]{border-color:var(--accent);
+  box-shadow:0 0 0 2px var(--accent)}
 /* ------------------------------------------------------------ the stage */
 /* Inside a viewport the stage is the body and nothing else: the frame already
    owns the border, the radius and the clipping, and a second border here drew
@@ -238,29 +286,33 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    whole rectangle and a grid of four frames costs no toolbars at all. Docks are
    9px off the edge -- the same inset as the .hud that predates them, because two
    insets on one page reads as a mistake even when neither is wrong. */
-.vp{position:relative;border:1px solid var(--rule);border-radius:var(--radius);
+/* One inset and one glyph box for every dock. Tile sets these once at the top
+   of the card and every rail measures from them, which is why its clusters
+   line up across four edges; four hand-tuned numbers never do. */
+.vp{--vp-in:6px;--vp-gl:24px;--vp-gap:4px;
+  position:relative;border:1px solid var(--rule);border-radius:var(--radius);
   background:var(--paper-alt);overflow:hidden}
 .vp-body{position:relative;aspect-ratio:16/10;display:block}
 .vp-body > svg,.vp-body > canvas,.vp-body > img{display:block;width:100%;height:100%}
 /* The options rail spans the top edge so its two ends anchor to the two corners.
    A rail that shrink-wrapped its content would drift as the labels changed. */
-.vp-top{position:absolute;left:9px;right:9px;top:9px;display:flex;
+.vp-top{position:absolute;left:var(--vp-in);right:var(--vp-in);top:var(--vp-in);display:flex;
   align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
-.vp-top > .l,.vp-top > .r{display:flex;align-items:center;gap:5px;
+.vp-top > .l,.vp-top > .r{display:flex;align-items:center;gap:var(--vp-gap);
   flex-wrap:wrap;pointer-events:auto}
 .vp-top > .r{justify-content:flex-end}
 /* One row for all three bottom docks, so an empty centre still holds its column
    and the left and right clusters cannot drift inward to meet each other. */
-.vp-bot{position:absolute;left:9px;right:9px;bottom:9px;display:grid;
+.vp-bot{position:absolute;left:var(--vp-in);right:var(--vp-in);bottom:var(--vp-in);display:grid;
   grid-template-columns:1fr auto 1fr;align-items:end;gap:8px;pointer-events:none}
-.vp-bot > .d{display:flex;align-items:center;gap:5px;pointer-events:auto;min-width:0}
+.vp-bot > .d{display:flex;align-items:center;gap:var(--vp-gap);pointer-events:auto;min-width:0}
 .vp-bot > .bl{justify-content:flex-start}
 .vp-bot > .bc{justify-content:center}
 .vp-bot > .br{justify-content:flex-end}
 /* Controls sit on their own plate rather than directly on the content: over a
    map or a rendered stage the badge border alone is not enough separation, and
    a translucent plate keeps the frame legible underneath. */
-.vp-btns{display:flex;align-items:center;gap:5px;padding:5px 6px;
+.vp-btns{display:flex;align-items:center;gap:var(--vp-gap);padding:4px 5px;
   background:var(--tip-paper);border:1px solid var(--rule-soft);
   border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10)}
 .vp-btns button{background:none;border:0;padding:0;cursor:pointer;font:inherit}

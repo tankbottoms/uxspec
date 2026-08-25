@@ -475,7 +475,12 @@ let pickSeq = 0;
 export function vpPick(o: {
   mark: string;
   title: string;
-  items: readonly { label: string; on?: boolean }[];
+  items?: readonly { label: string; on?: boolean }[];
+  /** A panel body of your own, for options that have a face: swatches, shapes,
+   *  a grid of cells. A list of words is right for options a word describes and
+   *  wrong for a colour, which no reader converts back into a colour from its
+   *  name. When given, it replaces the list; the title bar stays either way. */
+  body?: string;
   up?: boolean;
   rt?: boolean;
   w?: string;
@@ -489,11 +494,11 @@ export function vpPick(o: {
       o.mark
     }</span></label>` +
     `<label class="scrim" for="${id}" aria-hidden="true"></label>` +
-    `<span class="panel"><span class="t">${esc(o.title)}</span>${o.items
-      .map(
-        (i) =>
-          `<span class="opt${i.on ? " on" : ""}">${esc(i.label)}</span>`,
-      )
-      .join("")}</span></span>`
+    `<span class="panel"><span class="t">${esc(o.title)}</span>${
+      o.body ??
+      (o.items ?? [])
+        .map((i) => `<span class="opt${i.on ? " on" : ""}">${esc(i.label)}</span>`)
+        .join("")
+    }</span></span>`
   );
 }

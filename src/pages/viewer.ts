@@ -201,27 +201,47 @@ dis("sp+", stop === STOPS - 1);`,
       body: `Turning off every plate leaves an empty stage, which is a state with no way out that looks exactly like a crash. The layer rail refuses the last one standing. Refusing is better than confirming: a dialog to ask whether the reader meant to empty the frame is a dialog about a thing nobody wants.`,
     }) +
     /* ------------------------------------------------------------------ 5 */
-    U.h2(5, "glyphonly", "A glyph-only control needs a name and a note", icon("circle-question"), {
-      hint: "hover and focus",
+    U.h2(5, "glyphonly", "Help is a mode, not a hover", icon("circle-question"), {
+      hint: "the circle-i, top right",
       hintIc: icon("circle-info"),
       stmt:
-        "Not the browser's tooltip. Its delay is longer than a hesitating reader will wait, and it cannot hold two lines.",
+        "A tooltip answers a question about a control the reader has already found. It does not answer the one they ask first.",
     }) +
     U.p(
-      `Every mark in the rails carries a plate with two lines: what the control is <em>called</em>, and what pressing it <em>does</em>. The browser's own tooltip was tried first and is not enough on either count. It waits about a second &mdash; longer than a reader hesitating over an unfamiliar mark will wait before giving up and pressing it to find out &mdash; and it is one run of text, so the name and the consequence arrive as a single grey sentence.`,
+      `Every mark in these rails used to carry a hover plate with two lines: what the control is <em>called</em>, and what pressing it <em>does</em>. It was well meant and it was in the way. The plate opens beside the rail, which is the space the pointer travels through to reach the control next to the one being read, so a reader working down a column of five tools crossed a note on each move and pushed it aside four times. A note that has to be dodged to reach the tool has made the tool worse.`,
     ) +
     U.p(
-      `The plate opens on hover <em>and</em> on focus, so a keyboard reaches it, and it opens away from the edge its rail is docked to: the right-hand rail's plates open left, or they would be drawn off the frame and clipped by the viewport's own <span class="mono">overflow</span>.`,
+      `It also answered the wrong question. A tooltip is an answer about <em>one</em> control, and it can only be asked by someone already pointing at that control. The question a reader asks first is asked standing back from the frame: <em>what am I looking at, and where is the thing I want</em>. No amount of per-control hover text answers it, because reading fourteen notes one at a time is not the same act as seeing the shape of the thing.`,
+    ) +
+    U.p(
+      `So the notes came off the controls and became a mode. The <span class="gl">${icon(
+        "circle-info",
+      )}</span> in the top right raises a number on every cluster and one legend saying what each cluster owns and what is in it &mdash; five circles, in the places the clusters really stand. Out of help mode there is nothing at all between the pointer and the glyph, which is the state the frame is in for the whole of the time any work is being done in it.`,
+    ) +
+    U.noteBox({
+      kind: "good",
+      title: "Number the cluster, not the tool",
+      body: `Fourteen circles over five plates is a second interface laid across the first one, and the reader has to find the number before they can look it up. Five is a map. It is also the honest unit: a dock owns an axis, and what someone standing back has to learn is which axis lives where &mdash; not which of two adjacent buttons is the plus.`,
+    }) +
+    U.p(
+      `Three rules hold the mode together. The numbers are <strong>furniture</strong>: while they are up the tools are inert, so a reader counting clusters against the legend cannot switch one by pointing at it. Closing the help leaves the frame in <strong>exactly</strong> the state it was opened in &mdash; help that edits the reader's work is worse than no help. And it is a checkbox and two labels, not script, so it survives <strong>scripting being off</strong>: the still is precisely where a reader knows least about what they are looking at, and the least defensible place to lose the help.`,
     ) +
     U.code(
-      `<button type="button" class="vt" data-act="cam+" aria-label="Closer">
-  <span class="badge w3 idle">${"<svg …>"}</span>
-  <span class="tip-plate" role="tooltip">
-    <span class="n">Closer</span>
-    <span class="d">Moves the eye in one rung. Five rungs; the subject does not change size.</span>
-  </span>
-</button>`,
+      `<input type="checkbox" class="vp-helpck" id="vw-helpck">
+...
+<label class="vp-helpmk" for="vw-helpck"
+       aria-label="Help mode -- number every cluster and say what it owns">…</label>
+...
+<span class="vp-grp"><span class="hn" aria-hidden="true">2</span>
+  <div class="vp-btns col">…</div>
+</span>`,
       { lang: "viewer.ts" },
+    ) +
+    U.code(
+      `.hn{display:none;position:absolute;left:-6px;top:-6px;z-index:19}
+.vp-helpck:checked ~ .vp-lm .hn{display:flex}
+.vp-helpck:checked ~ .vp-lm .vt{pointer-events:none}`,
+      { lang: "tokens-extra.ts" },
     ) +
     /* ------------------------------------------------------------------ 6 */
     U.h2(6, "modes", "Editor and viewer are the same frame", icon("pen-to-square"), {

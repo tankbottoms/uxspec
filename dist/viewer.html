@@ -1354,6 +1354,9 @@ footer strong { color: var(--ink-muted); }
    sits above the bottom docks rather than in the row with them, because it is
    the only thing on the frame that is about one part of the subject rather than
    about the view. */
+/* [hidden] loses to display:flex, so a read-only frame went on showing the
+   editor's panel. The attribute has to be answered wherever display is set. */
+.vp-dock[hidden]{display:none}
 .vp-dock{position:absolute;left:9px;right:9px;bottom:52px;z-index:6;
   display:flex;justify-content:flex-start;pointer-events:none}
 .vp-dock>*{pointer-events:auto}
@@ -1379,7 +1382,6 @@ footer strong { color: var(--ink-muted); }
 .dk-tools{display:flex;gap:5px;flex-wrap:wrap}
 .dk-tone{padding:2px;background:var(--paper-card);border:1px solid var(--rule);
   border-radius:3px;cursor:pointer;line-height:0}
-.dk-tone .band{display:block;width:30px;height:13px;border-radius:2px}
 /* The chosen one is ringed, not filled darker. Filling it would change the one
    thing on the control the reader is judging it by. */
 .dk-tone[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent);
@@ -1404,12 +1406,12 @@ footer strong { color: var(--ink-muted); }
    is what tells the reader which axis a control belongs to; that is the whole
    argument for docking controls inside a frame in the first place. */
 .vp-lm,.vp-rm{position:absolute;top:50%;transform:translateY(-50%);z-index:4}
-.vp-lm{left:9px}
-.vp-rm{right:9px}
+.vp-lm{left:var(--vp-in)}
+.vp-rm{right:var(--vp-in)}
 /* A rail is the same plate as any other cluster, turned. It does not get its
    own background, padding or radius -- two plate treatments on one frame is
    how a viewport starts looking like two applications. */
-.vp-btns.col{flex-direction:column;align-items:center;padding:5px}
+.vp-btns.col{flex-direction:column;align-items:center;gap:var(--vp-gap);padding:4px}
 /* The rail's own position, under its buttons. It is not a badge: a badge here
    would be a sixth pressable-looking thing in a column of five real ones. */
 .vp-rung{font-family:var(--font-mono);font-size:8px;letter-spacing:.04em;
@@ -1420,29 +1422,75 @@ footer strong { color: var(--ink-muted); }
    under the pointer is a control pressed twice by accident. */
 .vp-btns button[disabled]{cursor:default}
 .vp-btns button[disabled] .badge{opacity:.34}
-.vp-btns button[disabled] .tip-plate{display:none}
 
-/* -------------------------------------------------- the glyph-only tooltip */
-/* A name and a note, on hover and on focus, opening away from the rail it is
-   docked to. The browser's own tooltip was tried first and is not enough: it
-   waits about a second, which is longer than a reader hesitating over an
-   unfamiliar mark will wait, and it cannot hold two lines of different weight.
-   It is positioned inside the button, so it follows the rail rather than being
-   placed against the frame. */
-.vt{position:relative}
-.tip-plate{display:none;position:absolute;left:calc(100% + 7px);top:50%;
-  transform:translateY(-50%);z-index:16;width:186px;padding:6px 9px 7px;
+/* --------------------------------------------------------------- help mode */
+/* The note used to hang off each control on hover, which put a plate under the
+   pointer on the way to the control beside it. It is now one state of the
+   frame: the circle-i in the top right raises a number on every cluster and one
+   legend that says what each cluster owns. A checkbox and two labels, so it
+   works with scripting off -- the still is exactly where a reader knows least
+   about what they are looking at, and the least helpful place to lose the help.
+   Nothing is switched while the numbers are up, so closing them leaves the
+   frame in the state the reader left it. */
+.vp-helpck{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%);
+  pointer-events:none}
+.vp-helpmk{flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:var(--vp-gl);height:var(--vp-gl);border-radius:50%;cursor:pointer;
+  background:var(--tip-paper);border:1px solid var(--rule-soft);
+  box-shadow:0 1px 4px rgba(0,0,0,.10);color:var(--ink-soft);line-height:0}
+.vp-helpmk:hover{color:var(--ink);border-color:var(--ink-muted)}
+.vp-helpck:checked ~ .vp-top .vp-helpmk{color:var(--ink);border-color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--ink)}
+.vp-helpmk .ic{width:11px;height:11px}
+/* The number sits on the cluster, not on each tool: five circles is a map,
+   fourteen is a second interface laid over the first. */
+.vp-grp{position:relative;display:inline-flex}
+.hn{display:none;position:absolute;left:-6px;top:-6px;z-index:19;
+  width:15px;height:15px;border-radius:50%;background:var(--ink);
+  color:var(--paper);font-family:var(--font-mono);font-size:8.5px;
+  align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.vp-helpck:checked ~ .vp-top .hn,.vp-helpck:checked ~ .vp-lm .hn,
+.vp-helpck:checked ~ .vp-rm .hn,.vp-helpck:checked ~ .vp-bot .hn{display:flex}
+/* Inert, not hidden. A reader counting clusters against the legend has to see
+   them where they really are, and must not switch one by pointing at it. */
+.vp-helpck:checked ~ .vp-top .vt,.vp-helpck:checked ~ .vp-lm .vt,
+.vp-helpck:checked ~ .vp-rm .vt,.vp-helpck:checked ~ .vp-bot .vt,
+.vp-helpck:checked ~ .vp-top .vp-pick > .mk{pointer-events:none}
+.vp-help{display:none;position:absolute;inset:0;z-index:17}
+.vp-helpck:checked ~ .vp-help{display:block}
+.vp-help > .scrim{position:absolute;inset:0;background:rgba(255,255,255,.60);
+  cursor:default}
+.hl-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(400px,calc(100% - 78px));max-height:calc(100% - 30px);overflow:auto;
   background:var(--tip-paper);border:1px solid var(--rule);
-  border-radius:var(--radius);box-shadow:0 6px 20px rgba(0,0,0,.14);
-  text-align:left;pointer-events:none}
-/* The right-hand rail opens left, or the note is drawn off the frame. */
-.tip-plate.lt{left:auto;right:calc(100% + 7px)}
-.vt:hover .tip-plate,.vt:focus-visible .tip-plate{display:block}
-.tip-plate .n{display:block;font-family:var(--font-mono);font-size:9px;
-  letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
-.tip-plate .d{display:block;margin-top:3px;font-size:10px;line-height:1.45;
-  color:var(--ink-muted)}
+  border-radius:var(--radius);box-shadow:0 8px 26px rgba(0,0,0,.16);
+  padding:8px 10px 9px}
+.hl-hd{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.hl-hd > span{flex:1}
+.hl-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.hl-rows li{display:flex;align-items:flex-start;gap:7px}
+.hl-rows .hn.s{display:flex;position:static;flex:none;margin-top:1px}
+.hl-rows .t{flex:1;font-size:10px;line-height:1.42;color:var(--ink-muted)}
+.hl-rows .t b{display:block;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink);font-weight:400}
+.hl-rows .t .k{display:block;margin-top:2px;font-family:var(--font-mono);
+  font-size:8.5px;color:var(--ink-faint)}
+.hl-ft{margin:8px 0 0;font-size:9px;line-height:1.4;color:var(--ink-faint)}
 
+/* ------------------------------------------------ options that have a face */
+/* Shape and swatch cannot be cycled blind and cannot be listed as words: no
+   reader converts "p7" back into a colour, and six shape names are six things
+   to picture and then match. Both are drawn at the size they are chosen at. */
+.pk-grid{display:grid;gap:4px;padding:2px 8px 6px}
+.pk-grid.sh{grid-template-columns:repeat(3,auto)}
+.pk-grid.tn{grid-template-columns:repeat(4,auto)}
+.pk-sw{padding:2px;background:var(--paper-card);border:1px solid var(--rule);
+  border-radius:3px;cursor:pointer;line-height:0}
+.pk-sw:hover{border-color:var(--ink-muted)}
+.pk-sw.on,.pk-sw[aria-pressed="true"]{border-color:var(--accent);
+  box-shadow:0 0 0 2px var(--accent)}
 /* ------------------------------------------------------------ the stage */
 /* Inside a viewport the stage is the body and nothing else: the frame already
    owns the border, the radius and the clipping, and a second border here drew
@@ -1512,29 +1560,33 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    whole rectangle and a grid of four frames costs no toolbars at all. Docks are
    9px off the edge -- the same inset as the .hud that predates them, because two
    insets on one page reads as a mistake even when neither is wrong. */
-.vp{position:relative;border:1px solid var(--rule);border-radius:var(--radius);
+/* One inset and one glyph box for every dock. Tile sets these once at the top
+   of the card and every rail measures from them, which is why its clusters
+   line up across four edges; four hand-tuned numbers never do. */
+.vp{--vp-in:6px;--vp-gl:24px;--vp-gap:4px;
+  position:relative;border:1px solid var(--rule);border-radius:var(--radius);
   background:var(--paper-alt);overflow:hidden}
 .vp-body{position:relative;aspect-ratio:16/10;display:block}
 .vp-body > svg,.vp-body > canvas,.vp-body > img{display:block;width:100%;height:100%}
 /* The options rail spans the top edge so its two ends anchor to the two corners.
    A rail that shrink-wrapped its content would drift as the labels changed. */
-.vp-top{position:absolute;left:9px;right:9px;top:9px;display:flex;
+.vp-top{position:absolute;left:var(--vp-in);right:var(--vp-in);top:var(--vp-in);display:flex;
   align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
-.vp-top > .l,.vp-top > .r{display:flex;align-items:center;gap:5px;
+.vp-top > .l,.vp-top > .r{display:flex;align-items:center;gap:var(--vp-gap);
   flex-wrap:wrap;pointer-events:auto}
 .vp-top > .r{justify-content:flex-end}
 /* One row for all three bottom docks, so an empty centre still holds its column
    and the left and right clusters cannot drift inward to meet each other. */
-.vp-bot{position:absolute;left:9px;right:9px;bottom:9px;display:grid;
+.vp-bot{position:absolute;left:var(--vp-in);right:var(--vp-in);bottom:var(--vp-in);display:grid;
   grid-template-columns:1fr auto 1fr;align-items:end;gap:8px;pointer-events:none}
-.vp-bot > .d{display:flex;align-items:center;gap:5px;pointer-events:auto;min-width:0}
+.vp-bot > .d{display:flex;align-items:center;gap:var(--vp-gap);pointer-events:auto;min-width:0}
 .vp-bot > .bl{justify-content:flex-start}
 .vp-bot > .bc{justify-content:center}
 .vp-bot > .br{justify-content:flex-end}
 /* Controls sit on their own plate rather than directly on the content: over a
    map or a rendered stage the badge border alone is not enough separation, and
    a translucent plate keeps the frame legible underneath. */
-.vp-btns{display:flex;align-items:center;gap:5px;padding:5px 6px;
+.vp-btns{display:flex;align-items:center;gap:var(--vp-gap);padding:4px 5px;
   background:var(--tip-paper);border:1px solid var(--rule-soft);
   border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10)}
 .vp-btns button{background:none;border:0;padding:0;cursor:pointer;font:inherit}
@@ -2010,7 +2062,7 @@ dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
 <h1>A viewport is mostly its controls</h1>
 <p class="lede">Four plates standing on a lit ground, and seven docked control groups around them. The subject is the least interesting part: what this page is for is where a control is allowed to sit, what it is allowed to act on, and how a reader tells apart the three different things that all mean &ldquo;bigger&rdquo;. With scripting off the same subject is shown as a flat isometric still and the page reads correctly.</p>
 </div><div class="tiles"><div class="tile"><div class="k">Docks</div><div class="v">7</div><div class="s">each owns one axis</div></div><div class="tile"><div class="k">Kinds of bigger</div><div class="v">3</div><div class="s">eye, subject, frame</div></div><div class="tile"><div class="k">Module</div><div class="v">vendored</div><div class="s">public/vendor, never a CDN</div></div><div class="tile"><div class="k">No-JS state</div><div class="v">a still</div><div class="s">same subject, flat</div></div></div><hr class="sep">
-<h2 id="stage"><span class="n">1</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-laptop"></use></svg>What is on the stage<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>live now</span><span class="stmt">A tile, drawn as four plates on a ground plane, so that every verb the controls use &mdash; closer, apart, above &mdash; has something to be relative to.</span></h2><p>The subject is one tile: nine squares, built up in four passes. Each pass adds to what the pass below it left, so the finished thing is a single flat image and the only way to see what any one pass contributed is to lift it off the others. That is what <span class="mono">apart</span> is for, and it is the entire reason this subject was chosen over an abstract shape.</p><p>The earlier version of this page floated four shapes on a dark rectangle. It read as a picture of an object rather than as a view onto a scene, and the reason is worth stating plainly: <strong>every viewport control is relative, and with nothing underneath the subject, none of the verbs had an object.</strong> Closer to what. Apart from what. So there is a ground now, and it is drawn &mdash; a rule grid, in the same tokens as everything else on the site &mdash; and the plates stand on it.</p><div class="vp vw has-cap"><div class="vp-body"><div class="stage" id="gl-stage"><div class="fallback"><svg viewBox="0 0 600 300" width="100%" height="100%" role="img" aria-label="Four plates standing apart above a ground grid"><polygon points="300,180 326,193 300,206 274,193" fill="none" stroke="var(--rule)"></polygon><polygon points="326,193 352,206 326,219 300,206" fill="none" stroke="var(--rule)"></polygon><polygon points="352,206 378,219 352,232 326,219" fill="none" stroke="var(--rule)"></polygon><polygon points="274,193 300,206 274,219 248,206" fill="none" stroke="var(--rule)"></polygon><polygon points="300,206 326,219 300,232 274,219" fill="none" stroke="var(--rule)"></polygon><polygon points="326,219 352,232 326,245 300,232" fill="none" stroke="var(--rule)"></polygon><polygon points="248,206 274,219 248,232 222,219" fill="none" stroke="var(--rule)"></polygon><polygon points="274,219 300,232 274,245 248,232" fill="none" stroke="var(--rule)"></polygon><polygon points="300,232 326,245 300,258 274,245" fill="none" stroke="var(--rule)"></polygon><polygon points="300,180 326,193 300,206 274,193" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="326,193 352,206 326,219 300,206" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="274,193 300,206 274,219 248,206" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="326,219 352,232 326,245 300,232" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="274,219 300,232 274,245 248,232" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="300,232 326,245 300,258 274,245" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="300,154 326,167 300,180 274,167" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="352,180 378,193 352,206 326,193" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="300,180 326,193 300,206 274,193" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="326,193 352,206 326,219 300,206" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="248,180 274,193 248,206 222,193" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="274,193 300,206 274,219 248,206" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="326,141 352,154 326,167 300,154" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="352,154 378,167 352,180 326,167" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="274,141 300,154 274,167 248,154" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="300,154 326,167 300,180 274,167" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="248,154 274,167 248,180 222,167" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="300,180 326,193 300,206 274,193" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="300,102 326,115 300,128 274,115" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="326,115 352,128 326,141 300,128" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="274,115 300,128 274,141 248,128" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="326,141 352,154 326,167 300,154" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="274,141 300,154 274,167 248,154" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="300,154 326,167 300,180 274,167" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><text x="300" y="290" text-anchor="middle" font-size="10" fill="var(--ink-muted)" font-family="var(--font-mono)">still &mdash; enable scripting for the live view</text></svg></div></div></div><div class="vp-top"><div class="l"><span class="vp-name"><span class="badge auto hollow" id="vw-mode"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-eye"></use></svg>Viewing</span></span></div><div class="r"><div class="vp-btns"><button type="button" class="vt" data-act="fill" aria-label="Fill"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-up-right-and-down-left-from-center"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Fill</span><span class="d">How much of the frame the subject takes. Three settings; it moves the subject, not the eye.</span></span></button><button type="button" class="vt" data-act="tone" aria-label="Tone"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-palette"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Tone</span><span class="d">Cycles the identity swatch the plates are tinted from. Read live out of the stylesheet.</span></span></button></div></div></div><div class="vp-lm" role="group" aria-label="Camera"><div class="vp-btns col"><button type="button" class="vt" data-act="cam+" aria-label="Closer"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-magnifying-glass-plus"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Closer</span><span class="d">Moves the eye in one rung. Five rungs; the subject does not change size.</span></span></button><button type="button" class="vt" data-act="cam-" aria-label="Further"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-magnifying-glass-minus"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Further</span><span class="d">Moves the eye out one rung.</span></span></button><button type="button" class="vt" data-act="cam0" aria-label="Home"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-rotate-left"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Home</span><span class="d">Puts the eye back where the frame opened. Spread and layers are left alone.</span></span></button><span class="vp-rung" id="vw-rung" aria-hidden="true">2/5</span></div></div><div class="vp-rm" role="group" aria-label="Layers"><div class="vp-btns col"><button type="button" class="vt" data-layer="ground" aria-pressed="true" aria-label="Ground"><span class="badge w3 p1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span><span class="tip-plate lt" role="tooltip"><span class="n">Ground</span><span class="d">Plate 1 of 4. Hidden plates keep their place in the stack.</span></span></button><button type="button" class="vt" data-layer="form" aria-pressed="true" aria-label="Form"><span class="badge w3 p4"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span><span class="tip-plate lt" role="tooltip"><span class="n">Form</span><span class="d">Plate 2 of 4. Hidden plates keep their place in the stack.</span></span></button><button type="button" class="vt" data-layer="mark" aria-pressed="true" aria-label="Mark"><span class="badge w3 p7"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span><span class="tip-plate lt" role="tooltip"><span class="n">Mark</span><span class="d">Plate 3 of 4. Hidden plates keep their place in the stack.</span></span></button><button type="button" class="vt" data-layer="gloss" aria-pressed="true" aria-label="Gloss"><span class="badge w3 p10"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span><span class="tip-plate lt" role="tooltip"><span class="n">Gloss</span><span class="d">Plate 4 of 4. Hidden plates keep their place in the stack.</span></span></button></div></div><div class="vp-bot"><div class="d bl"><div class="vp-btns"><button type="button" class="vt" data-act="spin" aria-pressed="true" aria-label="Turn"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrows-up-down-left-right"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Turn</span><span class="d">Rotates the stack. Off while you are reading a plate; the motion is the first thing that gets in the way.</span></span></button><button type="button" class="vt" data-act="wire" aria-pressed="false" aria-label="Edges"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-table-columns"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Edges</span><span class="d">Draws the wireframe only. The same geometry, without the fill.</span></span></button><button type="button" class="vt" data-act="edit" aria-pressed="false" aria-label="Editing"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-pen-to-square"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Editing</span><span class="d">Turns the frame from a view into a tool: the rails stay, and the plates become pickable.</span></span></button></div></div><div class="d bc"><div class="vp-btns"><button type="button" class="vt" data-act="sp-" disabled aria-label="Together"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-minus"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Together</span><span class="d">Closes the stack one stop. At zero the four plates are one tile.</span></span></button><span class="vp-rung" id="vw-stop" aria-hidden="true">0/4</span><button type="button" class="vt" data-act="sp+" aria-label="Apart"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg></span><span class="tip-plate" role="tooltip"><span class="n">Apart</span><span class="d">Lifts the plates one stop so what each one contributes can be seen on its own.</span></span></button></div></div><div class="d br"><div class="vp-read"><span class="v" id="hud-fps">&mdash;</span><span class="u">fps</span><span class="s" id="hud-tri">&mdash;</span></div></div></div><div class="vp-dock" id="vw-dock"><button type="button" class="badge auto act dk-open" data-act="dock" hidden><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sliders"></use></svg>What is in hand</button><div class="dk-panel"><div class="dk-hd"><span class="dk-ask" id="dk-ask">Choose the tint for the Form plate. One swatch is one identity colour, and the plate keeps it through every other control.</span><button type="button" class="dk-shut" data-act="dock" aria-label="Put it away -- the panel goes, the plate stays" title="Put it away"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-xmark"></use></svg></button></div><div class="dk-bd"><div class="dk-tools" role="group" aria-label="Identity swatches"><button type="button" class="dk-tone" data-plate="0" aria-pressed="false" aria-label="Tint the plate in hand with Ground's swatch" title="p1 -- Ground"><span class="band p1"></span></button><button type="button" class="dk-tone" data-plate="1" aria-pressed="true" aria-label="Tint the plate in hand with Form's swatch" title="p4 -- Form"><span class="band p4"></span></button><button type="button" class="dk-tone" data-plate="2" aria-pressed="false" aria-label="Tint the plate in hand with Mark's swatch" title="p7 -- Mark"><span class="band p7"></span></button><button type="button" class="dk-tone" data-plate="3" aria-pressed="false" aria-label="Tint the plate in hand with Gloss's swatch" title="p10 -- Gloss"><span class="band p10"></span></button></div><p class="dk-ft"><span class="badge auto hollow" id="dk-val"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg><span id="dk-val-t">Form</span> <span class="mono" id="dk-val-n">p4</span></span><span class="dk-note">Stored as the plate index and a swatch name. The hex is in the stylesheet, not here.</span></p></div></div></div><div class="vp-cap">Fig. 1 &middot; four plates, one tile &middot; <span class="mono" id="vw-state">4 up &middot; apart 0 &middot; rung 2</span></div></div><p>Every control above is docked <em>inside</em> the frame. A rail underneath a picture is a toolbar belonging to the page; a rail inside the frame is a control belonging to the view. Put four of these side by side and the difference stops being a preference: external toolbars stack into a wall of buttons that no longer says which frame each one drives.</p><hr class="sep">
+<h2 id="stage"><span class="n">1</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-laptop"></use></svg>What is on the stage<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>live now</span><span class="stmt">A tile, drawn as four plates on a ground plane, so that every verb the controls use &mdash; closer, apart, above &mdash; has something to be relative to.</span></h2><p>The subject is one tile: nine squares, built up in four passes. Each pass adds to what the pass below it left, so the finished thing is a single flat image and the only way to see what any one pass contributed is to lift it off the others. That is what <span class="mono">apart</span> is for, and it is the entire reason this subject was chosen over an abstract shape.</p><p>The earlier version of this page floated four shapes on a dark rectangle. It read as a picture of an object rather than as a view onto a scene, and the reason is worth stating plainly: <strong>every viewport control is relative, and with nothing underneath the subject, none of the verbs had an object.</strong> Closer to what. Apart from what. So there is a ground now, and it is drawn &mdash; a rule grid, in the same tokens as everything else on the site &mdash; and the plates stand on it.</p><div class="vp vw has-cap"><input type="checkbox" class="vp-helpck" id="vw-helpck"><div class="vp-body"><div class="stage" id="gl-stage"><div class="fallback"><svg viewBox="0 0 600 300" width="100%" height="100%" role="img" aria-label="Four plates standing apart above a ground grid"><polygon points="300,180 326,193 300,206 274,193" fill="none" stroke="var(--rule)"></polygon><polygon points="326,193 352,206 326,219 300,206" fill="none" stroke="var(--rule)"></polygon><polygon points="352,206 378,219 352,232 326,219" fill="none" stroke="var(--rule)"></polygon><polygon points="274,193 300,206 274,219 248,206" fill="none" stroke="var(--rule)"></polygon><polygon points="300,206 326,219 300,232 274,219" fill="none" stroke="var(--rule)"></polygon><polygon points="326,219 352,232 326,245 300,232" fill="none" stroke="var(--rule)"></polygon><polygon points="248,206 274,219 248,232 222,219" fill="none" stroke="var(--rule)"></polygon><polygon points="274,219 300,232 274,245 248,232" fill="none" stroke="var(--rule)"></polygon><polygon points="300,232 326,245 300,258 274,245" fill="none" stroke="var(--rule)"></polygon><polygon points="300,180 326,193 300,206 274,193" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="326,193 352,206 326,219 300,206" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="274,193 300,206 274,219 248,206" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="326,219 352,232 326,245 300,232" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="274,219 300,232 274,245 248,232" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="300,232 326,245 300,258 274,245" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon><polygon points="300,154 326,167 300,180 274,167" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="352,180 378,193 352,206 326,193" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="300,180 326,193 300,206 274,193" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="326,193 352,206 326,219 300,206" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="248,180 274,193 248,206 222,193" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="274,193 300,206 274,219 248,206" fill="var(--pastel-peach)" stroke="var(--stroke-peach)"></polygon><polygon points="326,141 352,154 326,167 300,154" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="352,154 378,167 352,180 326,167" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="274,141 300,154 274,167 248,154" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="300,154 326,167 300,180 274,167" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="248,154 274,167 248,180 222,167" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="300,180 326,193 300,206 274,193" fill="var(--pastel-lilac)" stroke="var(--stroke-lilac)"></polygon><polygon points="300,102 326,115 300,128 274,115" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="326,115 352,128 326,141 300,128" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="274,115 300,128 274,141 248,128" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="326,141 352,154 326,167 300,154" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="274,141 300,154 274,167 248,154" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><polygon points="300,154 326,167 300,180 274,167" fill="var(--pastel-teal)" stroke="var(--stroke-teal)"></polygon><text x="300" y="290" text-anchor="middle" font-size="10" fill="var(--ink-muted)" font-family="var(--font-mono)">still &mdash; enable scripting for the live view</text></svg></div></div></div><div class="vp-top"><div class="l"><span class="vp-name"><span class="badge auto hollow" id="vw-mode"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-eye"></use></svg>Viewing</span></span></div><div class="r"><span class="vp-grp"><span class="hn" aria-hidden="true">1</span><div class="vp-btns"><button type="button" class="vt" data-act="fill" aria-label="Fill"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-up-right-and-down-left-from-center"></use></svg></span></button><button type="button" class="vt" data-act="tone" aria-label="Tone"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-palette"></use></svg></span></button><span class="vp-pick rt"><input type="checkbox" id="vpk6"><label class="mk" for="vpk6"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span></label><label class="scrim" for="vpk6" aria-hidden="true"></label><span class="panel"><span class="t">Plate shape</span><span class="pk-grid sh"><button type="button" class="pk-sw" data-shape="sq" aria-pressed="false" title="Square" aria-label="Cut the plates to square"><svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true"><polygon points="1,1 19,1 19,15 1,15" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon></svg></button><button type="button" class="pk-sw on" data-shape="di" aria-pressed="true" title="Diamond" aria-label="Cut the plates to diamond"><svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true"><polygon points="10,1 19,8 10,15 1,8" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon></svg></button><button type="button" class="pk-sw" data-shape="hx" aria-pressed="false" title="Hex" aria-label="Cut the plates to hex"><svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true"><polygon points="5,1 15,1 19,8 15,15 5,15 1,8" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon></svg></button><button type="button" class="pk-sw" data-shape="ch" aria-pressed="false" title="Chamfer" aria-label="Cut the plates to chamfer"><svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true"><polygon points="4,1 19,1 19,12 16,15 1,15 1,4" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon></svg></button><button type="button" class="pk-sw" data-shape="tr" aria-pressed="false" title="Wedge" aria-label="Cut the plates to wedge"><svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true"><polygon points="1,15 10,1 19,15" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon></svg></button><button type="button" class="pk-sw" data-shape="pl" aria-pressed="false" title="Plate" aria-label="Cut the plates to plate"><svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true"><polygon points="3,1 19,4 17,15 1,12" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon></svg></button></span></span></span><span class="vp-pick rt"><input type="checkbox" id="vpk7"><label class="mk" for="vpk7"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-palette"></use></svg></span></label><label class="scrim" for="vpk7" aria-hidden="true"></label><span class="panel"><span class="t">Identity swatch</span><span class="pk-grid tn"><button type="button" class="pk-sw" data-tone="p1" aria-pressed="false" title="p1" aria-label="Tint the plates from swatch p1"><span class="badge w3 p1"></span></button><button type="button" class="pk-sw" data-tone="p2" aria-pressed="false" title="p2" aria-label="Tint the plates from swatch p2"><span class="badge w3 p2"></span></button><button type="button" class="pk-sw" data-tone="p3" aria-pressed="false" title="p3" aria-label="Tint the plates from swatch p3"><span class="badge w3 p3"></span></button><button type="button" class="pk-sw on" data-tone="p4" aria-pressed="true" title="p4" aria-label="Tint the plates from swatch p4"><span class="badge w3 p4"></span></button><button type="button" class="pk-sw" data-tone="p5" aria-pressed="false" title="p5" aria-label="Tint the plates from swatch p5"><span class="badge w3 p5"></span></button><button type="button" class="pk-sw" data-tone="p6" aria-pressed="false" title="p6" aria-label="Tint the plates from swatch p6"><span class="badge w3 p6"></span></button><button type="button" class="pk-sw" data-tone="p7" aria-pressed="false" title="p7" aria-label="Tint the plates from swatch p7"><span class="badge w3 p7"></span></button><button type="button" class="pk-sw" data-tone="p8" aria-pressed="false" title="p8" aria-label="Tint the plates from swatch p8"><span class="badge w3 p8"></span></button><button type="button" class="pk-sw" data-tone="p9" aria-pressed="false" title="p9" aria-label="Tint the plates from swatch p9"><span class="badge w3 p9"></span></button><button type="button" class="pk-sw" data-tone="p10" aria-pressed="false" title="p10" aria-label="Tint the plates from swatch p10"><span class="badge w3 p10"></span></button><button type="button" class="pk-sw" data-tone="p11" aria-pressed="false" title="p11" aria-label="Tint the plates from swatch p11"><span class="badge w3 p11"></span></button><button type="button" class="pk-sw" data-tone="p12" aria-pressed="false" title="p12" aria-label="Tint the plates from swatch p12"><span class="badge w3 p12"></span></button></span></span></span></div></span><label class="vp-helpmk" for="vw-helpck" title="What am I looking at" aria-label="Help mode -- number every cluster and say what it owns"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg></label></div></div><div class="vp-lm" role="group" aria-label="Camera"><span class="vp-grp"><span class="hn" aria-hidden="true">2</span><div class="vp-btns col"><button type="button" class="vt" data-act="cam+" aria-label="Closer"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-magnifying-glass-plus"></use></svg></span></button><button type="button" class="vt" data-act="cam-" aria-label="Further"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-magnifying-glass-minus"></use></svg></span></button><button type="button" class="vt" data-act="cam0" aria-label="Home"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-rotate-left"></use></svg></span></button><span class="vp-rung" id="vw-rung" aria-hidden="true">2/5</span></div></span></div><div class="vp-rm" role="group" aria-label="Layers"><span class="vp-grp"><span class="hn" aria-hidden="true">3</span><div class="vp-btns col"><button type="button" class="vt" data-layer="ground" aria-pressed="true" aria-label="Ground"><span class="badge w3 p1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span></button><button type="button" class="vt" data-layer="form" aria-pressed="true" aria-label="Form"><span class="badge w3 p4"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span></button><button type="button" class="vt" data-layer="mark" aria-pressed="true" aria-label="Mark"><span class="badge w3 p7"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span></button><button type="button" class="vt" data-layer="gloss" aria-pressed="true" aria-label="Gloss"><span class="badge w3 p10"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg></span></button></div></span></div><div class="vp-bot"><div class="d bl"><span class="vp-grp"><span class="hn" aria-hidden="true">4</span><div class="vp-btns"><button type="button" class="vt" data-act="spin" aria-pressed="true" aria-label="Turn"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrows-up-down-left-right"></use></svg></span></button><button type="button" class="vt" data-act="wire" aria-pressed="false" aria-label="Edges"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-table-columns"></use></svg></span></button><button type="button" class="vt" data-act="edit" aria-pressed="false" aria-label="Editing"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-pen-to-square"></use></svg></span></button></div></span></div><div class="d bc"><span class="vp-grp"><span class="hn" aria-hidden="true">5</span><div class="vp-btns"><button type="button" class="vt" data-act="sp-" disabled aria-label="Together"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-minus"></use></svg></span></button><span class="vp-rung" id="vw-stop" aria-hidden="true">0/4</span><button type="button" class="vt" data-act="sp+" aria-label="Apart"><span class="badge w3 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg></span></button></div></span></div><div class="d br"><div class="vp-read"><span class="v" id="hud-fps">&mdash;</span><span class="u">fps</span><span class="s" id="hud-tri">&mdash;</span></div></div></div><div class="vp-dock" id="vw-dock"><button type="button" class="badge auto act dk-open" data-act="dock" hidden><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sliders"></use></svg>What is in hand</button><div class="dk-panel"><div class="dk-hd"><span class="dk-ask" id="dk-ask">Choose the tint for the Form plate. One swatch is one identity colour, and the plate keeps it through every other control.</span><button type="button" class="dk-shut" data-act="dock" aria-label="Put it away -- the panel goes, the plate stays" title="Put it away"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-xmark"></use></svg></button></div><div class="dk-bd"><div class="dk-tools" role="group" aria-label="Identity swatches"><button type="button" class="dk-tone" data-plate="0" aria-pressed="false" aria-label="Tint the plate in hand with Ground's swatch" title="p1 -- Ground"><span class="badge w6 p1"></span></button><button type="button" class="dk-tone" data-plate="1" aria-pressed="true" aria-label="Tint the plate in hand with Form's swatch" title="p4 -- Form"><span class="badge w6 p4"></span></button><button type="button" class="dk-tone" data-plate="2" aria-pressed="false" aria-label="Tint the plate in hand with Mark's swatch" title="p7 -- Mark"><span class="badge w6 p7"></span></button><button type="button" class="dk-tone" data-plate="3" aria-pressed="false" aria-label="Tint the plate in hand with Gloss's swatch" title="p10 -- Gloss"><span class="badge w6 p10"></span></button></div><p class="dk-ft"><span class="badge auto hollow" id="dk-val"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg><span id="dk-val-t">Form</span> <span class="mono" id="dk-val-n">p4</span></span><span class="dk-note">Stored as the plate index and a swatch name. The hex is in the stylesheet, not here.</span></p></div></div></div><div class="vp-help" id="vw-help"><label class="scrim" for="vw-helpck" aria-hidden="true"></label><div class="hl-card" role="group" aria-label="What each cluster owns"><div class="hl-hd"><span>5 clusters, and the axis each one owns</span><label class="dk-shut" for="vw-helpck" aria-label="Put the numbers away" title="Put the numbers away"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-xmark"></use></svg></label></div><ol class="hl-rows"><li><span class="hn s" aria-hidden="true">1</span><span class="t"><b>Frame</b>What the frame does to the subject's presentation. Never its geometry.<span class="k">Fill &middot; Tone</span></span></li><li><span class="hn s" aria-hidden="true">2</span><span class="t"><b>Camera</b>Where the eye stands. Never the subject: nothing here resizes a plate.<span class="k">Closer &middot; Further &middot; Home</span></span></li><li><span class="hn s" aria-hidden="true">3</span><span class="t"><b>Layers</b>Which of the subject's plates are standing. One control per plate, named.<span class="k">Ground &middot; Form &middot; Mark &middot; Gloss</span></span></li><li><span class="hn s" aria-hidden="true">4</span><span class="t"><b>Mode</b>What the frame is doing, as distinct from what it is looking at.<span class="k">Turn &middot; Edges &middot; Editing</span></span></li><li><span class="hn s" aria-hidden="true">5</span><span class="t"><b>Spread</b>The subject's own geometry, opened and closed. The eye does not move.<span class="k">Together &middot; Apart</span></span></li></ol><p class="hl-ft">The numbers are furniture, not controls. Nothing is pressed while they are up, and closing them leaves the frame exactly as it was.</p></div></div><div class="vp-cap">Fig. 1 &middot; four plates, one tile &middot; <span class="mono" id="vw-state">4 up &middot; apart 0 &middot; rung 2</span></div></div><p>Every control above is docked <em>inside</em> the frame. A rail underneath a picture is a toolbar belonging to the page; a rail inside the frame is a control belonging to the view. Put four of these side by side and the difference stops being a preference: external toolbars stack into a wall of buttons that no longer says which frame each one drives.</p><hr class="sep">
 <h2 id="docks"><span class="n">2</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-table-columns"></use></svg>Seven places, and what each one owns<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>position is meaning</span><span class="stmt">A control's dock says what it acts on. Reader finds reset bottom-right on the map, finds it bottom-right on the model.</span></h2><p>The split is by <em>what the control acts on</em>, never by what it looks like. Two controls that both use a plus glyph belong in different docks if one moves the eye and the other moves the subject, and the dock is what tells them apart before the reader has hovered anything.</p><div class="scroll-wrap"><p class="tmark"><span class="badge auto hollow" title="A glyph-only control is readable because of where it is docked before it is readable because of its mark. Move a control between docks and its meaning changes even though nothing about it changed."><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>position is the label</span></p><div class="scroll"><table class="sortable">
 <caption><span class="fig">Table 6</span><button type="button" class="exp" hidden data-exp="Table 6" aria-label="Download Table 6 as CSV"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-down-to-bracket"></use></svg>CSV</button>The seven docks of a viewport frame<span class="scope">the contract &middot; every frame on the site</span></caption>
 <thead><tr><th>Dock</th><th>Owns</th><th>Typically</th></tr></thead>
@@ -2025,13 +2077,16 @@ dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
   .forEach(b =&gt; { b.disabled = off; });
 dis(<span class="s">&quot;sp-&quot;</span>, stop === 0);            <span class="c">// says so before it is pressed</span>
 dis(<span class="s">&quot;sp+&quot;</span>, stop === STOPS - 1);</pre><div class="note caution"><div class="hd">The last layer cannot be put away</div><p>Turning off every plate leaves an empty stage, which is a state with no way out that looks exactly like a crash. The layer rail refuses the last one standing. Refusing is better than confirming: a dialog to ask whether the reader meant to empty the frame is a dialog about a thing nobody wants.</p></div><hr class="sep">
-<h2 id="glyphonly"><span class="n">5</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-question"></use></svg>A glyph-only control needs a name and a note<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>hover and focus</span><span class="stmt">Not the browser's tooltip. Its delay is longer than a hesitating reader will wait, and it cannot hold two lines.</span></h2><p>Every mark in the rails carries a plate with two lines: what the control is <em>called</em>, and what pressing it <em>does</em>. The browser's own tooltip was tried first and is not enough on either count. It waits about a second &mdash; longer than a reader hesitating over an unfamiliar mark will wait before giving up and pressing it to find out &mdash; and it is one run of text, so the name and the consequence arrive as a single grey sentence.</p><p>The plate opens on hover <em>and</em> on focus, so a keyboard reaches it, and it opens away from the edge its rail is docked to: the right-hand rail's plates open left, or they would be drawn off the frame and clipped by the viewport's own <span class="mono">overflow</span>.</p><div class="code-hd">viewer.ts</div><pre class="code">&lt;button <span class="k">type</span>=<span class="s">&quot;button&quot;</span> <span class="k">class</span>=<span class="s">&quot;vt&quot;</span> data-act=<span class="s">&quot;cam+&quot;</span> aria-label=<span class="s">&quot;Closer&quot;</span>&gt;
-  &lt;span <span class="k">class</span>=<span class="s">&quot;badge w3 idle&quot;</span>&gt;&lt;svg …&gt;&lt;/span&gt;
-  &lt;span <span class="k">class</span>=<span class="s">&quot;tip-plate&quot;</span> role=<span class="s">&quot;tooltip&quot;</span>&gt;
-    &lt;span <span class="k">class</span>=<span class="s">&quot;n&quot;</span>&gt;Closer&lt;/span&gt;
-    &lt;span <span class="k">class</span>=<span class="s">&quot;d&quot;</span>&gt;Moves the eye in one rung. Five rungs; the subject does not change size.&lt;/span&gt;
-  &lt;/span&gt;
-&lt;/button&gt;</pre><hr class="sep">
+<h2 id="glyphonly"><span class="n">5</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-question"></use></svg>Help is a mode, not a hover<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>the circle-i, top right</span><span class="stmt">A tooltip answers a question about a control the reader has already found. It does not answer the one they ask first.</span></h2><p>Every mark in these rails used to carry a hover plate with two lines: what the control is <em>called</em>, and what pressing it <em>does</em>. It was well meant and it was in the way. The plate opens beside the rail, which is the space the pointer travels through to reach the control next to the one being read, so a reader working down a column of five tools crossed a note on each move and pushed it aside four times. A note that has to be dodged to reach the tool has made the tool worse.</p><p>It also answered the wrong question. A tooltip is an answer about <em>one</em> control, and it can only be asked by someone already pointing at that control. The question a reader asks first is asked standing back from the frame: <em>what am I looking at, and where is the thing I want</em>. No amount of per-control hover text answers it, because reading fourteen notes one at a time is not the same act as seeing the shape of the thing.</p><p>So the notes came off the controls and became a mode. The <span class="gl"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg></span> in the top right raises a number on every cluster and one legend saying what each cluster owns and what is in it &mdash; five circles, in the places the clusters really stand. Out of help mode there is nothing at all between the pointer and the glyph, which is the state the frame is in for the whole of the time any work is being done in it.</p><div class="note good"><div class="hd">Number the cluster, not the tool</div><p>Fourteen circles over five plates is a second interface laid across the first one, and the reader has to find the number before they can look it up. Five is a map. It is also the honest unit: a dock owns an axis, and what someone standing back has to learn is which axis lives where &mdash; not which of two adjacent buttons is the plus.</p></div><p>Three rules hold the mode together. The numbers are <strong>furniture</strong>: while they are up the tools are inert, so a reader counting clusters against the legend cannot switch one by pointing at it. Closing the help leaves the frame in <strong>exactly</strong> the state it was opened in &mdash; help that edits the reader's work is worse than no help. And it is a checkbox and two labels, not script, so it survives <strong>scripting being off</strong>: the still is precisely where a reader knows least about what they are looking at, and the least defensible place to lose the help.</p><div class="code-hd">viewer.ts</div><pre class="code">&lt;input <span class="k">type</span>=<span class="s">&quot;checkbox&quot;</span> <span class="k">class</span>=<span class="s">&quot;vp-helpck&quot;</span> id=<span class="s">&quot;vw-helpck&quot;</span>&gt;
+...
+&lt;label <span class="k">class</span>=<span class="s">&quot;vp-helpmk&quot;</span> <span class="k">for</span>=<span class="s">&quot;vw-helpck&quot;</span>
+       aria-label=<span class="s">&quot;Help mode -- number every cluster and say what it owns&quot;</span>&gt;…&lt;/label&gt;
+...
+&lt;span <span class="k">class</span>=<span class="s">&quot;vp-grp&quot;</span>&gt;&lt;span <span class="k">class</span>=<span class="s">&quot;hn&quot;</span> aria-hidden=<span class="s">&quot;true&quot;</span>&gt;2&lt;/span&gt;
+  &lt;div <span class="k">class</span>=<span class="s">&quot;vp-btns col&quot;</span>&gt;…&lt;/div&gt;
+&lt;/span&gt;</pre><div class="code-hd">tokens-extra.ts</div><pre class="code">.hn{display:none;position:absolute;left:-6px;top:-6px;z-index:19}
+.vp-helpck:checked ~ .vp-lm .hn{display:flex}
+.vp-helpck:checked ~ .vp-lm .vt{pointer-events:none}</pre><hr class="sep">
 <h2 id="modes"><span class="n">6</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-pen-to-square"></use></svg>Editor and viewer are the same frame<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>said, not implied</span><span class="stmt">A frame that can be changed and one that can only be looked at wear the same rails. The difference is stated in the corner.</span></h2><p>The temptation is to give an editable frame a second, richer set of controls and leave the read-only one bare. That is the wrong cut. The rails are the <em>view's</em> controls &mdash; where the eye stands and which layers are standing are questions a reader has just as much as an author &mdash; so they belong to both. What differs is whether the subject can be picked and changed, and that is one bit.</p><p>So it is <strong>said</strong>: the top-left corner prints <span class="mono">Viewing</span> or <span class="mono">Editing</span>, and the frame takes an inset accent rule while it is editable. Press <span class="gl"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-pen-to-square"></use></svg>Editing</span> on the stage above and both change. Nothing else does &mdash; which is the point.</p><div class="note"><div class="hd">Why not just hide the rails on a read-only frame</div><p>Because the reader then has no way to look at the thing they were given. A read-only document view still needs zoom; a read-only model still needs to be turned around. Hiding the controls to signal read-only takes the view away in order to say something about the subject.</p></div><hr class="sep">
 <h2 id="layers"><span class="n">7</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg>The layer rail, and what it must not do<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>named, not numbered</span><span class="stmt">One control per layer, carrying the layer's name and its colour. A hidden layer keeps its place in the stack.</span></h2><p>Four controls, one per plate, each in the plate's own identity swatch so the rail and the subject agree without a legend. They are <strong>named</strong>, not numbered: a rail of four numbered checkboxes says nothing about what turning one off would remove, and the reader finds out by removing it.</p><div class="scroll-wrap"><div class="scroll"><table class="sortable">
 <caption><span class="fig">Table 8</span><button type="button" class="exp" hidden data-exp="Table 8" aria-label="Download Table 8 as CSV"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-down-to-bracket"></use></svg>CSV</button>The four plates of the stage's subject<span class="scope">invented subject &middot; four passes</span></caption>
@@ -2556,7 +2611,11 @@ function start(host){
   let stop = 0;
   let rung = 2;
   let fillAt = 1;
-  let toneAt = 0;
+  // The base identity swatch, and the shape the plates are cut to. Both are
+  // picked from a grid rather than cycled: the reader can see every state Fill
+  // has in the subject, and cannot see the other eleven swatches at all.
+  let baseAt = 3;      // p4 -- the Form plate's swatch, and the panel's default
+  let shape = "di";
   let spin = true;
   let wire = false;
   let editing = false;
@@ -2565,13 +2624,41 @@ function start(host){
   // reopening it lands the reader somewhere they did not leave.
   let hand = 1; let dockUp = true;  const up = [true, true, true, true];
 
-  const PLATE = [
-    { fill: "--pastel-aqua",  edge: "--stroke-aqua"  },
-    { fill: "--pastel-peach", edge: "--stroke-peach" },
-    { fill: "--pastel-lilac", edge: "--stroke-lilac" },
-    { fill: "--pastel-teal",  edge: "--stroke-teal"  }
-  ];
-  const TONES = [0, 1, 2, 3];
+  // The twelve identity swatches, measured off the stylesheet rather than
+  // copied into this file. A hex written here is a hex that disagrees with the
+  // stylesheet after the first change to it, and nothing on the page compares
+  // the two, so the disagreement is never reported.
+  const SW = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12"];
+  const swCache = {};
+  function swatch(cls){
+    if (swCache[cls]) return swCache[cls];
+    const el = document.createElement("span");
+    el.className = "badge w3 " + cls;
+    el.style.position = "absolute";
+    el.style.visibility = "hidden";
+    document.body.appendChild(el);
+    const cs = getComputedStyle(el);
+    const v = { fill: cs.backgroundColor, edge: cs.borderTopColor };
+    el.remove();
+    swCache[cls] = v;
+    return v;
+  }
+
+  // One geometry per shape, cut on demand and kept. Six buffers at most, and a
+  // reader going back and forth between two shapes pays for each of them once.
+  const geoCache = {};
+  function plateGeo(){
+    if (geoCache[shape]) return geoCache[shape];
+    let g;
+    if (shape === "sq") g = new THREE.BoxGeometry(0.9, 0.16, 0.9);
+    else if (shape === "hx") g = new THREE.CylinderGeometry(0.56, 0.56, 0.16, 6);
+    else if (shape === "ch") g = new THREE.CylinderGeometry(0.58, 0.58, 0.16, 8);
+    else if (shape === "tr") g = new THREE.CylinderGeometry(0.66, 0.66, 0.16, 3);
+    else if (shape === "pl") g = new THREE.CylinderGeometry(0.44, 0.62, 0.16, 4);
+    else g = new THREE.CylinderGeometry(0.62, 0.62, 0.16, 4);
+    geoCache[shape] = { m: g, e: new THREE.EdgesGeometry(g) };
+    return geoCache[shape];
+  }
 
   // --------------------------------------------------------------- scene
   //
@@ -2594,11 +2681,6 @@ function start(host){
   }
   scene.add(ground);
 
-  // One box geometry and one edge geometry for all thirty-six squares. The
-  // count of squares is what changes when a plate is turned off; the count of
-  // buffers never does.
-  const box = new THREE.BoxGeometry(0.9, 0.16, 0.9);
-  const boxEdge = new THREE.EdgesGeometry(box);
 
   // Which of the nine squares each plate contributes to. Fixed, not random:
   // the same tile every build, so a screenshot in a commit means something.
@@ -2619,17 +2701,21 @@ function start(host){
     }
     plateG.length = 0;
     for (let L = 0; L < 4; L++) {
-      const t = PLATE[TONES[(L + toneAt) % 4]];
+      // Three steps between plates, so four plates off one base land on four
+      // different families and never on two neighbours a reader has to tell
+      // apart by saturation alone.
+      const t = swatch(SW[(baseAt + L * 3) % 12]);
+      const G = plateGeo();
       const mat = new THREE.MeshLambertMaterial({
-        color: tokenColour(t.fill), wireframe: wire
+        color: new THREE.Color(t.fill), wireframe: wire
       });
-      const em = new THREE.LineBasicMaterial({ color: tokenColour(t.edge) });
+      const em = new THREE.LineBasicMaterial({ color: new THREE.Color(t.edge) });
       const g = new THREE.Group();
       for (const c of CELLS[L]) {
         const x = (c % 3) - 1, z = Math.floor(c / 3) - 1;
-        const m = new THREE.Mesh(box, mat);
+        const m = new THREE.Mesh(G.m, mat);
         m.position.set(x * 1.0, 0, z * 1.0);
-        const ln = new THREE.LineSegments(boxEdge, em);
+        const ln = new THREE.LineSegments(G.e, em);
         ln.position.copy(m.position);
         g.add(m, ln);
       }
@@ -2699,6 +2785,15 @@ function start(host){
     dis("cam+", rung === RUNGS - 1);
     dis("cam-", rung === 0);
 
+    // The layer rail wears the plates' colours, so it has to be repainted when
+    // the base swatch moves. A rail that keeps the colours the subject had ten
+    // seconds ago is worse than a rail with no colour at all: it is a legend
+    // that disagrees with the thing it is a legend for, and it is believed.
+    document.querySelectorAll("[data-layer]").forEach((b, i) => {
+      const g = b.querySelector(".badge");
+      if (g) g.className = "badge w3 " + SW[(baseAt + i * 3) % 12];
+    });
+
     // The panel is an editor's control, so it is up only while the frame is
     // one. Read-only frames keep every rail -- looking is a thing a reader
     // does too -- and lose only the tool that writes.
@@ -2728,7 +2823,7 @@ function start(host){
     "sp+":  () => { stop = Math.min(STOPS - 1, stop + 1); layout(); },
     "sp-":  () => { stop = Math.max(0, stop - 1); layout(); },
     "fill": () => { fillAt = (fillAt + 1) % FILLS.length; layout(); },
-    "tone": () => { toneAt = (toneAt + 1) % 4; build(); },
+    "tone": () => { baseAt = (baseAt + 1) % 12; build(); },
     "spin": () => { spin = !spin; },
     "wire": () => { wire = !wire; build(); },
     "edit": () => { editing = !editing; host.classList.toggle("editing", editing); },
@@ -2760,6 +2855,29 @@ function start(host){
       report();
     });
   });
+
+  // The two grid pickers. One selected member per grid, and the panel shuts
+  // on the choice: a picker that stays open after being used covers the thing
+  // the reader opened it to look at, which is the subject it just changed.
+  function grid(attr, set){
+    document.querySelectorAll("[" + attr + "]").forEach(b => {
+      b.addEventListener("click", () => {
+        set(b.getAttribute(attr));
+        const own = b.closest(".pk-grid");
+        if (own) own.querySelectorAll("[" + attr + "]").forEach(o => {
+          o.setAttribute("aria-pressed", String(o === b));
+          o.classList.toggle("on", o === b);
+        });
+        const pick = b.closest(".vp-pick");
+        const ck = pick ? pick.querySelector("input") : null;
+        if (ck) ck.checked = false;
+        build();
+        report();
+      });
+    });
+  }
+  grid("data-shape", v => { shape = v; });
+  grid("data-tone", v => { baseAt = Math.max(0, SW.indexOf(v)); });
 
   document.querySelectorAll("[data-layer]").forEach((b, i) => {
     b.addEventListener("click", () => {
