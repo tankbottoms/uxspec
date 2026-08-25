@@ -1312,7 +1312,7 @@ function viewports(): string {
     ], { wide: true }) +
     U.h3("A frame, fully dressed", "dressed") +
     U.p(
-      `Options on the top edge; the readout under them at the right, larger than the body face rather than smaller, because it is the one figure meant to be legible from across a room. State bottom left, movement bottom centre, frame controls bottom right. Every control is a badge and inherits its height from the badge contract &mdash; a control that redeclares badge geometry is the first step to two badge heights on one page.`,
+      `Options on the top edge; the readout under them at the right, larger than the body face rather than smaller, because it is the one figure meant to be legible from across a room. State bottom left, movement bottom centre, frame controls bottom right. Every control takes its geometry from the badge contract &mdash; a control that redeclares badge height is the first step to two badge heights on one page &mdash; but none of them carries a fill. A filled badge is how the rest of this site says <em>here is a value, and it has a state</em>, and a tool is not a value. The fill and the border go, the glyph stays, and the states are told in the mark itself: ink-muted at rest, accent under the pointer, an amber fill when it is on. The plate belongs to the cluster rather than to the mark, so tools that act on one axis are drawn as one object &mdash; a single outline with hairlines between the glyphs, not five separately bordered pills.`,
     ) +
     U.viewport({
       cls: "wide",

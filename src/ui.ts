@@ -426,9 +426,18 @@ export function vpGrid(inner: string): string {
   return `<div class="vpgrid">${inner}</div>`;
 }
 
-/** A control cluster: glyph badges on one plate. Geometry comes from `.badge`,
- *  as everywhere else -- a control that redeclares badge height is how a page
- *  ends up with two badge heights. */
+/** A control cluster: glyphs on one plate.
+ *
+ *  The marks carry no fill and no border. A filled badge is how this site says
+ *  *here is a value, and it has a state*; a tool is not a value, it is a thing
+ *  you press, and drawing it as a badge puts a rectangle round every glyph on
+ *  a frame that is already carrying content. So the fill and the border go and
+ *  the glyph is left to say it on its own: ink-muted at rest, accent under the
+ *  pointer, amber fill when it is on. Geometry still comes from `.badge` --
+ *  a control that redeclares badge height is how a page ends up with two.
+ *
+ *  The plate belongs to the cluster, not to the mark. Tools that act on one
+ *  axis are one object: a single outline with hairlines between the marks. */
 export function vpBtns(
   items: readonly { ic: string; on?: boolean; title: string; w?: string }[],
   icf: (n: string) => string,
@@ -436,9 +445,9 @@ export function vpBtns(
   return `<div class="vp-btns">${items
     .map(
       (b) =>
-        `<button type="button" aria-pressed="${b.on === true}" title="${esc(
+        `<button type="button" class="vt" aria-pressed="${b.on === true}" title="${esc(
           b.title,
-        )}"><span class="badge ${b.w ?? "w3"} idle">${icf(b.ic)}</span></button>`,
+        )}"><span class="badge ${b.w ?? "w3"} bare">${icf(b.ic)}</span></button>`,
     )
     .join("")}</div>`;
 }
