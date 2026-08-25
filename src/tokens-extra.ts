@@ -187,32 +187,47 @@ export const CSS_EXTRA = `
   justify-content:center;width:var(--vp-gl);height:var(--vp-gl)}
 .vp-btns .vt:hover,.vp-btns .vp-pick > .mk:hover{background:var(--paper-alt)}
 .vp-btns .vp-rung{padding:0 5px}
-/* --- Help, in two stages ----------------------------------------------
-   Off, numbers, map. The middle stage is the one a checkbox could not
+/* --- Help, in three states, and a tour --------------------------------
+   Off, numbers, map. The middle state is the one a checkbox could not
    express: numbers over the live frame, with every control still working,
    for the reader whose question is "which of these is the fourth one".
    Only the second press raises a card, because only then is the question
-   about the frame as a whole rather than about a control in it. */
+   about the frame as a whole rather than about a control in it.
+
+   Highlight is amber and hover is teal, the same way round as the tile
+   viewer: amber says "this is the one being talked about", teal says
+   "this is the one under your hand". A reader who learns the pair once on
+   a tile is not asked to relearn it here. */
 .vp-hm{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%);
   pointer-events:none}
 .vp-helpmks{flex:none;display:inline-flex}
 .vp-helpmk{display:none;align-items:center;justify-content:center;
   width:var(--vp-gl);height:var(--vp-gl);border-radius:50%;cursor:pointer;
   background:var(--tip-paper);border:1px solid var(--rule-soft);
-  box-shadow:0 1px 4px rgba(0,0,0,.10);color:var(--ink-soft);line-height:0}
+  box-shadow:0 1px 4px rgba(0,0,0,.10);color:var(--ink-muted);line-height:0}
 .h0:checked ~ .vp-top .vp-helpmk.m0,
 .h1:checked ~ .vp-top .vp-helpmk.m1,
 .h2:checked ~ .vp-top .vp-helpmk.m2{display:inline-flex}
-.vp-helpmk:hover{color:var(--ink);border-color:var(--ink-muted)}
-.vp-helpmk.m1,.vp-helpmk.m2{color:var(--accent);border-color:var(--accent)}
+/* Lit while the help is up, so the control says which state it is in without
+   changing shape. Pointing at it still turns it teal: it is a control. */
+.vp-helpmk.m1,.vp-helpmk.m2{color:var(--stroke-amber);
+  border-color:var(--stroke-amber);background:var(--pastel-amber)}
+.vp-helpmk:hover{color:var(--accent);border-color:var(--accent);
+  background:var(--tip-paper)}
+/* Every dock rides above the wash, so the circle stays reachable with the map
+   up and the numbers are never dimmed by the thing that explains them. The
+   wash and the card are siblings inside .vp-help, which carries no z-index of
+   its own precisely so its two children can sit on either side of the docks. */
+.vp-top,.vp-bot,.vp-lm,.vp-rm{z-index:18}
 /* The number sits on the cluster, not on each tool: five circles is a map,
-   fourteen is a second interface laid over the first. Outlined, never
-   filled -- a solid disc is a badge, and a badge on a picture reads as a
-   value belonging to the picture rather than as a caption about the frame. */
+   fourteen is a second interface laid over the first. Amber, because it is
+   the colour this frame uses for "the thing being explained", and never ink
+   or white -- a black disc on a picture reads as a value belonging to the
+   picture rather than as a caption about the frame. */
 .vp-grp{position:relative;display:inline-flex}
-.hn{display:none;position:absolute;left:-7px;top:-7px;z-index:19;
-  width:15px;height:15px;border-radius:50%;background:var(--tip-paper);
-  border:1px solid var(--ink-muted);color:var(--ink);
+.hn{display:none;position:absolute;left:-6px;top:-6px;z-index:19;
+  width:15px;height:15px;border-radius:50%;background:var(--pastel-amber);
+  border:1px solid var(--stroke-amber);color:var(--ink);
   font-family:var(--font-mono);font-size:8.5px;
   align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .h1:checked ~ .vp-top .hn,.h1:checked ~ .vp-lm .hn,
@@ -220,29 +235,56 @@ export const CSS_EXTRA = `
 .h2:checked ~ .vp-top .hn,.h2:checked ~ .vp-lm .hn,
 .h2:checked ~ .vp-rm .hn,.h2:checked ~ .vp-bot .hn{display:flex}
 /* Dust, not paint. While the numbers are up each cluster carries the
-   faintest wash so the eye can find the five of them against a moving
-   picture; pointing at one brings it up to a readable outline. */
+   faintest amber wash so the eye can find the five of them against a moving
+   picture; pointing at one brings it up to a readable teal outline. */
 .h1:checked ~ .vp-top .vp-grp,.h1:checked ~ .vp-lm .vp-grp,
 .h1:checked ~ .vp-rm .vp-grp,.h1:checked ~ .vp-bot .vp-grp,
 .h2:checked ~ .vp-top .vp-grp,.h2:checked ~ .vp-lm .vp-grp,
 .h2:checked ~ .vp-rm .vp-grp,.h2:checked ~ .vp-bot .vp-grp{
-  border-radius:5px;box-shadow:0 0 0 3px var(--rule)}
+  border-radius:5px;box-shadow:0 0 0 3px var(--pastel-amber)}
 .h1:checked ~ .vp-top .vp-grp:hover,.h1:checked ~ .vp-lm .vp-grp:hover,
-.h1:checked ~ .vp-rm .vp-grp:hover,.h1:checked ~ .vp-bot .vp-grp:hover{
+.h1:checked ~ .vp-rm .vp-grp:hover,.h1:checked ~ .vp-bot .vp-grp:hover,
+.h2:checked ~ .vp-top .vp-grp:hover,.h2:checked ~ .vp-lm .vp-grp:hover,
+.h2:checked ~ .vp-rm .vp-grp:hover,.h2:checked ~ .vp-bot .vp-grp:hover{
   box-shadow:0 0 0 3px var(--accent)}
 .h1:checked ~ .vp-top .vp-grp:hover .hn,.h1:checked ~ .vp-lm .vp-grp:hover .hn,
-.h1:checked ~ .vp-rm .vp-grp:hover .hn,.h1:checked ~ .vp-bot .vp-grp:hover .hn{
-  border-color:var(--accent);color:var(--ink)}
+.h1:checked ~ .vp-rm .vp-grp:hover .hn,.h1:checked ~ .vp-bot .vp-grp:hover .hn,
+.h2:checked ~ .vp-top .vp-grp:hover .hn,.h2:checked ~ .vp-lm .vp-grp:hover .hn,
+.h2:checked ~ .vp-rm .vp-grp:hover .hn,.h2:checked ~ .vp-bot .vp-grp:hover .hn{
+  border-color:var(--accent);background:var(--tip-paper);color:var(--ink)}
+/* The note a tooltip used to be. It is only reachable in help mode, which is
+   the whole difference: a tooltip that opens while the reader is working the
+   controls is in the way of the controls, and this one cannot be. */
+.vp-hx{display:none;position:absolute;z-index:21;width:186px;
+  padding:6px 8px 7px;text-align:left;pointer-events:none;
+  background:var(--tip-paper);border:1px solid var(--rule);
+  border-radius:var(--radius);box-shadow:0 6px 18px rgba(0,0,0,.14)}
+.vp-hx b{display:block;margin-bottom:2px;font-family:var(--font-mono);
+  font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink);font-weight:400}
+.vp-hx .o{display:block;font-size:10px;line-height:1.4;color:var(--ink-muted)}
+.vp-hx .k{display:block;margin-top:3px;font-family:var(--font-mono);
+  font-size:8.5px;color:var(--ink-faint)}
+/* Each note opens away from its own edge, so it never leaves the frame and
+   never covers the cluster it is describing. */
+.vp-grp.st .vp-hx{top:calc(100% + 8px);right:0}
+.vp-grp.sb .vp-hx{bottom:calc(100% + 8px);left:0}
+.vp-grp.sl .vp-hx{left:calc(100% + 8px);top:0}
+.vp-grp.sr .vp-hx{right:calc(100% + 8px);top:0}
+.h1:checked ~ .vp-top .vp-grp:hover .vp-hx,
+.h1:checked ~ .vp-lm .vp-grp:hover .vp-hx,
+.h1:checked ~ .vp-rm .vp-grp:hover .vp-hx,
+.h1:checked ~ .vp-bot .vp-grp:hover .vp-hx{display:block}
 /* Stage one leaves every tool live. It is the whole point of having it:
    the reader is reading the numbers in order to use the controls, not
    instead of using them. Only the map, which covers the frame, is modal. */
-.vp-help{display:none;position:absolute;inset:0;z-index:17}
+.vp-help{display:none;position:absolute;inset:0}
 .h2:checked ~ .vp-help{display:block}
-.vp-help > .scrim{position:absolute;inset:0;background:var(--paper-alt);opacity:.92;
-  cursor:default}
+.vp-help > .scrim{position:absolute;inset:0;z-index:16;
+  background:var(--paper-alt);opacity:.92;cursor:default}
 .hl-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  width:min(400px,calc(100% - 78px));max-height:calc(100% - 30px);overflow:auto;
-  background:var(--tip-paper);border:1px solid var(--rule);
+  z-index:24;width:min(400px,calc(100% - 78px));max-height:calc(100% - 30px);
+  overflow:auto;background:var(--tip-paper);border:1px solid var(--rule);
   border-radius:var(--radius);box-shadow:0 8px 26px rgba(0,0,0,.16);
   padding:8px 10px 9px}
 .hl-hd{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;
@@ -254,13 +296,14 @@ export const CSS_EXTRA = `
    the page that happens to share a class name. */
 .hl-map{display:flex;justify-content:center;padding:2px 0 9px;
   border-bottom:1px solid var(--rule-soft);margin-bottom:9px}
-.hl-wire{max-width:100%;height:auto}
+.hl-wire{max-width:100%;height:auto;overflow:visible}
 .hl-wire rect{fill:none;stroke:var(--rule);stroke-width:1}
 .hl-wire rect.fr{stroke:var(--ink-muted)}
 .hl-wire rect.st{fill:var(--paper-alt);stroke:var(--rule-soft);
   stroke-dasharray:3 3}
-.hl-wire .b rect{stroke:var(--ink-muted);fill:var(--paper-card)}
-.hl-wire circle.n{fill:var(--tip-paper);stroke:var(--ink-muted);stroke-width:1}
+.hl-wire rect.b{stroke:var(--stroke-amber);fill:var(--paper-card)}
+.hl-wire .n circle{fill:var(--pastel-amber);stroke:var(--stroke-amber);
+  stroke-width:1}
 .hl-wire text{font-family:var(--font-mono);font-size:8px;fill:var(--ink);
   font-variant-numeric:tabular-nums}
 .hl-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
@@ -272,6 +315,51 @@ export const CSS_EXTRA = `
 .hl-rows .t .k{display:block;margin-top:2px;font-family:var(--font-mono);
   font-size:8.5px;color:var(--ink-faint)}
 .hl-ft{margin:8px 0 0;font-size:9px;line-height:1.4;color:var(--ink-faint)}
+/* --- the tour ---------------------------------------------------------
+   The card can say where the five clusters are; it cannot say where to
+   start. The walk does: the highlight moves, the number under it comes up
+   out of the dust, and one small card in the middle of the frame reads the
+   row aloud. The frame stays live underneath the whole time. */
+.hl-go{display:inline-block;margin-top:8px;padding:0;border:0;
+  background:none;cursor:pointer}
+.hl-go[hidden]{display:none}
+.hl-go:hover .badge{border-color:var(--accent);color:var(--accent)}
+.vp-tour{position:absolute;left:0;right:0;top:50%;z-index:26;
+  transform:translateY(-50%);display:flex;justify-content:center;
+  pointer-events:none}
+.vp-tour[hidden]{display:none}
+.tt-card{pointer-events:auto;width:min(272px,calc(100% - 96px));
+  padding:8px 10px 7px;background:var(--tip-paper);
+  border:1px solid var(--stroke-amber);border-radius:var(--radius);
+  box-shadow:0 8px 26px rgba(0,0,0,.16)}
+.tt-h{display:flex;align-items:flex-start;gap:7px}
+.tt-card .hn.s{display:flex;position:static;flex:none;margin-top:1px}
+.tt-t{flex:1;font-size:10px;line-height:1.42;color:var(--ink-muted)}
+.tt-t b{display:block;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink);font-weight:400}
+.tt-t .k{display:block;margin-top:3px;font-family:var(--font-mono);
+  font-size:8.5px;color:var(--ink-faint)}
+.tt-c{display:flex;justify-content:flex-end;margin-top:7px;padding-top:5px;
+  border-top:1px solid var(--rule-hair)}
+.tt-b{display:inline-flex;align-items:center;justify-content:center;
+  width:var(--vp-gl);height:var(--vp-gl);padding:0;border:0;background:none;
+  cursor:pointer;line-height:0}
+.tt-b .badge{color:var(--ink-muted)}
+.tt-b:hover .badge{color:var(--accent)}
+.tt-b .ic{width:12px;height:12px}
+/* One glyph mirrored is one glyph, and the pair can never drift apart. */
+.tt-b.rev{transform:scaleX(-1)}
+.tt-b .pp-a,.tt-b .pp-b{display:inline-flex;line-height:0}
+.tt-b .pp-b{display:none}
+.vp.tpaused .tt-b .pp-a{display:none}
+.vp.tpaused .tt-b .pp-b{display:inline-flex}
+/* The cluster being read. Two rings: the inner one is the amber the numbers
+   already wear, the outer one is the dust it throws while it is the subject. */
+.vp .vp-grp.thi{border-radius:5px;
+  box-shadow:0 0 0 2px var(--stroke-amber),0 0 0 7px var(--pastel-amber)}
+.vp .vp-grp.thi .hn{background:var(--stroke-amber);
+  border-color:var(--stroke-amber);color:var(--paper-card)}
+.vp.tour .hn{display:flex}
 
 /* ------------------------------------------------ options that have a face */
 /* Shape and swatch cannot be cycled blind and cannot be listed as words: no

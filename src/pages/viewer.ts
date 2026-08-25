@@ -278,6 +278,28 @@ dis("sp+", stop === STOPS - 1);`,
     U.p(
       `Three radios and three labels, each pointing at the next state, with only the current state's label rendered. It costs one input more than a checkbox and it buys a cycle that runs with scripting off &mdash; which is the case that matters, because a still frame with no captions is exactly where a reader knows least.`,
     ) +
+    U.p(
+      `While the numbers are up, pointing at a cluster opens a small note beside it &mdash; the number, the cluster's name, the one line of what it owns, and the keys it contains. It opens <em>away</em> from its own rail, so it never leaves the frame and never covers the thing it is describing, and it is inert: no pointer events, no press, nothing to dismiss. It exists only in the first help state. In normal use the same hover does what hover should do on a tool, which is nothing but a cursor change.`,
+    ) +
+    U.noteBox({
+      kind: "good",
+      title: "Amber is the subject, teal is the pointer",
+      body: `Two colours, two jobs, everywhere on the frame. <strong>Amber</strong> means <em>this is the thing being explained</em> &mdash; the lit circle-i, the numbers, the wash under a numbered cluster, the ring the tour is standing on. <strong>Teal</strong> means <em>this is the thing under your hand</em> &mdash; hover, and only hover. Because they never overlap, a reader can tell at a glance whether a highlight is something the page is saying or something they are doing, without being told.`,
+    }) +
+    U.h3("A tour is a caption that moves", "helptour") +
+    U.p(
+      `The map answers <em>where is everything</em> in one picture, but it cannot pace a reader through five clusters in order. So the card ends with one door &mdash; <span class="gl">${icon(
+        "play",
+      )}Walk me through it</span> &mdash; and pressing it drops back to the <strong>first</strong> state, not the map. That is deliberate: a tour that keeps the map up would put a card over the very controls it is pointing at. The frame comes back live, the numbers stay, and one cluster at a time takes a doubled amber ring while a small card in the middle of the stage names it and says what it owns.`,
+    ) +
+    U.p(
+      `The card carries four controls and nothing else: pause, back, forward, close. <strong>Back and forward pause first</strong> &mdash; taking the wheel stops the clock, because a reader who reaches for &ldquo;next&rdquo; is reading at their own speed and a timer that keeps running would take the page away from them mid-sentence. Escape closes it, the arrow keys step it, and closing it puts the frame back exactly as it was found: no cluster left highlighted, no state left set, the circle-i dark again.`,
+    ) +
+    U.noteBox({
+      kind: "",
+      title: "The tour is the one part that needs script",
+      body: `Three states are radios and work with scripting off; a timed walk cannot be. So the door ships <span class="mono">hidden</span> and the script removes the attribute &mdash; the button exists only where it would work. The tour also reads the clusters out of the frame itself rather than carrying its own copy of the list, so a cluster added to the rails is in the tour the moment it renders, and a caption that has drifted from the control it describes is not a failure mode this page has.`,
+    }) +
     /* ------------------------------------------------------------------ 6 */
     U.h2(6, "modes", "Editor and viewer are the same frame", icon("pen-to-square"), {
       hint: "said, not implied",

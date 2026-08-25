@@ -16,6 +16,7 @@ import { fitSheet } from "./icons.ts";
 import { CLIENT } from "./client.ts";
 import { VIEWER_JS } from "./viewer.ts";
 import { FIELDS_JS } from "./fields.ts";
+import { TOUR_JS } from "./tour.ts";
 import { specBody } from "./pages/spec.ts";
 import { viewerBody } from "./pages/viewer.ts";
 import { pageHead, p } from "./ui.ts";
@@ -80,6 +81,7 @@ const pages: { file: string; nav: string; html: string }[] = [
       // The stage is the only module on the site. It is deferred by being a
       // module, so nothing here blocks the first paint of the fallback still.
       `<script>${FIELDS_JS}</script>` +
+      `<script>${TOUR_JS}</script>` +
       `<script type="module">${VIEWER_JS}</script>`,
   },
 ];

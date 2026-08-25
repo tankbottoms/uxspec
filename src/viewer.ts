@@ -104,11 +104,26 @@ function tool(
  * standing back has to learn is which axis lives where, not which of two
  * adjacent buttons is the plus.
  */
-function grp(name: string, owns: string, inner: string): string {
+function grp(
+  name: string,
+  owns: string,
+  inner: string,
+  side: "t" | "b" | "l" | "r" = "t",
+): string {
   const n = REG.length + 1;
-  REG.push({ n, name, owns, tools: PEND });
+  const tools = PEND;
+  REG.push({ n, name, owns, tools });
   PEND = [];
-  return `<span class="vp-grp"><span class="hn" aria-hidden="true">${n}</span>${inner}</span>`;
+  const keys = tools.map((t) => esc(t.name)).join(" &middot; ");
+  return (
+    `<span class="vp-grp s${side}" data-n="${n}" data-name="${esc(name)}"` +
+    ` data-owns="${esc(owns)}" data-keys="${keys}">` +
+    `<span class="hn" aria-hidden="true">${n}</span>` +
+    inner +
+    `<span class="vp-hx" aria-hidden="true"><b>${n}. ${esc(name)}</b>` +
+    `<span class="o">${esc(owns)}</span><span class="k">${keys}</span></span>` +
+    `</span>`
+  );
 }
 
 /** A rail: a column of tools on one plate, docked to a side of the frame. */
@@ -144,7 +159,12 @@ function cameraRail(): string {
   return rail(
     "lm",
     "Camera",
-    grp("Camera", "Where the eye stands. Never the subject: nothing here resizes a plate.", btns),
+    grp(
+      "Camera",
+      "Where the eye stands. Never the subject: nothing here resizes a plate.",
+      btns,
+      "l",
+    ),
   );
 }
 
@@ -167,7 +187,12 @@ function layerRail(): string {
   return rail(
     "rm",
     "Layers",
-    grp("Layers", "Which of the subject's plates are standing. One control per plate, named.", btns),
+    grp(
+      "Layers",
+      "Which of the subject's plates are standing. One control per plate, named.",
+      btns,
+      "r",
+    ),
   );
 }
 
@@ -190,7 +215,12 @@ function spreadDock(): string {
       act: "sp+",
     }) +
     `</div>`;
-  return grp("Spread", "The subject's own geometry, opened and closed. The eye does not move.", btns);
+  return grp(
+    "Spread",
+    "The subject's own geometry, opened and closed. The eye does not move.",
+    btns,
+    "b",
+  );
 }
 
 /** What the frame is doing, as distinct from what it is looking at. */
@@ -219,7 +249,12 @@ function stateDock(): string {
       on: false,
     }) +
     `</div>`;
-  return grp("Mode", "What the frame is doing, as distinct from what it is looking at.", btns);
+  return grp(
+    "Mode",
+    "What the frame is doing, as distinct from what it is looking at.",
+    btns,
+    "b",
+  );
 }
 
 /** The six shapes a plate can be cut to. Drawn, not named: a list reading
@@ -325,13 +360,22 @@ const POS: Record<string, { x: number; y: number; w: number; h: number }> = {
  * Everything here is either an attribute or a rule scoped to `.hl-wire`.
  */
 function helpWire(): string {
-  const boxes = REG.map((g) => {
+  /* Two passes, and the order is the whole point. A number drawn inside its
+     own group is painted before the next cluster's box, so on the two rails
+     that overlap in the corner the later box covers the earlier number.
+     Boxes first, numbers second: paint order is the only z-index an svg has. */
+  const seen = REG.filter((g) => POS[g.name] !== undefined);
+  const boxes = seen.map((g) => {
+    const p = POS[g.name];
+    if (!p) return "";
+    return `<rect class="b" x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="3"></rect>`;
+  }).join("");
+  const nums = seen.map((g) => {
     const p = POS[g.name];
     if (!p) return "";
     return (
-      `<g class="b">` +
-      `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="3"></rect>` +
-      `<circle class="n" cx="${p.x + 1}" cy="${p.y + 1}" r="6.5"></circle>` +
+      `<g class="n">` +
+      `<circle cx="${p.x + 1}" cy="${p.y + 1}" r="6.5"></circle>` +
       `<text x="${p.x + 1}" y="${p.y + 3.6}" text-anchor="middle">${g.n}</text>` +
       `</g>`
     );
@@ -344,6 +388,7 @@ function helpWire(): string {
     `<rect class="nm" x="8" y="7" width="46" height="17" rx="3"></rect>` +
     `<rect class="nm" x="180" y="124" width="52" height="17" rx="3"></rect>` +
     boxes +
+    nums +
     `</svg>`
   );
 }
@@ -391,9 +436,53 @@ function helpLegend(): string {
     ` title="Put the help away">${icon("xmark")}</label></div>` +
     `<div class="hl-map">${helpWire()}</div>` +
     `<ol class="hl-rows">${rows}</ol>` +
-    `<p class="hl-ft">The numbers are furniture, not controls. Nothing is pressed while ` +
-    `they are up, and closing them leaves the frame exactly as it was.</p>` +
+    `<p class="hl-ft">Press the circle once for numbers over the live frame, again ` +
+    `for this map, a third time to put it away. Point at any cluster while the ` +
+    `numbers are up and it says what it owns. The numbers are furniture, not ` +
+    `controls: nothing is pressed while they are up, and closing them leaves the ` +
+    `frame exactly as it was.</p>` +
+    `<button type="button" class="hl-go" data-tour="start" hidden>` +
+    `<span class="badge auto hollow">${icon("play")}Walk me through it</span></button>` +
     `</div></div>`
+  );
+}
+
+
+/**
+ * The tour: the same five clusters, one at a time, with the frame still live.
+ *
+ * A map answers "where is everything" and a hover answers "what is this one".
+ * Neither answers "where do I start", which is the question a reader who has
+ * never seen the frame actually has. So the card offers a walk: the highlight
+ * moves, the number under it comes up out of the dust, and a card in the middle
+ * says what that cluster owns. It is a reading of the same five rows the card
+ * already lists -- no new vocabulary, just paced.
+ *
+ * Play, pause, back, forward, done. Touching back or forward pauses, because a
+ * reader who has taken the wheel is not asking to be moved along again.
+ */
+function tourBar(): string {
+  const b = (act: string, ic: string, label: string, cls: string): string =>
+    `<button type="button" class="tt-b${cls}" data-tour="${act}"` +
+    ` aria-label="${esc(label)}" title="${esc(label)}">` +
+    `<span class="badge w3 bare">${icon(ic)}</span></button>`;
+  const pp =
+    `<button type="button" class="tt-b" data-tour="play" aria-label="Pause the tour"` +
+    ` title="Pause the tour" id="tt-pp"><span class="badge w3 bare">` +
+    `<span class="pp-a">${icon("pause")}</span>` +
+    `<span class="pp-b">${icon("play")}</span></span></button>`;
+  return (
+    `<div class="vp-tour" id="vw-tour" hidden>` +
+    `<div class="tt-card" role="status" aria-live="polite">` +
+    `<div class="tt-h"><span class="hn s" id="tt-n" aria-hidden="true">1</span>` +
+    `<span class="tt-t"><b id="tt-name">&mdash;</b><span id="tt-owns"></span>` +
+    `<span class="k" id="tt-keys"></span></span></div>` +
+    `<div class="tt-c">` +
+    b("prev", "chevron-right", "The cluster before this one", " rev") +
+    pp +
+    b("next", "chevron-right", "The next cluster", "") +
+    b("close", "xmark", "End the tour", "") +
+    `</div></div></div>`
   );
 }
 
@@ -557,6 +646,7 @@ export function stage(): string {
     `</div></div>` +
     panel() +
     helpLegend() +
+    tourBar() +
     `<div class="vp-cap">${nextFig()} &middot; four plates, one tile &middot; ` +
     `<span class="mono" id="vw-state">4 up &middot; apart 0 &middot; rung 2</span></div>` +
     `</div>`
