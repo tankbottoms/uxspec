@@ -418,6 +418,11 @@ function tables(): string {
     }),
     labW: RAIL,
     row: rowCells,
+    /* Double click, not click. A grouped row is also a thing a reader selects,
+       drags a cursor across and copies out of, and a single click that opens a
+       modal takes all three away. The second click is the one that means open.
+       tabindex plus Enter keeps it reachable without a mouse at all. */
+    rowAttr: (r) => `data-tx="${DATA.indexOf(r)}" tabindex="0"`,
     rest: (_b, k) => restCells(k, typeClass(k)),
     after: (block, k) => {
       const m = { name: GNAME[k] ?? k, tone: typeClass(k), ic: GICON[k] ?? "folder-open" };
@@ -477,6 +482,10 @@ function tables(): string {
           "Each block ends with a named residual line holding the accounts too small to have earned a row. Its balance is inside the block subtotal and inside the grand total.",
       },
     }) +
+    D.inspector("tbl1-dialog", DATA, GNAME) +
+    U.p(
+      `Every row in <span class="mono">Table 1</span> opens. Double click one and the charges behind that balance arrive in a modal set at the table's own size &mdash; not a page, not a drawer, the same document a step closer. Double rather than single because a row of numbers is also a thing readers select and copy out of, and a modal on the first click takes that away; the same row answers Enter and Space, so a keyboard reaches the depth a mouse reaches. The mechanism is the whole point and it is nearly nothing: the panels are already in the page, one per row, all <span class="mono">hidden</span>, and opening a row is deciding which one is not. No client-side templating means no second set of escaping rules.`,
+    ) +
     U.h3("The rail, and what it does when the name will not fit", "rail") +
     U.p(
       `The left column is one cell per block, spanning it: a glyph, and the group's name turned on its side beneath it. It is a badge like any other &mdash; one width for the whole rail, taken from every group name the table can ever hold rather than the ones this dataset happens to contain, so the rail does not change width when a group drops out.`,

@@ -172,6 +172,22 @@ export function viewerBody(): string {
         ),
       scope: "three axes &middot; three marks &middot; three docks",
     }) +
+    U.h3("Turning is the mouse's job, not a button's", "orbit") +
+    U.p(
+      `Distance is on a rail because it is a value with a range and a reader wants it to stop where they put it. <strong>Orientation is not that.</strong> A reader turning a model is aiming, and aiming through two buttons is aiming with the lights off &mdash; so the frame is dragged directly: press anywhere on the stage and the subject follows the pointer, wheel over it and the eye steps in and out on the same rail the magnifier drives. Pointer events rather than mouse events, so a finger and a mouse are one code path, and the pointer is captured, so a drag that leaves the canvas keeps turning instead of sticking the subject half way round.`,
+    ) +
+    U.p(
+      `Two limits, and both are about not being able to get back. The pitch is clamped short of either pole, because a camera that goes over the top puts the ground plane above the subject and every reader reads that as the picture having broken. And <span class="gl">${icon(
+        "house",
+      )}Home</span> restores the <em>orientation</em> as well as the distance &mdash; that is the whole licence for a free camera. A view a reader can lose themselves in needs one press that undoes it; without that press, dragging is a trap and the two buttons really were the safer answer.`,
+    ) +
+    U.code(
+      `const r = Math.cos(el) * d;
+cam.position.set(Math.sin(az) * r, Math.sin(el) * d + 0.35, Math.cos(az) * r);
+cam.lookAt(0, 1.0, 0);
+el = Math.max(0.08, Math.min(1.45, el));   // never over the pole`,
+      { lang: "viewer.ts" },
+    ) +
     U.banner(
       "warn",
       `The magnifier is <strong>reserved for the camera</strong>. It is the one mark on the page that a reader arrives already knowing, and spending it on anything other than distance costs more than any other glyph decision on a viewport. Plus and minus are the general pair and can mean whatever their dock says they mean; the magnifier cannot.`,
@@ -203,7 +219,7 @@ dis("sp+", stop === STOPS - 1);`,
     }) +
     U.h3("A tool is a glyph, and the cluster is one object", "toolface") +
     U.p(
-      `None of these marks carries a fill. A filled badge is how the rest of this site says <em>here is a value, and it has a state</em>; a tool is not a value, and thirty filled lozenges scattered over a picture read as data laid on the subject rather than as controls belonging to the frame. So the fill and the border go, the glyph stays, and the states are told in the mark itself: <span class="mono">ink-muted</span> at rest, ink under the pointer, <span class="mono">accent</span> when pressed.`,
+      `None of these marks carries a fill. A filled badge is how the rest of this site says <em>here is a value, and it has a state</em>; a tool is not a value, and thirty filled lozenges scattered over a picture read as data laid on the subject rather than as controls belonging to the frame. So the fill and the border go, the glyph stays, and the states are told in the mark itself: <span class="mono">ink-muted</span> at rest, <span class="mono">accent</span> under the pointer, and an amber fill when it is on. Two colours and two jobs: teal arrives with the pointer and leaves with it, so it can never be read as a setting; amber says <em>this is the one being talked about</em>, which is the same thing it says everywhere else on the site. Black fill was the old answer to <em>on</em> and it is not one &mdash; it turns the glyph into a hole and puts a third colour on a frame that has two.`,
     ) +
     U.p(
       `The one exception is the layer rail, and it is the exception that proves the rule &mdash; there the colour <strong>is</strong> the plate's identity, so the fill goes and the tint stays, on the glyph. That is the same trade tile makes: a neutral frame, and the selected mark carrying the colour.`,
@@ -214,11 +230,53 @@ dis("sp+", stop === STOPS - 1);`,
     U.code(
       `.vp .badge.bare{background:none;border-color:transparent;box-shadow:none}
 .vp [data-act] .badge{color:var(--ink-muted)}
-.vp .vt[aria-pressed="true"] .badge{color:var(--accent)}
+.vp .vp-pick > .mk:hover .badge{color:var(--accent)}
+.vp .vt[aria-pressed="true"] .badge,
+.vp .vp-pick > input:checked ~ .mk .badge{color:var(--ink);
+  background:var(--pastel-amber);border-color:var(--stroke-amber)}
 .vp-btns{gap:0;border:1px solid var(--rule-soft);border-radius:4px}
 .vp-btns > * + *{border-left:1px solid var(--rule-soft)}`,
       { lang: "tokens-extra.ts" },
     ) +
+    U.h3("A tool with more than two answers opens a drawn one", "drawntools") +
+    U.p(
+      `A glyph that cycles is only honest where the answers are two. Past that the reader is pressing to find out, which is the interaction equivalent of reading a list by deleting it one line at a time &mdash; twelve tints reached by twelve presses is eleven wrong pictures on the way to the right one. So the four marks beside the circle-i are not cycles. Each opens a small panel, and each panel is <strong>drawn</strong>: the tint tool is swatches, the shape tool is shapes, the layer tool is the stack in the order the stack is in, and the mode tool draws both sides of the choice so the reader can see the other one before standing in it.`,
+    ) +
+    U.p(
+      `The rule underneath is the one the panel section states and it applies to a rail just as hard: <strong>the control wears the value's own face.</strong> Nobody converts <span class="mono">p7</span> back into a colour, and six shape names are six things to picture and then match. A word is the right control only where the value genuinely has no other face.`,
+    ) +
+    T.table({
+      fig: "Table 8b",
+      caption: "The four tools beside the circle-i, and what each draws",
+      cols: [{ h: "Tool" }, { h: "Draws" }, { h: "Answers" }],
+      body:
+        row(
+          T.td(`<span class="gl">${icon("palette")}Palette</span>`) +
+            T.td("twelve swatches, then the four plates the choice derives") +
+            T.td("one identity, and the ramp it implies"),
+        ) +
+        row(
+          T.td(`<span class="gl">${icon("layer-group")}Layers</span>`) +
+            T.td("one row per plate, in stack order") +
+            T.td("four transparencies, per plate"),
+        ) +
+        row(
+          T.td(`<span class="gl">${icon("hexagon")}Shape</span>`) +
+            T.td("six outlines, then three frames at three sizes") +
+            T.td("the subject's form, and how much frame it takes"),
+        ) +
+        row(
+          T.td(`<span class="gl">${icon("pen-to-square")}Mode</span>`) +
+            T.td("both states, side by side, drawn") +
+            T.td("viewing or editing"),
+        ),
+      scope: "four tools &middot; one cluster &middot; top right",
+    }) +
+    U.noteBox({
+      kind: "caution",
+      title: "A picker that changes four things shows the four",
+      body: `Choosing one swatch sets a whole ramp, and a grid of twelve with no preview reads as twelve wrong answers to a question about one colour. The palette panel therefore ends in the four plates it just derived. Any control whose one input has more than one output owes the reader that row.`,
+    }) +
     /* ------------------------------------------------------------------ 5 */
     U.h2(5, "glyphonly", "Help is a mode, not a hover", icon("circle-question"), {
       hint: "the circle-i, top right",
@@ -388,19 +446,27 @@ dis("sp+", stop === STOPS - 1);`,
       `The temptation is to copy the six hexes into the module &ldquo;just for the 3D&rdquo;. That is exactly the fork that <span class="mono">design-lint.ts</span> exists to catch, and the linter reads the module too.`,
     ) +
     /* ----------------------------------------------------------------- 10 */
-    U.h2(10, "panel", "The floating panel", icon("sliders"), {
-      hint: "over, not beside",
+    U.h2(10, "panel", "What is in hand, and where it goes", icon("sliders"), {
+      hint: "under, not over",
       hintIc: icon("circle-info"),
       stmt:
-        "The decision in hand, stated as a decision, with the tool that decision actually takes.",
+        "The decision in hand, stated as a decision, with the tool that decision actually takes -- on the edge the frame shares with it.",
     }) +
     U.p(
-      `Rails act on the view. A panel acts on <em>part of the subject</em>, and that is a different job with a different rule: it has to be readable at the same time as the thing it changes. Press <span class="gl">${icon(
+      `Rails act on the view. This acts on <em>part of the subject</em>, and that is a different job with a different rule: it has to be readable at the same time as the thing it changes. Press <span class="gl">${icon(
         "pen-to-square",
-      )}Editing</span> on <a href="#stage">the stage</a> and one appears over the frame&rsquo;s lower left.`,
+      )}Editing</span> on <a href="#stage">the stage</a> and a strip appears joined to the frame&rsquo;s bottom edge.`,
     ) +
     U.p(
-      `A side inspector is the obvious alternative and it is worse for one measurable reason: a viewport wide enough to be worth having is wide enough that the panel and the subject are two glances apart, so the reader carries the value across the page in their head. Over the frame costs some of the subject; beside it costs the connection between the control and the thing controlled.`,
+      `It floated over the lower left first, and that was wrong in a way worth writing down, because the argument for it was sound. A side inspector <em>is</em> worse: a viewport wide enough to be worth having is wide enough that a panel beside it is two glances away, so the reader carries the value across the page in their head. The mistake was concluding from that that it had to go <strong>on</strong> the frame. It only had to be <strong>near</strong> it. Over the frame costs the subject &mdash; the part being edited was under the thing editing it &mdash; and the cost compounded: a panel in the way needs a shut control, and a shut panel needs a badge to reopen from, so two controls existed only to walk back one placement decision. Joined to the bottom edge it is one glance, hides nothing, and needs neither.`,
+    ) +
+    U.noteBox({
+      kind: "good",
+      title: "Near the subject, not on it",
+      body: `When a control has to be read beside the thing it changes, the shared <em>edge</em> is what buys that, not the overlap. Reach for over-the-content only when the control is genuinely about a point in the content &mdash; a marker, a selection handle &mdash; and not when it is about a property of the whole.`,
+    }) +
+    U.p(
+      `The strip takes the frame&rsquo;s own accent while the frame is editable, on the border the two share, so the pair reads as one object in one state rather than as a frame with a note under it.`,
     ) +
     T.table({
       fig: "Table 9",
@@ -420,9 +486,9 @@ dis("sp+", stop === STOPS - 1);`,
             ),
         ) +
         row(
-          T.td("<strong>Putting it away is a state, not a removal</strong>") +
+          T.td("<strong>It is up exactly while the frame can be edited</strong>") +
             T.td(
-              `Shutting it leaves a badge in the corner it left from, and leaves the plate in hand alone. A panel that closes to nothing cannot be reopened by a reader who did not see what opened it.`,
+              `One bit, one owner, no second state to keep. The shut-state machinery went with the floating placement: a strip that is out of the way does not need to be dismissed, and a control that cannot be dismissed cannot be lost.`,
             ),
         ),
       scope: "the contract &middot; every panel on a frame",
@@ -437,15 +503,16 @@ dis("sp+", stop === STOPS - 1);`,
       `The swatches are the second rule made literal: the button <em>is</em> the colour, at the size of a word, carrying no text at all. The chosen one is ringed rather than filled darker &mdash; filling it would change the one property the reader is judging it by.`,
     ) +
     U.code(
-      `.dk-tone .band{display:block;width:30px;height:13px;border-radius:2px}
-.dk-tone[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent);
-  border-color:var(--accent)}`,
+      `.vw-hand .hb-c{display:flex;gap:5px;flex:none}
+.dk-tone{padding:2px;border:1px solid var(--rule);border-radius:3px}
+.dk-tone[aria-pressed="true"]{box-shadow:0 0 0 2px var(--stroke-amber);
+  border-color:var(--stroke-amber)}`,
       { lang: "tokens-extra.ts" },
     ) +
     U.noteBox({
       kind: "caution",
       title: "Shut and empty are not the same state",
-      body: `Two variables, not one. The panel being down and the plate in hand are independent, so shutting the panel does not drop what was being worked on &mdash; otherwise reopening it lands the reader somewhere they did not leave. Same argument as the reset that must not put the layer rail back.`,
+      body: `Leaving edit mode does not clear the plate in hand. The two are independent, so coming back lands the reader where they left rather than at the start &mdash; the same argument as the reset that must not put the layer rail back.`,
     }) +
     U.p(
       `The panel is also where the read-only case is settled. A frame that cannot be edited keeps <strong>every rail</strong> &mdash; looking is something a reader does too &mdash; and loses only the tool that writes. That is why the panel is bound to <span class="mono">editing</span> and nothing else is.`,

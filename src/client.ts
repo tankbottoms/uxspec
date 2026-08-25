@@ -266,6 +266,26 @@ document.querySelectorAll("tr.clickable[data-row]").forEach(function(tr){
   });
 });
 
+/* Table 1 opens on the second click. Same panels, same trick, different
+   dialog -- and dblclick rather than click because the grouped table is also
+   something a reader drags a cursor across. A modal on the first click makes
+   the table unselectable, which is a strange price to pay for a shortcut. */
+var txDlg=document.getElementById("tbl1-dialog");
+var openTx=function(i){
+  if(!txDlg) return;
+  txDlg.querySelectorAll(".rp").forEach(function(p){
+    p.hidden = p.getAttribute("data-row")!==String(i);
+  });
+  if(txDlg.showModal && !txDlg.open) txDlg.showModal();
+};
+document.querySelectorAll("tr[data-tx]").forEach(function(tr){
+  var go=function(){ openTx(tr.getAttribute("data-tx")); };
+  tr.addEventListener("dblclick",go);
+  tr.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); }
+  });
+});
+
 /* ------------------------------------------------------------- the drill */
 /* Four depths behind one dialog. The panels are all on the page already, keyed
    by their path, so opening a depth is choosing which key is not hidden -- the

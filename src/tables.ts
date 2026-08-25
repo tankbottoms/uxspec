@@ -232,7 +232,12 @@ export function grouped<T>(o: {
   row: (t: T) => string;
   rest?: (block: readonly T[], k: string) => string | null;
   after?: (block: readonly T[], k: string) => string;
+  /* Attributes for the data rows, and only the data rows. The residual is not
+     an item and the subtotal is not a row anybody drills into, so neither can
+     be given a handle that promises they are. */
+  rowAttr?: (t: T) => string;
 }): string {
+  const at = (x: T): string => (o.rowAttr ? " " + o.rowAttr(x) : "");
   const out: string[] = [];
   for (let i = 0; i < o.items.length; ) {
     const k = o.key(o.items[i] as T);
@@ -243,13 +248,13 @@ export function grouped<T>(o: {
     // The rail spans the residual too, because the residual is in the block.
     const span = n + (residual ? 1 : 0);
     out.push(
-      `<tr data-g="${esc(k)}">${glabelCell(k, span, o.labW, o.meta(k))}${o.row(
-        o.items[i] as T,
-      )}</tr>`,
+      `<tr data-g="${esc(k)}"${at(o.items[i] as T)}>` +
+        `${glabelCell(k, span, o.labW, o.meta(k))}${o.row(o.items[i] as T)}</tr>`,
     );
     for (let j = 1; j < n; j++)
       out.push(
-        `<tr class="rep" data-g="${esc(k)}">${o.row(o.items[i + j] as T)}</tr>`,
+        `<tr class="rep" data-g="${esc(k)}"${at(o.items[i + j] as T)}>` +
+          `${o.row(o.items[i + j] as T)}</tr>`,
       );
     if (residual) out.push(`<tr class="rep" data-g="${esc(k)}">${residual}</tr>`);
     if (o.after) out.push(o.after(block, k));

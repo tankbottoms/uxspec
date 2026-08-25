@@ -241,16 +241,9 @@ function stateDock(): string {
       act: "wire",
       on: false,
     }) +
-    tool({
-      ic: "pen-to-square",
-      name: "Editing",
-      note: "Turns the frame from a view into a tool: the rails stay, and the plates become pickable.",
-      act: "edit",
-      on: false,
-    }) +
     `</div>`;
   return grp(
-    "Mode",
+    "Motion",
     "What the frame is doing, as distinct from what it is looking at.",
     btns,
     "b",
@@ -275,28 +268,67 @@ const SWATCHES: readonly string[] = [
   "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12",
 ];
 
-/** Shape and tone, as popup pickers on the top rail rather than as two more
- *  glyphs cycling silently. A control that cycles is fine where the reader can
- *  see all of its states in the subject; shape and tone have twelve and six,
- *  and cycling through them is a guessing game with a redraw after each guess. */
+/** Register a picker with the cluster's legend the way `tool()` does for a
+ *  glyph button. A picker that does not register is a control the help mode
+ *  cannot name, and the legend then lists three of a cluster's four tools. */
+function pend(name: string, note: string): void {
+  PEND.push({ name, note });
+}
+
+/** Shape, and how much of the frame the subject takes.
+ *
+ *  Two settings in one tool because they are one question -- what the plate is
+ *  cut to and how big it sits -- and because six shapes and three sizes are
+ *  nine states nobody wants nine glyphs for. */
 function shapePick(): string {
-  const body =
+  pend("Shape", "Six cuts and three sizes, drawn. Neither moves the eye.");
+  const shapes =
     `<span class="pk-grid sh">` +
     SHAPES.map(
       (s) =>
         `<button type="button" class="pk-sw${s.on ? " on" : ""}" data-shape="${esc(s.k)}"` +
         ` aria-pressed="${s.on ? "true" : "false"}" title="${esc(s.name)}"` +
         ` aria-label="${esc("Cut the plates to " + s.name.toLowerCase())}">` +
-        `<svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true">` +
+        `<svg viewBox="0 0 20 16" width="24" height="19" aria-hidden="true">` +
         `<polygon points="${s.pts}" fill="var(--pastel-aqua)" stroke="var(--stroke-aqua)"></polygon>` +
         `</svg></button>`,
     ).join("") +
     `</span>`;
-  return U.vpPick({ mark: icon("layer-group"), title: "Plate shape", body, rt: true, w: "w3" });
+  const fills = [
+    { k: "0", n: "Small", r: 5 },
+    { k: "1", n: "Medium", r: 7 },
+    { k: "2", n: "Full", r: 9 },
+  ];
+  const size =
+    `<span class="pk-sub">Size in frame</span>` +
+    `<span class="pk-grid fl">` +
+    fills.map(
+      (f) =>
+        `<button type="button" class="pk-sw${f.k === "1" ? " on" : ""}" data-fill="${f.k}"` +
+        ` aria-pressed="${f.k === "1" ? "true" : "false"}" title="${esc(f.n)}"` +
+        ` aria-label="${esc("Set the subject to " + f.n.toLowerCase())}">` +
+        `<svg viewBox="0 0 24 19" width="24" height="19" aria-hidden="true">` +
+        `<rect x="1.5" y="1.5" width="21" height="16" rx="2" fill="none"` +
+        ` stroke="var(--rule)"></rect>` +
+        `<rect x="${12 - f.r}" y="${9.5 - f.r * 0.62}" width="${f.r * 2}"` +
+        ` height="${f.r * 1.24}" rx="1.5" fill="var(--pastel-aqua)"` +
+        ` stroke="var(--stroke-aqua)"></rect>` +
+        `</svg></button>`,
+    ).join("") +
+    `</span>`;
+  return U.vpPick({
+    mark: icon("hexagon"), title: "Plate shape", body: shapes + size, rt: true, w: "w3",
+  });
 }
 
+/** The identity swatch, and the ramp the four plates are actually painted from.
+ *
+ *  The ramp is the half a grid of twelve cannot say. Picking p4 does not set
+ *  one colour, it sets four -- every third swatch round the wheel -- and a
+ *  reader who cannot see that reads the grid as twelve wrong answers. */
 function tonePick(): string {
-  const body =
+  pend("Palette", "One swatch sets four: the base, and every third one after it.");
+  const grid =
     `<span class="pk-grid tn">` +
     SWATCHES.map(
       (t, i) =>
@@ -306,32 +338,106 @@ function tonePick(): string {
         `<span class="badge w3 ${t}"></span></button>`,
     ).join("") +
     `</span>`;
-  return U.vpPick({ mark: icon("palette"), title: "Identity swatch", body, rt: true, w: "w3" });
+  const ramp =
+    `<span class="pk-sub">The four plates it makes</span>` +
+    `<span class="pk-ramp" id="pk-ramp" aria-hidden="true">` +
+    PLATES.map(
+      (p, i) =>
+        `<span class="rp"><span class="badge w7 ${p.tone}" data-ramp="${i}"></span>` +
+        `<span class="n">${esc(p.name)}</span></span>`,
+    ).join("") +
+    `</span>`;
+  return U.vpPick({
+    mark: icon("palette"), title: "Identity swatch", body: grid + ramp, rt: true, w: "w3",
+  });
 }
 
-/** The top-right cluster: what the frame does to the subject's presentation.
- *  Fill and tone are cycles because the reader can see every state they have in
- *  the subject itself; shape and swatch are pickers because they cannot. */
+/** Transparency, one plate at a time.
+ *
+ *  The rail on the right edge answers standing or away, which is one bit and
+ *  belongs on a rail. How far through a plate the one under it shows is four
+ *  values, and four values do not fit on a bit. Drawn as the elevation the
+ *  stack actually has, so the row a reader presses is in the position the
+ *  plate it changes is in. */
+const OPAC: readonly { k: string; n: string }[] = [
+  { k: "100", n: "Solid" },
+  { k: "70", n: "Most" },
+  { k: "40", n: "Half" },
+  { k: "15", n: "Ghost" },
+];
+
+function layerPick(): string {
+  pend("Layers", "How far through each plate the one below it shows. Four stops.");
+  const rows = PLATES.map((p, i) => {
+    const cells = OPAC.map(
+      (o) =>
+        `<button type="button" class="pk-op${o.k === "100" ? " on" : ""}"` +
+        ` data-op="${i}:${o.k}" aria-pressed="${o.k === "100" ? "true" : "false"}"` +
+        ` title="${esc(p.name + " -- " + o.n)}"` +
+        ` aria-label="${esc("Set the " + p.name + " plate to " + o.n.toLowerCase())}">` +
+        `<svg viewBox="0 0 18 12" width="18" height="12" aria-hidden="true">` +
+        `<rect x="1" y="2.5" width="16" height="7" rx="1.5"` +
+        ` fill="var(--pastel-aqua)" fill-opacity="${Number(o.k) / 100}"` +
+        ` stroke="var(--stroke-aqua)"></rect></svg></button>`,
+    ).join("");
+    return (
+      `<span class="pk-lrow"><span class="badge w3 bare ${p.tone}" data-ramp="${i}"` +
+      ` aria-hidden="true">${icon("layer-group")}</span>` +
+      `<span class="n">${esc(p.name)}</span><span class="c">${cells}</span></span>`
+    );
+  }).join("");
+  return U.vpPick({
+    mark: icon("layer-group"), title: "Plate transparency",
+    body: `<span class="pk-lay">${rows}</span>`, rt: true, w: "w3",
+  });
+}
+
+/** Viewing or editing, said as the two frames rather than as one switch.
+ *
+ *  A press that flips a mode with no picture of the other side is a control a
+ *  reader has to try to read. Two drawn choices, both visible at once, and the
+ *  one the frame is in is the one that is lit. */
+function modePick(): string {
+  pend("Mode", "Whether the plates can be picked and changed, or only looked at.");
+  const opt = (
+    k: string, name: string, note: string, on: boolean, art: string,
+  ): string =>
+    `<button type="button" class="pk-mode${on ? " on" : ""}" data-mode="${esc(k)}"` +
+    ` aria-pressed="${on ? "true" : "false"}" aria-label="${esc(name)}">` +
+    `<svg viewBox="0 0 44 26" width="44" height="26" aria-hidden="true">` +
+    `<rect x="1" y="1" width="42" height="24" rx="3" fill="var(--paper-card)"` +
+    ` stroke="var(--rule)"></rect>${art}</svg>` +
+    `<span class="n"><b>${esc(name)}</b>${esc(note)}</span></button>`;
+  const viewing = opt(
+    "0", "Viewing", "Rails only", true,
+    `<rect x="9" y="8" width="26" height="10" rx="2" fill="var(--pastel-aqua)"` +
+      ` stroke="var(--stroke-aqua)"></rect>`,
+  );
+  const editing = opt(
+    "1", "Editing", "Plates pickable", false,
+    `<rect x="3" y="3" width="38" height="20" rx="2" fill="none"` +
+      ` stroke="var(--accent)" stroke-dasharray="3 2"></rect>` +
+      `<rect x="9" y="8" width="26" height="10" rx="2" fill="var(--pastel-aqua)"` +
+      ` stroke="var(--accent)"></rect>`,
+  );
+  return U.vpPick({
+    mark: icon("pen-to-square"), title: "What the frame is",
+    body: `<span class="pk-modes">${viewing}${editing}</span>`, rt: true, w: "w3",
+  });
+}
+
+/** The top-right cluster: four tools, each one drawn.
+ *
+ *  Every one of these was a glyph that either cycled silently or flipped a
+ *  mode with no picture of the other side, and the reader had to press it to
+ *  find out what it was. A tool that opens is not more furniture -- it is the
+ *  same glyph, with the states it owns visible before the press instead of
+ *  after it. */
 function frameDock(): string {
   const btns =
-    `<div class="vp-btns">` +
-    tool({
-      ic: "up-right-and-down-left-from-center",
-      name: "Fill",
-      note: "How much of the frame the subject takes. Three settings; it moves the subject, not the eye.",
-      act: "fill",
-    }) +
-    tool({
-      ic: "palette",
-      name: "Tone",
-      note: "Cycles the identity swatch the plates are tinted from. Read live out of the stylesheet.",
-      act: "tone",
-    }) +
-    shapePick() +
-    tonePick() +
-    `</div>`;
+    `<div class="vp-btns">` + tonePick() + layerPick() + shapePick() + modePick() + `</div>`;
   return grp(
-    "Frame",
+    "Tools",
     "What the frame does to the subject's presentation. Never its geometry.",
     btns,
   );
@@ -340,11 +446,11 @@ function frameDock(): string {
 /** Where each cluster sits on the frame, for the wireframe. Keyed by the name
  *  the cluster registered, so a cluster that moves has to move here too. */
 const POS: Record<string, { x: number; y: number; w: number; h: number }> = {
-  Frame: { x: 138, y: 7, w: 94, h: 17 },
+  Tools: { x: 146, y: 7, w: 66, h: 17 },
   Camera: { x: 8, y: 42, w: 17, h: 56 },
   Layers: { x: 215, y: 42, w: 17, h: 56 },
-  Mode: { x: 8, y: 124, w: 64, h: 17 },
-  Spread: { x: 92, y: 124, w: 50, h: 17 },
+  Motion: { x: 8, y: 124, w: 46, h: 17 },
+  Spread: { x: 74, y: 124, w: 50, h: 17 },
 };
 
 /**
@@ -387,6 +493,7 @@ function helpWire(): string {
     `<rect class="st" x="30" y="30" width="180" height="88" rx="2"></rect>` +
     `<rect class="nm" x="8" y="7" width="46" height="17" rx="3"></rect>` +
     `<rect class="nm" x="180" y="124" width="52" height="17" rx="3"></rect>` +
+    `<circle class="nm hi" cx="223" cy="15.5" r="7.5"></circle>` +
     boxes +
     nums +
     `</svg>`
@@ -534,74 +641,44 @@ export function stageFallback(): string {
 /* ------------------------------------------------------------- the panel */
 
 /**
- * The floating panel: the decision in hand, said in words, with the tool that
- * decision actually takes.
+ * What is in hand, printed under the frame.
  *
- * It is docked over the frame rather than beside it, and that is the whole
- * reason it exists as its own thing. A control that changes the subject has to
- * be readable at the same time as the subject, or the reader is carrying a
- * value across the width of the page in their head. A viewport wide enough to
- * be worth having is wide enough that a side inspector is a different glance.
+ * This was a floating panel docked over the stage, and it was wrong in the way
+ * that is hardest to see from inside: it answered a question the reader had not
+ * asked yet, in the middle of the picture they were trying to look at, and it
+ * had a shut state and a reopen badge to manage the fact that it was in the
+ * way. Three controls existed to undo a placement decision.
  *
- * Three rules it demonstrates, all of them taken from a dock that had to work
- * on a phone where the subject was forty characters four pixels apart:
+ * A strip under the frame has none of that. It is readable at the same time as
+ * the subject -- which was the whole argument for docking it inside -- without
+ * standing on it, it needs no dismissal, and it cannot cover the plate it is
+ * about. It appears only while the frame is editable, because a frame that
+ * cannot be changed has nothing in hand.
  *
- *  - The head states the DECISION, not the encoding. Not "plate 2, tone p4" --
- *    that is what is stored. An imperative with a subject, so a reader who
- *    arrived at this panel cold knows what is being asked of them.
- *  - The tool wears the value's own face. A colour is chosen from colours; a
- *    shape from shapes. A text field or a number is the right control only
- *    where the value genuinely has no other face, and reaching for one before
- *    that is how an editor ends up being a form about a picture.
- *  - Putting it away is a STATE, not a removal. It leaves a way back -- a
- *    single badge in the corner it left from. A panel that closes to nothing
- *    is a panel the reader cannot get back without knowing what opened it.
+ * The rules it still demonstrates are the ones that were never about position:
+ * the head states the DECISION rather than the encoding, and the tool wears the
+ * value's own face -- a colour is chosen from colours, never from a field.
  */
-function panel(): string {
+function handBar(): string {
   const rows = PLATES.map(
     (pl, i) =>
-      '<button type="button" class="dk-tone" data-plate="' +
-      i +
-      '"' +
-      (i === 1 ? ' aria-pressed="true"' : ' aria-pressed="false"') +
-      ' aria-label="' +
-      esc("Tint the plate in hand with " + pl.name + "'s swatch") +
-      '" title="' +
-      esc(pl.tone + " -- " + pl.name) +
-      '"><span class="badge w6 ' +
-      pl.tone +
-      '"></span></button>',
+      `<button type="button" class="dk-tone" data-plate="${i}"` +
+      ` aria-pressed="${i === 1 ? "true" : "false"}"` +
+      ` aria-label="${esc("Take the " + pl.name + " plate in hand")}"` +
+      ` title="${esc(pl.tone + " -- " + pl.name)}">` +
+      `<span class="badge w7 ${pl.tone}" data-ramp="${i}"></span></button>`,
   ).join("");
-
   return (
-    '<div class="vp-dock" id="vw-dock">' +
-    /* The reopen badge lives outside the panel, not inside it: it has to
-       survive the panel being shut, which is the one moment it matters. */
-    '<button type="button" class="badge auto act dk-open" data-act="dock" hidden>' +
-    icon("sliders") +
-    "What is in hand</button>" +
-    '<div class="dk-panel">' +
-    '<div class="dk-hd"><span class="dk-ask" id="dk-ask">' +
-    "Choose the tint for the Form plate. One swatch is one identity colour, and the plate keeps it through every other control." +
-    "</span>" +
-    '<button type="button" class="dk-shut" data-act="dock" ' +
-    'aria-label="Put it away -- the panel goes, the plate stays" ' +
-    'title="Put it away">' +
-    icon("xmark") +
-    "</button></div>" +
-    '<div class="dk-bd">' +
-    /* The subject the panel acts on, repeated inside it. The plate in hand is
-       four rails away on the right edge; a reader setting a tint should not
-       have to look back across the frame to check which one they are setting. */
-    '<div class="dk-tools" role="group" aria-label="Identity swatches">' +
-    rows +
-    "</div>" +
-    '<p class="dk-ft"><span class="badge auto hollow" id="dk-val">' +
-    icon("layer-group") +
-    '<span id="dk-val-t">Form</span> <span class="mono" id="dk-val-n">p4</span></span>' +
-    '<span class="dk-note">Stored as the plate index and a swatch name. ' +
-    "The hex is in the stylesheet, not here.</span></p>" +
-    "</div></div></div>"
+    `<div class="vw-hand" id="vw-dock" hidden>` +
+    `<span class="hb-k"><span class="badge auto hollow">${icon("sliders")}` +
+    `In hand</span></span>` +
+    `<span class="hb-t"><b id="dk-val-t">Form</b>` +
+    `<span class="mono" id="dk-val-n">p4</span>` +
+    `<span class="ask" id="dk-ask">Choose the tint for the Form plate. ` +
+    `One swatch is one identity colour, and the plate keeps it through every ` +
+    `other control.</span></span>` +
+    `<span class="hb-c" role="group" aria-label="Identity swatches">${rows}</span>` +
+    `</div>`
   );
 }
 
@@ -623,6 +700,7 @@ export function stage(): string {
   const st = stateDock();
   const sp = spreadDock();
   return (
+    `<div class="vw-wrap">` +
     `<div class="vp vw has-cap">`
     + `<input type="radio" name="vw-hm" class="vp-hm h0" id="vw-hm0" checked>` +
       `<input type="radio" name="vw-hm" class="vp-hm h1" id="vw-hm1">` +
@@ -644,11 +722,12 @@ export function stage(): string {
     `<div class="vp-read"><span class="v" id="hud-fps">&mdash;</span>` +
     `<span class="u">fps</span><span class="s" id="hud-tri">&mdash;</span></div>` +
     `</div></div>` +
-    panel() +
     helpLegend() +
     tourBar() +
     `<div class="vp-cap">${nextFig()} &middot; four plates, one tile &middot; ` +
     `<span class="mono" id="vw-state">4 up &middot; apart 0 &middot; rung 2</span></div>` +
+    `</div>` +
+    handBar() +
     `</div>`
   );
 }
@@ -734,7 +813,15 @@ function start(host){
   // The plate in hand, and whether the panel is up. Two variables and not
   // one: shutting the panel must not drop what was being worked on, or
   // reopening it lands the reader somewhere they did not leave.
-  let hand = 1; let dockUp = true;  const up = [true, true, true, true];
+  let hand = 1; const up = [true, true, true, true];
+  // How far through each plate the one under it shows. Four stops, per plate,
+  // because it is a property of a plate and not of the stack.
+  const opac = [1, 1, 1, 1];
+  // Where the eye stands round the subject. Two angles and a distance, and the
+  // drag writes the angles -- so "home" restores an orientation as well as a
+  // rung, which is the thing that makes a free camera safe to hand over.
+  const HOME = { az: 0.86, el: 0.62 };
+  let az = HOME.az, el = HOME.el;
 
   // The twelve identity swatches, measured off the stylesheet rather than
   // copied into this file. A hex written here is a hex that disagrees with the
@@ -819,7 +906,8 @@ function start(host){
       const t = swatch(SW[(baseAt + L * 3) % 12]);
       const G = plateGeo();
       const mat = new THREE.MeshLambertMaterial({
-        color: new THREE.Color(t.fill), wireframe: wire
+        color: new THREE.Color(t.fill), wireframe: wire,
+        transparent: opac[L] < 1, opacity: opac[L], depthWrite: opac[L] > 0.85
       });
       const em = new THREE.LineBasicMaterial({ color: new THREE.Color(t.edge) });
       const g = new THREE.Group();
@@ -858,14 +946,60 @@ function start(host){
   }
 
   function place(){
-    // The eye moves along one line through the origin. Orbit is not offered:
-    // a viewport with a free camera and no way back is a viewport readers get
-    // lost in, and "home" would then have to restore an orientation as well as
-    // a distance.
-    const d = 9.4 - rung * 1.05;
-    cam.position.set(d * 0.62, d * 0.52, d * 0.72);
-    cam.lookAt(0, 1.0, 0);
+    // The eye moves on a sphere round the subject: the rails set the distance,
+    // the drag sets the two angles. Orbit was refused here for a while on the
+    // grounds that a free camera is one readers get lost in -- which is true
+    // of a free camera with no way back. The way back is "home", and it now
+    // restores the orientation as well as the rung, so the argument no longer
+    // holds. Pitch is clamped short of the poles because the frame has a
+    // ground plane: a camera that goes over the top puts the grid above the
+    // subject and every reader reads that as the picture having broken.
+    const d = 8.3 - rung * 0.95;
+    el = Math.max(0.08, Math.min(1.45, el));
+    const r = Math.cos(el) * d;
+    cam.position.set(Math.sin(az) * r, Math.sin(el) * d + 0.2, Math.cos(az) * r);
+    cam.lookAt(0, 0.55, 0);
   }
+
+  // Dragging turns the subject. Pointer events, so a finger and a mouse are
+  // the same code path, and capture, so a drag that leaves the canvas keeps
+  // going rather than sticking the subject mid-turn.
+  const el0 = renderer.domElement;
+  el0.style.touchAction = "none";
+  let drag = null;
+  el0.addEventListener("pointerdown", e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    drag = { x: e.clientX, y: e.clientY };
+    host.classList.add("dragging");
+    // Capture throws if the pointer is already gone by the time the handler
+    // runs. That is a race, not a failure, and it must not take the drag with it.
+    try { el0.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  el0.addEventListener("pointermove", e => {
+    if (!drag) return;
+    az -= (e.clientX - drag.x) * 0.008;
+    el += (e.clientY - drag.y) * 0.006;
+    drag.x = e.clientX; drag.y = e.clientY;
+    place();
+  });
+  const drop = e => {
+    if (!drag) return;
+    drag = null;
+    host.classList.remove("dragging");
+    if (e && e.pointerId !== undefined && el0.hasPointerCapture(e.pointerId))
+      el0.releasePointerCapture(e.pointerId);
+  };
+  el0.addEventListener("pointerup", drop);
+  el0.addEventListener("pointercancel", drop);
+  // The wheel is the same control the camera rail is, so it moves in the same
+  // five rungs rather than in a continuous zoom the rail's readout could not
+  // then describe. It only takes the wheel while the pointer is over the
+  // canvas, and it says so by preventing the page scroll it just consumed.
+  el0.addEventListener("wheel", e => {
+    e.preventDefault();
+    rung = Math.max(0, Math.min(RUNGS - 1, rung + (e.deltaY > 0 ? -1 : 1)));
+    place(); report();
+  }, { passive: false });
 
   function size(){
     const r = host.getBoundingClientRect();
@@ -909,15 +1043,25 @@ function start(host){
     // The panel is an editor's control, so it is up only while the frame is
     // one. Read-only frames keep every rail -- looking is a thing a reader
     // does too -- and lose only the tool that writes.
+    // Every swatch that stands for a plate is repainted from the same ramp the
+    // plates are built from: the rail, the transparency rows, the palette
+    // preview and the strip under the frame. A legend that disagrees with its
+    // subject is worse than no legend, and it is believed.
+    document.querySelectorAll("[data-ramp]").forEach(b => {
+      const i = Number(b.getAttribute("data-ramp")) || 0;
+      b.className = b.className.replace(/\bp\d+\b/, SW[(baseAt + i * 3) % 12]);
+    });
+    document.querySelectorAll("[data-mode]").forEach(b => {
+      const on = (b.getAttribute("data-mode") === "1") === editing;
+      b.setAttribute("aria-pressed", String(on));
+      b.classList.toggle("on", on);
+    });
     const dk = document.getElementById("vw-dock");
     if (dk) {
       dk.hidden = !editing;
-      dk.classList.toggle("shut", !dockUp);
-      const ob = dk.querySelector(".dk-open");
-      if (ob) ob.hidden = dockUp;
       // The head is rewritten with the decision, not the encoding. It names
       // the plate because the plate is the subject of the sentence.
-      const nm = NAMES[hand], tn = SWATCH[hand];
+      const nm = NAMES[hand], tn = SW[(baseAt + hand * 3) % 12];
       t("dk-ask", "Choose the tint for the " + nm + " plate. One swatch is one " +
         "identity colour, and the plate keeps it through every other control.");
       t("dk-val-t", nm);
@@ -931,17 +1075,13 @@ function start(host){
   const ACTS = {
     "cam+": () => { rung = Math.min(RUNGS - 1, rung + 1); place(); },
     "cam-": () => { rung = Math.max(0, rung - 1); place(); },
-    "cam0": () => { rung = 2; place(); },
+    "cam0": () => { rung = 2; az = HOME.az; el = HOME.el; place(); },
     "sp+":  () => { stop = Math.min(STOPS - 1, stop + 1); layout(); },
     "sp-":  () => { stop = Math.max(0, stop - 1); layout(); },
-    "fill": () => { fillAt = (fillAt + 1) % FILLS.length; layout(); },
-    "tone": () => { baseAt = (baseAt + 1) % 12; build(); },
     "spin": () => { spin = !spin; },
-    "wire": () => { wire = !wire; build(); },
-    "edit": () => { editing = !editing; host.classList.toggle("editing", editing); },
-    "dock": () => { dockUp = !dockUp; }
+    "wire": () => { wire = !wire; build(); }
   };
-  const TOGGLE = { spin: 1, wire: 1, edit: 1 };
+  const TOGGLE = { spin: 1, wire: 1 };
 
   document.querySelectorAll("[data-act]").forEach(b => {
     b.addEventListener("click", () => {
@@ -949,11 +1089,7 @@ function start(host){
       const fn = ACTS[a];
       if (!fn) return;
       fn();
-      if (TOGGLE[a]) {
-        b.setAttribute("aria-pressed", String(
-          a === "spin" ? spin : a === "wire" ? wire : editing
-        ));
-      }
+      if (TOGGLE[a]) b.setAttribute("aria-pressed", String(a === "spin" ? spin : wire));
       report();
     });
   });
@@ -990,6 +1126,29 @@ function start(host){
   }
   grid("data-shape", v => { shape = v; });
   grid("data-tone", v => { baseAt = Math.max(0, SW.indexOf(v)); });
+  grid("data-fill", v => { fillAt = Math.max(0, Math.min(FILLS.length - 1, Number(v))); });
+  // Editing is picked from the two frames rather than flipped, so the control
+  // says what the other side looks like before the reader is standing in it.
+  grid("data-mode", v => {
+    editing = v === "1";
+    host.classList.toggle("editing", editing);
+  });
+  // Transparency is one row per plate, so the pressed member is the row's own
+  // set and not the whole panel's. .pk-grid would take all sixteen.
+  document.querySelectorAll("[data-op]").forEach(b => {
+    b.addEventListener("click", () => {
+      const p = (b.getAttribute("data-op") || "0:100").split(":");
+      const i = Number(p[0]) || 0;
+      opac[i] = (Number(p[1]) || 100) / 100;
+      const row = b.closest(".pk-lrow");
+      if (row) row.querySelectorAll("[data-op]").forEach(o => {
+        o.setAttribute("aria-pressed", String(o === b));
+        o.classList.toggle("on", o === b);
+      });
+      build();
+      report();
+    });
+  });
 
   document.querySelectorAll("[data-layer]").forEach((b, i) => {
     b.addEventListener("click", () => {

@@ -73,55 +73,22 @@ export const CSS_EXTRA = `
 .stage .hud{position:absolute;left:9px;bottom:9px;display:flex;gap:5px;
   font-family:var(--font-mono);font-size:9.5px;color:var(--ink-soft)}
 
-/* -------------------------------------------------------- the floating panel */
-/* Docked over the frame, not beside it. A control that changes the subject has
-   to be readable at the same time as the subject; a viewport wide enough to be
-   worth having is wide enough that a side inspector is a separate glance. It
-   sits above the bottom docks rather than in the row with them, because it is
-   the only thing on the frame that is about one part of the subject rather than
-   about the view. */
-/* [hidden] loses to display:flex, so a read-only frame went on showing the
-   editor's panel. The attribute has to be answered wherever display is set. */
-.vp-dock[hidden]{display:none}
-.vp-dock{position:absolute;left:9px;right:9px;bottom:52px;z-index:6;
-  display:flex;justify-content:flex-start;pointer-events:none}
-.vp-dock>*{pointer-events:auto}
-.dk-panel{width:100%;max-width:352px;background:var(--tip-paper);
-  border:1px solid var(--rule);border-radius:var(--radius);
-  box-shadow:0 8px 26px rgba(0,0,0,.16);padding:8px 10px 9px}
-/* Shut is a state. The panel goes; a badge in the corner it left from stays,
-   because a panel that closes to nothing cannot be reopened by a reader who
-   did not see what opened it. */
-.vp-dock.shut .dk-panel{display:none}
-.dk-open{cursor:pointer;border:0;font:inherit}
-.dk-hd{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
-/* The decision, said as a decision. It wraps to two lines and that is the
-   budget -- a third line is a paragraph, and a panel is not where prose goes. */
-.dk-ask{flex:1;font-size:10px;line-height:1.42;color:var(--ink-muted)}
+/* --------------------------------------------------- two panel leftovers */
+/* What is in hand used to float over the frame. It was in the way, it needed a
+   shut state, and the shut state needed a badge to undo itself with -- three
+   pieces of machinery to walk back one placement decision. It now lives under
+   the frame as .vw-hand, below. These two rules survive because the help card
+   still needs a close affordance and the strip still needs a swatch button. */
 .dk-shut{flex:none;background:none;border:0;padding:2px;cursor:pointer;
   color:var(--ink-faint);line-height:0}
 .dk-shut:hover{color:var(--ink)}
 .dk-shut .ic{width:10px;height:10px}
-/* The tools wear the value's own face. A tint is chosen from tints -- the
-   button IS the swatch, at the size of a word, and carries no text at all.
-   A name here would be the encoding wearing the value's clothes. */
-.dk-tools{display:flex;gap:5px;flex-wrap:wrap}
 .dk-tone{padding:2px;background:var(--paper-card);border:1px solid var(--rule);
   border-radius:3px;cursor:pointer;line-height:0}
 /* The chosen one is ringed, not filled darker. Filling it would change the one
    thing on the control the reader is judging it by. */
-.dk-tone[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent);
-  border-color:var(--accent)}
-.dk-ft{display:flex;align-items:center;gap:8px;margin:8px 0 0;flex-wrap:wrap}
-.dk-ft .badge{font-size:9px;letter-spacing:.06em;text-transform:uppercase;
-  display:inline-flex;align-items:center;gap:5px}
-.dk-ft .badge .ic{width:9px;height:9px}
-.dk-note{font-size:9px;line-height:1.4;color:var(--ink-faint)}
-/* The panel is the first thing to give up its room. On a narrow frame it takes
-   the full width and the swatches fold; below that the frame is too small for
-   an editor at all and the panel is simply not put up. */
-@media (max-width:560px){.vp-dock{bottom:48px}.dk-panel{max-width:none}}
-
+.dk-tone[aria-pressed="true"]{box-shadow:0 0 0 2px var(--stroke-amber);
+  border-color:var(--stroke-amber)}
 /* ------------------------------------------------------- the side rails */
 /* Two docks the other viewports do not have, because two of the axes a 3D view
    offers do not exist on a map or a chart: where the eye stands, and which of
@@ -170,10 +137,18 @@ export const CSS_EXTRA = `
 /* A glyph with nothing behind it has to carry the whole control, so it is
    drawn a size up from the mark that used to sit inside a filled badge. */
 .vp-btns .badge .ic,.vp-helpmk .ic{width:12px;height:12px}
-.vp .vt:hover .badge,.vp .vp-pick > .mk:hover .badge{color:var(--ink)}
-.vp .vt[aria-pressed="true"] .badge{color:var(--accent)}
+/* Two colours, two jobs, and the frame never uses a third. Teal is the thing
+   under the pointer: it arrives on hover and leaves with the pointer, so it
+   can never be mistaken for a setting. Amber is the thing that is on -- a held
+   state, so it gets a fill, because a held state that is only a tint is a
+   tint the reader has to compare against its neighbours to read. Black fill
+   was the old answer to on and it is not an answer: it turns the glyph into
+   a hole and puts a third, meaningless colour on a frame with two. */
+.vp .vt:hover .badge,.vp .vp-pick > .mk:hover .badge{color:var(--accent)}
+.vp .vt[aria-pressed="true"] .badge:not(.bare),
+.vp .vp-pick > input:checked ~ .mk .badge{color:var(--ink);
+  background:var(--pastel-amber);border-color:var(--stroke-amber)}
 .vp .vt[disabled]{opacity:.34;cursor:default}
-.vp .vp-pick > input:checked ~ .mk .badge{color:var(--accent)}
 /* One outline round the cluster, hairlines between the tools. Adjacent
    controls that act on one axis are one object; five separately bordered
    pills say five axes and make the reader count them to find out. */
@@ -304,6 +279,8 @@ export const CSS_EXTRA = `
 .hl-wire rect.b{stroke:var(--stroke-amber);fill:var(--paper-card)}
 .hl-wire .n circle{fill:var(--pastel-amber);stroke:var(--stroke-amber);
   stroke-width:1}
+.hl-wire circle.nm{fill:none;stroke:var(--rule);stroke-width:1}
+.hl-wire .nm.hi{stroke:var(--stroke-amber)}
 .hl-wire text{font-family:var(--font-mono);font-size:8px;fill:var(--ink);
   font-variant-numeric:tabular-nums}
 .hl-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
@@ -371,13 +348,17 @@ export const CSS_EXTRA = `
 .pk-sw{padding:2px;background:var(--paper-card);border:1px solid var(--rule);
   border-radius:3px;cursor:pointer;line-height:0}
 .pk-sw:hover{border-color:var(--ink-muted)}
-.pk-sw.on,.pk-sw[aria-pressed="true"]{border-color:var(--accent);
-  box-shadow:0 0 0 2px var(--accent)}
+.pk-sw.on,.pk-sw[aria-pressed="true"]{border-color:var(--stroke-amber);
+  box-shadow:0 0 0 2px var(--stroke-amber)}
 /* ------------------------------------------------------------ the stage */
 /* Inside a viewport the stage is the body and nothing else: the frame already
    owns the border, the radius and the clipping, and a second border here drew
    a hairline just inside the first one on every rebuild. */
-.vw .vp-body{aspect-ratio:16/10}
+/* The frame was two thirds air. A stage is sized to the subject standing in
+   it, not to a nice ratio, and 16/10 at full page width put the model in a
+   field. The cap matters more than the ratio: past it the extra height is
+   floor and sky, and the reader scrolls to reach the controls. */
+.vw .vp-body{width:100%;aspect-ratio:16/9;max-height:392px}
 .vw .stage{position:absolute;inset:0;aspect-ratio:auto;margin:0;border:0;
   border-radius:0;background:var(--paper-alt)}
 /* The frame says which of the two things it is. A viewport that can be edited
@@ -419,8 +400,8 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
   border:0;opacity:0;clip-path:inset(50%);pointer-events:none}
 .seg-ctl label{display:inline-flex;align-items:center;cursor:pointer;padding:2px 3px}
 .seg-ctl label .badge{cursor:pointer}
-.seg-ctl input:checked + label .badge{border-color:var(--ink);color:var(--ink);
-  box-shadow:inset 0 0 0 1px var(--ink)}
+.seg-ctl input:checked + label .badge{border-color:var(--stroke-amber);color:var(--ink);
+  background:var(--pastel-amber)}
 .seg-ctl label:hover .badge{border-color:var(--ink-muted)}
 .seg-ctl input:focus-visible + label .badge{outline:2px solid var(--stroke-teal);
   outline-offset:2px}
@@ -432,8 +413,8 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
 .gctl{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
 .gctl button{background:none;border:0;padding:2px 3px;cursor:pointer;font:inherit}
 .gctl button .badge{cursor:pointer}
-.gctl button[aria-pressed="true"] .badge{border-color:var(--ink);color:var(--ink);
-  box-shadow:inset 0 0 0 1px var(--ink)}
+.gctl button[aria-pressed="true"] .badge{border-color:var(--stroke-amber);color:var(--ink);
+  background:var(--pastel-amber)}
 .gctl button:hover .badge{border-color:var(--ink-muted)}
 
 /* ---------------------------------------------------------- viewports */
@@ -489,8 +470,11 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
   clip-path:inset(50%);pointer-events:none}
 .vp-pick > .mk{display:inline-flex;cursor:pointer}
 .vp-pick > .mk .badge{cursor:pointer}
-.vp-pick > input:checked ~ .mk .badge{border-color:var(--ink);color:var(--ink);
-  box-shadow:inset 0 0 0 1px var(--ink)}
+/* On is amber, never black. Black fill is what a control does when it has run
+   out of vocabulary: it stops being a glyph and becomes a hole. Amber is the
+   page's word for the thing being talked about, and a pressed tool IS that. */
+.vp-pick > input:checked ~ .mk .badge{border-color:var(--stroke-amber);color:var(--ink);
+  background:var(--pastel-amber)}
 .vp-pick > .scrim{display:none;position:fixed;inset:0;z-index:14;cursor:default}
 .vp-pick > input:checked ~ .scrim{display:block}
 .vp-pick > .panel{display:none;position:absolute;z-index:15;left:0;top:calc(100% + 6px);
@@ -940,10 +924,10 @@ dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
    the board cannot reflow at a narrow width and put a different character
    under the same finger. It scrolls instead. */
 .ab{width:fit-content;max-width:100%;border:1px solid var(--rule);border-radius:var(--radius);
-  background:var(--paper-card);padding:8px 10px 9px;margin:12px 0}
+  background:var(--paper-card);padding:6px 26px 7px 8px;margin:10px 0}
 .ab-m{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%);
   pointer-events:none}
-.ab-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.ab-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
 .ab-face{flex:1;min-width:180px;font-size:10.5px;color:var(--ink-muted);
   word-break:break-all;line-height:1.5}
 .ab-face b{color:var(--ink);font-weight:400}
@@ -957,17 +941,20 @@ dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
 .ab-t:hover{color:var(--ink)}
 .ab-plain:checked ~ .ab-hd .ab-t[for="ab-plain"],
 .ab-ends:checked ~ .ab-hd .ab-t[for="ab-ends"],
-.ab-val:checked ~ .ab-hd .ab-t[for="ab-val"]{background:var(--ink);color:var(--paper)}
-.ab-grid{display:grid;grid-template-columns:repeat(var(--per),26px);
-  gap:3px;justify-content:start}
+.ab-val:checked ~ .ab-hd .ab-t[for="ab-val"]{background:var(--pastel-amber);
+  border-color:var(--stroke-amber);color:var(--ink)}
+.ab-grid{display:grid;grid-template-columns:repeat(var(--per),var(--cw,26px));
+  gap:2px;justify-content:start}
 .ab-c{position:relative;display:flex;align-items:center;justify-content:center;
-  height:24px;padding:0;background:var(--paper-alt);border:1px solid var(--rule-soft);
-  border-radius:2px;cursor:pointer;font-family:var(--font-mono);font-size:10px;
+  height:var(--ch,24px);padding:0;background:var(--paper-alt);
+  border:1px solid var(--rule-soft);border-radius:2px;cursor:pointer;
+  font-family:var(--font-mono);font-size:var(--cf,10px);
   color:var(--ink-muted);line-height:1}
 .ab-c:hover{border-color:var(--ink-muted);color:var(--ink)}
-.ab-c.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);color:var(--ink)}
+.ab-c.on{border-color:var(--stroke-amber);box-shadow:0 0 0 2px var(--stroke-amber);
+  color:var(--ink)}
 .ab-c .vb{display:none;position:absolute;left:1px;right:1px;bottom:1px;
-  height:calc(2px + var(--v) * 18px);background:var(--pastel-aqua);
+  height:calc(2px + var(--v) * (var(--ch,24px) - 6px));background:var(--pastel-aqua);
   border-top:1px solid var(--stroke-aqua);border-radius:1px}
 .ab-c .ch{position:relative;z-index:1}
 .ab-ends:checked ~ .ab-grid .ab-c{color:var(--ink-faint);
@@ -976,7 +963,7 @@ dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
   border-color:var(--ink-muted)}
 .ab-val:checked ~ .ab-grid .ab-c .vb{display:block}
 .ab-val:checked ~ .ab-grid .ab-c{color:var(--ink-soft)}
-.ab-ft{display:flex;align-items:flex-start;gap:8px;margin-top:8px}
+.ab-ft{display:flex;align-items:flex-start;gap:8px;margin-top:6px}
 .ab-ft .t{flex:1;font-size:9.5px;line-height:1.45;color:var(--ink-faint)}
 
 /* --- Field controls ----------------------------------------------------
@@ -1036,4 +1023,116 @@ dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
 .fsw{padding:0;background:none;border:0;cursor:pointer;text-align:left}
 .fsw .badge{opacity:.55}
 .fsw[aria-pressed="true"] .badge{opacity:1}
+/* ------------------------------------------------------- the four tools */
+/* Each glyph beside the circle-i opens a drawn tool rather than cycling. The
+   panels are wider than a list because what is in them is drawn at the size it
+   is chosen at -- a swatch the size of a word is a word about a colour. */
+.pk-sub{display:block;padding:6px 10px 3px;margin-top:2px;
+  border-top:1px solid var(--rule-hair);font-family:var(--font-mono);
+  font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-soft)}
+.pk-grid.fl{grid-template-columns:repeat(3,auto)}
+/* The ramp: one swatch sets four, and the four are shown. A grid of twelve
+   with no ramp reads as twelve wrong answers to a question about one colour. */
+.pk-ramp{display:flex;gap:4px;padding:2px 8px 6px}
+.pk-ramp .rp{display:flex;flex-direction:column;align-items:center;gap:3px}
+.pk-ramp .n{font-size:8px;letter-spacing:.03em;color:var(--ink-soft)}
+/* Transparency, drawn as the elevation the stack has: the row a reader presses
+   is in the position of the plate it changes. */
+.pk-lay{display:block;padding:2px 8px 6px}
+.pk-lrow{display:flex;align-items:center;gap:6px;padding:2px 0}
+.pk-lrow + .pk-lrow{border-top:1px solid var(--rule-hair)}
+.pk-lrow > .n{flex:1;min-width:44px;font-size:9.5px;color:var(--ink-muted)}
+.pk-lrow > .c{display:flex;gap:3px}
+.pk-op{padding:1px;background:var(--paper-card);border:1px solid var(--rule);
+  border-radius:2px;cursor:pointer;line-height:0}
+.pk-op:hover{border-color:var(--ink-muted)}
+.pk-op.on,.pk-op[aria-pressed="true"]{border-color:var(--stroke-amber);
+  background:var(--pastel-amber)}
+/* Viewing and editing, both drawn, so the control says what the other side
+   looks like before the reader is standing in it. */
+.pk-modes{display:flex;gap:6px;padding:2px 8px 6px}
+.pk-mode{display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  padding:4px;background:var(--paper-card);border:1px solid var(--rule);
+  border-radius:3px;cursor:pointer;text-align:left}
+.pk-mode:hover{border-color:var(--ink-muted)}
+.pk-mode.on,.pk-mode[aria-pressed="true"]{border-color:var(--stroke-amber);
+  background:var(--pastel-amber)}
+.pk-mode .n{display:flex;flex-direction:column;line-height:1.3}
+.pk-mode .n b{font-size:9.5px;font-weight:600;color:var(--ink)}
+.pk-mode .n span{font-size:8.5px;color:var(--ink-muted)}
+
+/* --------------------------------------------------- what is in hand */
+/* Under the frame, not over it. The floating version had a shut state and a
+   reopen badge, which is two controls existing to undo a placement decision.
+   A strip below the frame is readable at the same time as the subject -- the
+   whole argument for docking it inside -- without standing on it. */
+.vw-wrap{margin:14px 0}
+.vw-wrap > .vp{margin:0}
+.vw-hand{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:7px 10px 8px;background:var(--paper-card);
+  border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 var(--radius) var(--radius)}
+.vw-hand[hidden]{display:none}
+.vw-hand .hb-k{flex:none}
+.vw-hand .hb-t{flex:1;min-width:200px;display:flex;align-items:baseline;
+  gap:6px;flex-wrap:wrap}
+.vw-hand .hb-t b{font-size:11px;font-weight:600;color:var(--ink)}
+.vw-hand .hb-t .mono{font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.05em;color:var(--ink-soft)}
+.vw-hand .hb-t .ask{flex:1;min-width:180px;font-size:9.5px;line-height:1.45;
+  color:var(--ink-muted)}
+.vw-hand .hb-c{display:flex;gap:5px;flex:none}
+/* The frame is editable, and the strip under it is the sentence that says so.
+   It takes the accent the frame takes, on the edge they share. */
+.vw-wrap .vp:has(.stage.editing) + .vw-hand{border-color:var(--accent)}
+/* Turning the subject is a drag, so the surface says it is grabbable before it
+   is grabbed and says it is held while it is. */
+.vw .stage{cursor:grab}
+.vw .stage.dragging{cursor:grabbing}
+
+/* ----------------------------------------------- enlarge and reduce */
+/* The board is one address at five densities, from a single line of forty
+   cells to five fat ones per row. The control lives on the board's own right
+   border, because it changes the board's shape and nothing else on the page --
+   a control that reshapes its container belongs on that container's edge.
+   It is radios and sibling selectors: no script, and the state survives a
+   reader who has JavaScript off. */
+/* A row that opens on the second click still has to look pressable on the
+   first. tokens.ts gives tr.clickable the cursor; a grouped row cannot take
+   that class without colliding with .rep, so the handle does the job. */
+tr[data-tx]{cursor:pointer}
+.ab{position:relative}
+.ab-side{position:absolute;top:-1px;bottom:-1px;right:-1px;width:20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;border-left:1px solid var(--rule-soft);
+  border-radius:0 var(--radius) var(--radius) 0;background:var(--paper-alt)}
+.ab-side label{display:none;padding:2px;cursor:pointer;color:var(--ink-soft);
+  line-height:0}
+.ab-side label:hover{color:var(--ink)}
+.ab-side .ic{width:11px;height:11px}
+/* Only the two steps a reader can actually take are drawn. At either end of
+   the ramp one of them is not a step, and a dead control is worse than a
+   missing one -- it invites the press and then does nothing. */
+.ab-p0:checked ~ .ab-side .s0,.ab-p1:checked ~ .ab-side .s1,
+.ab-p2:checked ~ .ab-side .s2,.ab-p3:checked ~ .ab-side .s3,
+.ab-p4:checked ~ .ab-side .s4{display:block}
+.ab-side label:focus-within{outline:2px solid var(--stroke-teal);outline-offset:1px}
+/* The five densities. Cell width, height and type size move together: a cell
+   is a character, and a character that keeps its size while its box grows is
+   just a box with more air in it. */
+.ab-p0:checked ~ .ab-grid{--per:40;--cw:15px;--ch:18px;--cf:8.5px}
+.ab-p1:checked ~ .ab-grid{--per:20;--cw:20px;--ch:21px;--cf:9.5px}
+.ab-p2:checked ~ .ab-grid{--per:10;--cw:26px;--ch:24px;--cf:10px}
+.ab-p3:checked ~ .ab-grid{--per:8;--cw:31px;--ch:28px;--cf:11px}
+.ab-p4:checked ~ .ab-grid{--per:5;--cw:44px;--ch:34px;--cf:13px}
+/* The footer says which of the five it is. One badge, five sentences, four of
+   them not drawn -- the alternative is a badge that changes width as the count
+   changes, and a column whose width moves is a column that reads as broken. */
+.ab-cn{display:inline-flex}
+.ab-n{display:none}
+.ab-p0:checked ~ .ab-ft .n0,.ab-p1:checked ~ .ab-ft .n1,
+.ab-p2:checked ~ .ab-ft .n2,.ab-p3:checked ~ .ab-ft .n3,
+.ab-p4:checked ~ .ab-ft .n4{display:inline}
+
 `;

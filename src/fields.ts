@@ -33,7 +33,6 @@ const hexVal = (c: string): number => parseInt(c, 16);
  * would spend twelve identities on a value nobody reads as a colour.
  */
 export function addressBoard(): string {
-  const per = 10;
   const cells = ADDR.split("")
     .map((c, i) => {
       const end = i < 4 || i >= ADDR.length - 4;
@@ -51,22 +50,58 @@ export function addressBoard(): string {
     `<input type="radio" name="abm" id="ab-${id}" class="ab-m ab-${id}"${on ? " checked" : ""}>`;
   const tab = (id: string, lbl: string): string =>
     `<label class="ab-t" for="ab-${id}">${esc(lbl)}</label>`;
+  // Five densities, from one line of forty to five per row. The step control
+  // sits on the board's right border because it reshapes the board and nothing
+  // else; the count in the footer names the state, so the reader is never
+  // guessing which of the five they are looking at.
+  const DENS = [
+    { per: 40, n: "on one line" },
+    { per: 20, n: "per row" },
+    { per: 10, n: "per row" },
+    { per: 8, n: "per row" },
+    { per: 5, n: "per row" },
+  ] as const;
+  const step = DENS.map(
+    (_, i) =>
+      `<input type="radio" name="abp" id="ab-p${i}" class="ab-m ab-p${i}"` +
+      `${i === 2 ? " checked" : ""}>`,
+  ).join("");
+  const side = DENS.map((_d, i) => {
+    const up = DENS[i + 1];
+    const down = DENS[i - 1];
+    return (
+      (up
+        ? `<label class="s${i}" for="ab-p${i + 1}" title="Fewer, larger cells"` +
+          ` aria-label="Enlarge to ${up.per} ${up.n}">${icon("magnifying-glass-plus")}</label>`
+        : "") +
+      (down
+        ? `<label class="s${i}" for="ab-p${i - 1}" title="More, smaller cells"` +
+          ` aria-label="Reduce to ${down.per} ${down.n}">${icon("magnifying-glass-minus")}</label>`
+        : "")
+    );
+  }).join("");
+  const count = DENS.map(
+    (d, i) => `<span class="ab-n n${i}">${d.per} ${d.n}</span>`,
+  ).join("");
   return (
     `<div class="ab" role="group" aria-label="The forty characters of the address">` +
     mode("plain", true) +
     mode("ends") +
     mode("val") +
+    step +
     `<div class="ab-hd">` +
     `<span class="ab-face mono" id="ab-face">0x<b>${esc(ADDR.slice(0, 4))}</b>` +
     `${esc(ADDR.slice(4, -4))}<b>${esc(ADDR.slice(-4))}</b></span>` +
     `<span class="ab-tabs" role="group" aria-label="How to read the board">` +
     tab("plain", "Plain") + tab("ends", "Ends") + tab("val", "Value") +
     `</span></div>` +
-    `<div class="ab-grid" style="--per:${per}">${cells}</div>` +
+    `<div class="ab-grid">${cells}</div>` +
+    `<div class="ab-side" role="group" aria-label="Board density">${side}</div>` +
     `<div class="ab-ft"><span class="badge auto hollow">${icon("circle-info")}` +
-    `${per} per row, fixed</span>` +
+    `<span class="ab-cn">${count}</span></span>` +
     `<span class="t">Copying takes the whole address; the cells are for comparing, ` +
-    `not for editing. Nothing on this board writes.</span></div>` +
+    `not for editing. Nothing on this board writes. The magnifiers on the right ` +
+    `border step the board between one line and five cells to a row.</span></div>` +
     `</div>`
   );
 }
