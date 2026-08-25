@@ -272,11 +272,71 @@ function histCell(key: string, v: number, tone: string): string {
   const stroke = strokeOf(tone);
   return T.td(
     `<span class="hcell" title="Twelve months to date">` +
-      sparkline(hist(key, v), "var(--pastel-vanilla)", stroke, 68, 18) +
+      sparkline(hist(key, v), "var(--pastel-vanilla)", stroke, 60, 12) +
       `</span>`,
     "hs",
   );
 }
+
+/* The small accounts, pooled. Every group has a tail of balances too small to have
+   earned a line, and the two ways to show it are both wrong on their own: list them
+   and the table is mostly noise, drop them and the subtotal stops being the sum of
+   what is above it. So they share one row, and that row names them. */
+const RESIDUAL: Record<string, { names: string[]; more: number; v: number }> = {
+  Depository: { names: ["Ally", "Marcus", "Discover"], more: 4, v: 8_412 },
+  CreditCard: { names: ["Store card", "Fuel card"], more: 2, v: -1_366 },
+  Investment: { names: ["Old 401k", "UTMA"], more: 1, v: 19_055 },
+  Crypto: { names: ["Ledger", "Trezor"], more: 3, v: 2_190 },
+};
+
+/* Named, not called a remainder. "rest of depository" tells the reader something was
+   left over and nothing about what; "Ally, Marcus, Discover +4" tells them whether
+   they care. The count of what did not fit is the honest end of the line -- the
+   column has a width and nineteen names is not a label either. */
+function restCells(k: string, tone: string): string {
+  const r = RESIDUAL[k];
+  if (!r) return "";
+  const detail =
+    `<strong>${esc(r.names.join(", "))}</strong>` +
+    `<span class="x">and ${r.more} more, each under ${usd0(2500)}</span>` +
+    `<span class="iso">pooled into one line &middot; ${usdA(r.v)}</span>`;
+  return (
+    T.dtd(`${r.names.join(", ")} +${r.more}`, detail, "rest") +
+    T.td(`<span class="rest">${icon("layer-group")} pooled</span>`) +
+    T.td("") +
+    T.td("&mdash;", "n") +
+    T.td(usdA(r.v), "n") +
+    /* No share. Share is share of the named book, and the pooled line is the part
+       that is not named -- a figure here would have to be measured on a different
+       base than the column it sits in, and a column with two bases is worse than a
+       column with a gap. The balance is what the pool is for. */
+    T.td("&mdash;", "n") +
+    histCell(`${k}-rest`, r.v, tone)
+  );
+}
+
+/* The demo's own names, and its own rail width taken from them. A table with a
+   different vocabulary gets a different rail; what must not happen is one table
+   whose rail width changes as its own groups come and go. */
+const DEMO_NAME: Record<string, string> = {
+  Depository: "Depository",
+  CreditCard: "Credit card",
+  Investment: "Investment",
+  Crypto: "Deferred compensation",
+};
+const DEMO_RAIL = T.railW(Object.values(DEMO_NAME));
+
+/* Four blocks whose only job is to be four different heights. */
+const RAIL_DEMO: { g: string; n: string; v: number }[] = [
+  ...["Everyday", "Reserve", "Payroll", "Escrow", "Sweep"].map((n, i) => ({
+    g: "Depository", n, v: 41_200 - i * 6_310,
+  })),
+  ...["Travel", "Household", "Fuel", "Business"].map((n, i) => ({
+    g: "CreditCard", n, v: -2_140 - i * 815,
+  })),
+  ...["Brokerage", "Roth"].map((n, i) => ({ g: "Investment", n, v: 128_400 - i * 71_500 })),
+  { g: "Crypto", n: "Deferred comp", v: 9_640 },
+];
 
 function rowCells(r: Row): string {
   /* The account name is the column that would wrap first, so it is the column
@@ -317,6 +377,7 @@ function tables(): string {
     }),
     labW: RAIL,
     row: rowCells,
+    rest: (_b, k) => restCells(k, typeClass(k)),
     after: (block, k) => {
       const m = { name: GNAME[k] ?? k, tone: typeClass(k), ic: GICON[k] ?? "folder-open" };
       return T.subRow(
@@ -325,12 +386,12 @@ function tables(): string {
           T.td("") +
           T.td("") +
           T.td("", "n") +
-          T.td(usdA(sum(block)), "n") +
+          T.td(usdA(sum(block) + (RESIDUAL[k]?.v ?? 0)), "n") +
           T.td(
             pct(block.reduce((a, x) => a + x.pct, 0)),
             "n",
           ) +
-          histCell(k, sum(block), m.tone),
+          histCell(k, sum(block) + (RESIDUAL[k]?.v ?? 0), m.tone),
       );
     },
   });
@@ -340,7 +401,13 @@ function tables(): string {
       T.td("") +
       T.td("") +
       T.td("", "n") +
-      T.td(usdA(sum(DATA)), "n") +
+      T.td(
+        usdA(
+          sum(DATA) +
+            Object.values(RESIDUAL).reduce((a, r) => a + r.v, 0),
+        ),
+        "n",
+      ) +
       T.td(pct(DATA.reduce((a, x) => a + x.pct, 0)), "n") +
       T.td(""),
   );
@@ -360,6 +427,55 @@ function tables(): string {
       grouped: true,
       scope: "invented data &middot; 90 days",
     }) +
+    U.h3("The rail, and what it does when the name will not fit", "rail") +
+    U.p(
+      `The left column is one cell per block, spanning it: a glyph, and the group's name turned on its side beneath it. It is a badge like any other &mdash; one width for the whole rail, taken from every group name the table can ever hold rather than the ones this dataset happens to contain, so the rail does not change width when a group drops out.`,
+    ) +
+    U.p(
+      `The interesting case is a two-row block. Twenty-nine pixels a row, thirty-six spent on the glyph and its gap, and a nine-character name needs sixty-one: it does not fit, and the three ways out are all worse than the fourth. Shrinking the type below the smaller face makes a label nobody reads. Wrapping the rotated name turns the rail into a paragraph on its side. Stretching every block to the tallest name pads the table for the sake of one word. So <span class="mono">fit()</span> tries the full face, then the smaller one, then two to five rows' worth of height for blocks that can afford it &mdash; and when none of those hold, it drops the name and keeps the glyph. That is <span class="mono">td.rot.gonly</span>: the badge loses its fill, its border and its insets, and what is left is the mark, centred, in the group's colour, with the full name on the cell's <span class="mono">title</span>. Nothing is lost that the row's own badges do not already say; the rail's job at that size is to show where the block starts and ends.`,
+    ) +
+    U.p(
+      `The subtotal wears the same mark and never the ribbon. A subtotal is one row, so a rotated name would have twenty-nine pixels to stand in and would draw a box around a single upright glyph &mdash; a second, emptier badge beside the one the block already wears. <span class="mono">hollow</span> was tried there first and only dropped the fill; the border stayed, and the border was the part that read as a box.`,
+    ) +
+    T.table({
+      fig: "Table 2",
+      caption: "The same rail at four block heights",
+      cols: [
+        { h: "", cls: "rot-h" },
+        { h: "Account" },
+        { h: "Balance", cls: "n" },
+      ],
+      body: T.grouped<{ g: string; n: string; v: number }>({
+        /* Five rows, then four, then two, then one. The last two are the point:
+           at two rows the name is dropped and the glyph is kept, and at one there
+           was never room for either -- which is the same cell, doing the same
+           thing, and not a special case anyone has to remember. */
+        items: RAIL_DEMO,
+        key: (r) => r.g,
+        meta: (k) => ({
+          name: DEMO_NAME[k] ?? k,
+          tone: typeClass(k),
+          ic: GICON[k] ?? "folder-open",
+        }),
+        labW: DEMO_RAIL,
+        row: (r) => T.td(esc(r.n)) + T.td(usdA(r.v), "n"),
+      }),
+      grouped: true,
+      scope: "invented data",
+    }) +
+    U.p(
+      `<span class="fig">Table 2</span> Five rows, four, two, one, and one name of twenty-one characters. Third block: the cell takes four rows\u0027 height so its two rows share the extra (<span class="mono">gh4</span>). Fourth: nothing holds it, so the name is dropped and the glyph carries the column (<span class="mono">gonly</span>).`,
+    ) +
+    U.h3("The line that names what is in it", "residual") +
+    U.p(
+      `Every group has a tail: balances too small to have earned a row. Listing them makes the table mostly noise; dropping them makes the subtotal stop being the sum of what is above it. Both are wrong, so the tail shares one line &mdash; and the line says who is in it. <span class="mono">Ally, Marcus, Discover +4</span>, largest first, cut at a width the column can hold, with the count of what did not fit.`,
+    ) +
+    U.p(
+      `The earlier version read <span class="mono">rest of depository</span>, which tells the reader that something was left over and nothing at all about what. Naming it is the difference between a line they can dismiss and a line they have to open. It is muted and italic because it is not a named account; it carries a glyph and no badge, because a badge would make it a category, and it is not one. Its balance is folded into the block subtotal and into the total &mdash; that is the entire reason it exists. Its share is blank: share is share of the named book, and a figure here would have to be measured on a different base than the column it sits in.`,
+    ) +
+    U.p(
+      `It is a member of the block, not arithmetic on it, so it carries <span class="mono">data-g</span> and the rail's span counts it &mdash; unlike the subtotal, which must not carry <span class="mono">data-g</span> or a sort would shuffle it in among rows of another kind.`,
+    ) +
     U.h3("Sign, sort, and the twelve months behind the number", "reading") +
     U.p(
       `Three things are happening in that table that a reader will use and never name.`,
@@ -371,7 +487,7 @@ function tables(): string {
       `<strong>A sortable heading is said by the cursor, not by a glyph.</strong> Every column with a <span class="mono">k</span> gets <span class="mono">th.sortable</span>, which is a pointer cursor and a hover; click sorts, and only then does an arrow appear &mdash; <span class="mono">&uarr;</span> or <span class="mono">&darr;</span>, on that one heading. The neutral double arrow on every heading at once was tried and removed: it put nine glyphs on the page carrying no information so that the tenth, which carried all of it, had to be found among them. The keyboard gets the same control, because the header takes focus and Enter and Space are wired to the same handler.`,
     ) +
     U.p(
-      `<strong>The last column is the history.</strong> Two accounts at the same balance arrived from opposite directions, and that is the one thing the balance cannot say. Twelve months at 68&times;18 costs less width than the number beside it and settles the question at a glance. It takes the group's own colour, so it reads as part of the block rather than as a chart parked next to it, and it carries no badge and no box &mdash; a line is already a shape, and a border around a shape is a second frame for one fact. The subtotal row gets the block's line for the same reason the subtotal gets a number.`,
+      `<strong>The last column is the history.</strong> Two accounts at the same balance arrived from opposite directions, and that is the one thing the balance cannot say. Twelve months at 60&times;12 costs less width than the number beside it and settles the question at a glance. It takes the group's own colour, so it reads as part of the block rather than as a chart parked next to it, and it carries no badge and no box &mdash; a line is already a shape, and a border around a shape is a second frame for one fact. The subtotal row gets the block's line for the same reason the subtotal gets a number.`,
     ) +
     U.h3("No wrap, and where the rest of it goes", "nowrap") +
     U.p(
@@ -1255,7 +1371,7 @@ function contract(): string {
       `A rule that is only written down is a rule that is already being broken somewhere. Each of these is checked by <span class="mono">design-lint.ts</span> and <span class="mono">badge-lint.ts</span> before a file is written, and <span class="mono">bun run build</span> runs the linter first &mdash; a violation fails the build rather than reaching review.`,
     ) +
     T.table({
-      fig: "Table 2",
+      fig: "Table 3",
       caption: "What the build refuses",
       cols: [{ h: "Rule" }, { h: "Level" }],
       body: rules

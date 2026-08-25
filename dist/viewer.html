@@ -1539,13 +1539,24 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    height, so the cell is sized and the SVG fills it. preserveAspectRatio is
    none on this spark, which is what lets 68x18 hold twelve months without the
    line going flat. */
-td.hs{width:76px;padding-top:2px;padding-bottom:2px}
-.hcell{display:block;height:18px;line-height:0}
-.hcell .spark{display:block;width:68px;height:18px}
+/* 12px, not 18. The row height is the table's whole argument -- ROW_PX in
+   tables.ts is 29 and the rail's fit() is measured against it, so a column that
+   makes rows taller does not just cost density, it silently mis-sizes the
+   rotated label two columns to the left. The history has to fit the row the
+   table already had. */
+td.hs{width:68px}
+.hcell{display:block;height:12px;line-height:0}
+.hcell .spark{display:block;width:60px;height:12px}
 /* The residual line. Muted rather than badged: it is the same kind of thing as
-   the rows above it, only unnamed, and a badge would make it a category. */
-tr .rest{color:var(--ink-faint);font-style:italic}
-tr .rest .n{font-style:normal;font-family:var(--font-mono)}
+   the rows above it, only unnamed, and a badge would make it a category. The
+   mute is put on the cell's own text and not on the cell, so the hover plate
+   inside it is set at the page's weight -- a detail plate is the place the
+   reader went to read, and muting what they went to read is backwards. */
+td.rest > .dt{color:var(--ink-faint);font-style:italic}
+td.rest > .dt > .dt-full{color:var(--ink);font-style:normal}
+span.rest{display:inline-flex;align-items:center;gap:5px;color:var(--ink-faint);
+  font-style:italic;font-size:9.5px}
+span.rest .ic{width:9px;height:9px;flex:0 0 auto}
 
 /* ---------------------------------------------------------------- schema */
 /* An entity-relationship diagram: HTML cards over one SVG wire layer. The frame
@@ -1667,13 +1678,21 @@ caption .scope{display:block;margin-top:4px;font-family:var(--font-mono);
    and below the block. Physical properties are used deliberately here rather than
    the logical ones -- padding-block in vertical-rl addresses the thickness,
    which is the axis that must not change. */
-.badge.vert { padding-top: 7px; padding-bottom: 7px; }
+.badge.vert { padding-top: 4px; padding-bottom: 4px; }
 /* And room between the glyph and the name it introduces. margin-inline-end
    because with the text on its side the inline axis runs down the cell -- a right
    margin would push the glyph across the ribbon instead of along it. */
-.badge.vert .gm { margin-inline-end: 8px; }
+.badge.vert .gm { margin-inline-end: 6px; }
 /* Both of the above are spent out of the length available to the name, so
-   STACK_PX in tables.ts counts them. Change one, change the other. */
+   STACK_PX in tables.ts counts them. Change one, change the other.
+
+   They were 7 and 8. Eight pixels came off because a block only three rows deep
+   is the common case in this table and every pixel of overhead is a pixel the
+   name cannot have: at 7 and 8, "Credit card" could not be set inside four rows'
+   worth of height and the block was stretched to five, which cost every one of
+   its rows nine pixels of the density the table is for. The glyph is still held
+   off the rules above and below by the stack's own nine-pixel inset, which is
+   the separation that was actually doing that work. */
 
 /* The subtotal's mark, with no box around it.
 

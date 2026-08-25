@@ -99,18 +99,31 @@ export const ROW_PX = 29;
  * What the label cell spends before a single letter of the name is set.
  *
  * Nine of inset at each end of the stack, the glyph itself, the gap between the
- * glyph and the name, and seven of padding at each end of the ribbon. If any of
+ * glyph and the name, and four of padding at each end of the ribbon. If any of
  * those change in `tokens-extra.ts`, this number changes with them -- it is the
  * one place the CSS and the fitting arithmetic have to agree, and when they stop
  * agreeing the failure is a name that fits by this calculation and is cut short
  * by an ellipsis on the page.
  */
-export const STACK_PX = 53;
+export const STACK_PX = 45;
 /** Heights a label cell may claim, indexed by how many rows' worth they are. */
 const GH_PX = [0, 29, 58, 87, 116, 145] as const;
-/** Width of a character in the label face at 11.5px, and in the smaller face. */
-const CH_WIDE = 6.8;
-const CH_NARROW = 5.6;
+/**
+ * Length a character takes along the rail, in the full face at 11.5px and in the
+ * smaller one at 9.5px.
+ *
+ * Measured off a rendered rail with a Range over the name, not read off the font
+ * metrics: the badge sets `nowrap` in `vertical-rl`, so what is being measured is
+ * an advance sum, and the mono face advances wider than its nominal em. The two
+ * were 6.8 and 5.6 -- both about twelve percent short, which is how "Depository"
+ * came to pass `fit()` and still render as "Deposito" with an ellipsis.
+ *
+ * These round UP on purpose. Over-estimating costs a block one step of stretch;
+ * under-estimating costs the reader the end of the word, and the rail's whole job
+ * is the word.
+ */
+const CH_WIDE = 7.8;
+const CH_NARROW = 6.2;
 
 /**
  * How to draw a group name down a block `n` rows deep.
@@ -182,6 +195,11 @@ export function glabelCell(
  * `data-g`: a subtotal is arithmetic on the block, not a member of it, so the
  * label must not span it and a sort must not shuffle it in among rows of another
  * kind. `.sub` is the hook the script already looks for.
+ *
+ * `rest` emits the block's residual line -- everything too small to have earned a
+ * row of its own, pooled and named by what is in it. Unlike `after` it IS a member:
+ * it holds rows, it has a total, and a reader who sorts by balance expects to find
+ * it in the order. So it carries `data-g`, and the rail's span counts it.
  */
 export function grouped<T>(o: {
   items: readonly T[];
@@ -189,6 +207,7 @@ export function grouped<T>(o: {
   meta: (k: string) => GroupMeta;
   labW: string;
   row: (t: T) => string;
+  rest?: (block: readonly T[], k: string) => string | null;
   after?: (block: readonly T[], k: string) => string;
 }): string {
   const out: string[] = [];
@@ -196,8 +215,12 @@ export function grouped<T>(o: {
     const k = o.key(o.items[i] as T);
     let n = 1;
     while (i + n < o.items.length && o.key(o.items[i + n] as T) === k) n++;
+    const block = o.items.slice(i, i + n);
+    const residual = o.rest ? o.rest(block, k) : null;
+    // The rail spans the residual too, because the residual is in the block.
+    const span = n + (residual ? 1 : 0);
     out.push(
-      `<tr data-g="${esc(k)}">${glabelCell(k, n, o.labW, o.meta(k))}${o.row(
+      `<tr data-g="${esc(k)}">${glabelCell(k, span, o.labW, o.meta(k))}${o.row(
         o.items[i] as T,
       )}</tr>`,
     );
@@ -205,7 +228,8 @@ export function grouped<T>(o: {
       out.push(
         `<tr class="rep" data-g="${esc(k)}">${o.row(o.items[i + j] as T)}</tr>`,
       );
-    if (o.after) out.push(o.after(o.items.slice(i, i + n), k));
+    if (residual) out.push(`<tr class="rep" data-g="${esc(k)}">${residual}</tr>`);
+    if (o.after) out.push(o.after(block, k));
     i += n;
   }
   return out.join("");
