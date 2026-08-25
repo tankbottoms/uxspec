@@ -41,6 +41,15 @@ export function table(o: {
   foot?: string;
   grouped?: boolean;
   scope?: string;
+  /* A mark above the table's top-left corner, for a fact about the whole table
+     rather than about a row. It exists for one case: a table that pools part of
+     its own book into a residual line has to say so where the reader decides
+     whether to trust the totals, and that is before the first row.
+
+     It is not put in the caption, which is where the table number lives. The
+     caption in this system sits under the table, and a qualification read after
+     the totals is a qualification read after the totals have been believed. */
+  mark?: { ic: string; label: string; title: string };
 }): string {
   const cls = ["sortable", o.grouped ? "grouped" : ""].filter(Boolean).join(" ");
   /* The wrapper exists only to hold the chevron still while the table slides
@@ -48,7 +57,16 @@ export function table(o: {
      the content. The hint is inert until the script measures an overflow and
      adds `more`, so a table that fits never shows an affordance it cannot
      honour, and a page with no script shows none at all rather than a lie. */
-  return `<div class="scroll-wrap"><div class="scroll"><table class="${cls}">
+  /* In flow, not positioned over the table. A badge floated above the top-left
+     corner would sit over the header row's first cell, which on a grouped table
+     is the rail -- the one column that is already carrying a mark of its own. */
+  const mk =
+    o.mark === undefined
+      ? ""
+      : `<p class="tmark"><span class="badge auto hollow" title="${esc(
+          o.mark.title,
+        )}">${icon(o.mark.ic)}${esc(o.mark.label)}</span></p>`;
+  return `<div class="scroll-wrap">${mk}<div class="scroll"><table class="${cls}">
 <caption><span class="fig">${esc(o.fig)}</span><button type="button" class="exp" hidden data-exp="${esc(o.fig)}" aria-label="Download ${esc(o.fig)} as CSV">${icon("arrow-down-to-bracket")}CSV</button>${o.caption}${
     // Raw HTML, like every other scope on the page: a scope is a period and its
     // separator is an entity.

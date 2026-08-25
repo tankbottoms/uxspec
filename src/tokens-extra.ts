@@ -297,6 +297,21 @@ td .tip.mk .body,th .tip.mk .body{width:300px}
    invisible, and a control that gives no sign it worked gets pressed twice. */
 .heat-ctl button.kept svg{fill:var(--stroke-mint)}
 
+/* --------------------------------------------------- the table mark */
+/* One fact about the whole table, above its top-left corner. It is a paragraph
+   in the flow above the scroll box rather than a badge positioned over it: the
+   scroll box clips, and anything overlapping its top edge is cut the moment the
+   table is wide enough to scroll -- which is every table this system is for.
+   The 6px below it is less than the 10px a paragraph would take, so the mark
+   reads as belonging to the table under it and not to the prose above. */
+p.tmark{margin:0 0 6px}
+/* Hollow on purpose. A filled badge here would be the loudest thing on a table
+   made of quiet ones, and what it says -- some of this is pooled -- is a
+   qualification, not a heading. */
+p.tmark .badge{font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:5px;cursor:help}
+p.tmark .badge .ic{width:9px;height:9px}
+
 /* ----------------------------------------------------------- the drill */
 /* The crumb rail sits in the corner the reader looks at first when an overlay
    opens over something they were already reading, and it is boxed because at

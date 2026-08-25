@@ -27,9 +27,15 @@ let bad = 0;
 for (const f of files) {
   const html = await Bun.file(f).text();
   // Inline only -- a script with src= has no body to parse here.
-  for (const m of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)) {
-    const body = m[1] ?? "";
+  for (const m of html.matchAll(/<script(?![^>]*\bsrc=)([^>]*)>([\s\S]*?)<\/script>/g)) {
+    const attrs = m[1] ?? "";
+    const body = m[2] ?? "";
     if (!body.trim()) continue;
+    // Data blocks are not JavaScript. A page can legitimately inline a JSON payload
+    // under application/json or importmap; parsing those as JS reports a syntax
+    // error for a file that is perfectly correct. Only absent/module/js types run.
+    const type = (attrs.match(/\btype\s*=\s*["']?([^"'\s>]+)/i)?.[1] ?? "").toLowerCase();
+    if (type && !/^(module|text\/javascript|application\/javascript|text\/ecmascript)$/.test(type)) continue;
     scripts++;
     try {
       // Transpiler, not `new Function`: viewer.html ships a `type="module"` script,

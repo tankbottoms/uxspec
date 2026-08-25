@@ -467,6 +467,15 @@ function tables(): string {
       foot,
       grouped: true,
       scope: "invented data &middot; 90 days",
+      /* The one fact about this table that a reader has to know before the first
+         row rather than after the last: some of the book is pooled. A footnote
+         under the totals is read after the totals have already been believed. */
+      mark: {
+        ic: "layer-group",
+        label: "rest pooled",
+        title:
+          "Each block ends with a named residual line holding the accounts too small to have earned a row. Its balance is inside the block subtotal and inside the grand total.",
+      },
     }) +
     U.h3("The rail, and what it does when the name will not fit", "rail") +
     U.p(
