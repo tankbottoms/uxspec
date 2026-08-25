@@ -266,10 +266,13 @@ document.querySelectorAll("tr.clickable[data-row]").forEach(function(tr){
   });
 });
 
-/* Table 1 opens on the second click. Same panels, same trick, different
-   dialog -- and dblclick rather than click because the grouped table is also
-   something a reader drags a cursor across. A modal on the first click makes
-   the table unselectable, which is a strange price to pay for a shortcut. */
+/* Table 1 opens on the first click, like every other openable row on the site.
+   The second click was an attempt to protect text selection, and it protected it
+   by making the row harder to open for everybody -- a shortcut nobody discovers
+   is not a shortcut. Selection is protected directly instead: if the reader has
+   dragged across a figure, the release is a copy and not an open. Controls inside
+   the row are excluded for the same reason, because a select or a button is
+   itself the thing that was clicked. */
 var txDlg=document.getElementById("tbl1-dialog");
 var openTx=function(i){
   if(!txDlg) return;
@@ -280,10 +283,46 @@ var openTx=function(i){
 };
 document.querySelectorAll("tr[data-tx]").forEach(function(tr){
   var go=function(){ openTx(tr.getAttribute("data-tx")); };
-  tr.addEventListener("dblclick",go);
+  tr.addEventListener("click",function(e){
+    if(e.target.closest("select,button,a,input,textarea,label")) return;
+    var sel=window.getSelection();
+    if(sel && String(sel).length>1) return;
+    go();
+  });
   tr.addEventListener("keydown",function(e){
     if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); }
   });
+});
+/* A modal with only a corner control traps a reader who opened it by accident
+   on a row they meant to sort. The backdrop is the other way out. */
+[txDlg,rowDlg].forEach(function(d){
+  if(!d) return;
+  d.addEventListener("click",function(e){ if(e.target===d) d.close(); });
+});
+
+/* A hover detail drawn inside a table that scrolls sideways is drawn inside the
+   box that clips it, so the detail a reader opened arrives cut off at the table's
+   own border. Fixed position leaves that box's coordinate space entirely -- an
+   overflow ancestor does not clip a fixed descendant -- and the only thing
+   absolute position was giving for free is two numbers, which the script can
+   hand over on the way in. Flip above to below near the bottom, clamp to the
+   window at both sides, and mark the root so the rule applies only where the
+   script is there to feed it: with scripting off nothing changes. */
+document.documentElement.classList.add("js-dtx");
+document.querySelectorAll(".dt").forEach(function(d){
+  var place=function(){
+    var f=d.querySelector(".dt-full");
+    if(!f) return;
+    var r=d.getBoundingClientRect();
+    f.style.setProperty("--dtw", Math.min(280, innerWidth-24)+"px");
+    var w=f.offsetWidth||260, h=f.offsetHeight||70;
+    var x=Math.max(12, Math.min(r.left, innerWidth-w-12));
+    var above=r.top-h-6;
+    f.style.setProperty("--dtx", x+"px");
+    f.style.setProperty("--dty", (above>8 ? above : r.bottom+6)+"px");
+  };
+  d.addEventListener("pointerenter",place);
+  d.addEventListener("focusin",place);
 });
 
 /* ------------------------------------------------------------- the drill */

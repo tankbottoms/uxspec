@@ -1102,6 +1102,12 @@ dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
    first. tokens.ts gives tr.clickable the cursor; a grouped row cannot take
    that class without colliding with .rep, so the handle does the job. */
 tr[data-tx]{cursor:pointer}
+
+/* The hover detail, lifted out of the scrolling box that was cutting it off.
+   Only under .js-dtx, because the two coordinates come from the script and a
+   fixed box with no coordinates is worse than a clipped one. */
+.js-dtx .dt-full{position:fixed;left:var(--dtx,0);top:var(--dty,0);bottom:auto;
+  right:auto;z-index:60;width:var(--dtw,268px);max-width:none}
 .ab{position:relative}
 .ab-side{position:absolute;top:-1px;bottom:-1px;right:-1px;width:20px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;

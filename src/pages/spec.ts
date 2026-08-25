@@ -418,10 +418,10 @@ function tables(): string {
     }),
     labW: RAIL,
     row: rowCells,
-    /* Double click, not click. A grouped row is also a thing a reader selects,
-       drags a cursor across and copies out of, and a single click that opens a
-       modal takes all three away. The second click is the one that means open.
-       tabindex plus Enter keeps it reachable without a mouse at all. */
+    /* One click, like every other openable row here. Selection is protected by
+       asking whether any was made rather than by charging a second click for the
+       open: a reader who dragged across a figure gets their copy, everybody else
+       gets the row. tabindex plus Enter keeps it reachable without a mouse. */
     rowAttr: (r) => `data-tx="${DATA.indexOf(r)}" tabindex="0"`,
     rest: (_b, k) => restCells(k, typeClass(k)),
     after: (block, k) => {
@@ -484,7 +484,7 @@ function tables(): string {
     }) +
     D.inspector("tbl1-dialog", DATA, GNAME) +
     U.p(
-      `Every row in <span class="mono">Table 1</span> opens. Double click one and the charges behind that balance arrive in a modal set at the table's own size &mdash; not a page, not a drawer, the same document a step closer. Double rather than single because a row of numbers is also a thing readers select and copy out of, and a modal on the first click takes that away; the same row answers Enter and Space, so a keyboard reaches the depth a mouse reaches. The mechanism is the whole point and it is nearly nothing: the panels are already in the page, one per row, all <span class="mono">hidden</span>, and opening a row is deciding which one is not. No client-side templating means no second set of escaping rules.`,
+      `Every row in <span class="mono">Table 1</span> opens. Click one and the charges behind that balance arrive in a modal set at the table's own size &mdash; not a page, not a drawer, the same document a step closer. The target is the line and not the word in column two: a click on the amount, on the badge or in the white space between them is a click on that row and means the same thing. Two clicks were tried first, to keep a row of numbers selectable, and the cost was a door nobody found. Selection is defended directly instead &mdash; if the reader dragged across a figure the release is a copy, and a click that landed on a control is that control's &mdash; and the same row answers Enter and Space, so a keyboard reaches the depth a mouse reaches. The mechanism is the whole point and it is nearly nothing: the panels are already in the page, one per row, all <span class="mono">hidden</span>, and opening a row is deciding which one is not. No client-side templating means no second set of escaping rules.`,
     ) +
     U.h3("The rail, and what it does when the name will not fit", "rail") +
     U.p(
