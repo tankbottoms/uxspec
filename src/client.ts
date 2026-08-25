@@ -403,4 +403,58 @@ document.querySelectorAll("pre.code").forEach(function(pre){
     var s=getSelection(); if(!s) return; s.removeAllRanges(); s.addRange(r);
   });
 });
+/* --- CSV export -------------------------------------------------------------
+   The control ships hidden and is revealed here, so with scripting off the caption
+   carries no button that cannot do anything. The row scrape reads textContent, which
+   is what the reader actually sees: badge labels, rotated rail names and glyph
+   captions all resolve to their words, and the inlined svg contributes nothing. */
+function csvCell(el) {
+  var t = (el.textContent || "").replace(/\\s+/g, " ").trim();
+  return /[",\\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+function csvRows(tbl) {
+  var out = [];
+  var span = {};
+  function carry(row, col) {
+    for (;;) {
+      var sp = span[col];
+      if (!sp || sp.n <= 0) return col;
+      row.push(sp.v);
+      sp.n--;
+      col++;
+    }
+  }
+  [].slice.call(tbl.querySelectorAll("tr")).forEach(function (tr) {
+    if (tr.closest("table") !== tbl) return;
+    var row = [];
+    var col = carry(row, 0);
+    [].slice.call(tr.children).forEach(function (c) {
+      var v = csvCell(c);
+      var cs = +(c.getAttribute("colspan") || 1);
+      var rs = +(c.getAttribute("rowspan") || 1);
+      if (rs > 1) span[col] = { v: v, n: rs - 1 };
+      for (var k = 0; k < cs; k++) {
+        row.push(k === 0 ? v : "");
+        col++;
+      }
+      col = carry(row, col);
+    });
+    if (row.join("").length) out.push(row.join(","));
+  });
+  return out.join("\\r\\n");
+}
+document.querySelectorAll("caption .exp").forEach(function(btn){
+  var tbl = btn.closest("table");
+  if (!tbl) return;
+  var table = tbl;
+  btn.hidden = false;
+  btn.addEventListener("click", function(){
+    var fig = (btn.getAttribute("data-exp") || "table").replace(/[^\\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+    var blob = new Blob(["﻿" + csvRows(table)], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = fig + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 0);
+  });
+});
 })();`;

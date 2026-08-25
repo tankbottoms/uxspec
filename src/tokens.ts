@@ -88,6 +88,13 @@ body {
    clip simply refuses to paint past the edge and leaves position: fixed alone, so the
    receipt sheets and tooltips still cover the viewport. */
 html {
+  /* Safari on iOS inflates text inside any block it judges too wide for the viewport.
+     A prose table set in nowrap ran to two thousand pixels, tripped the heuristic, and
+     rendered its sentences visibly larger than the same 10px type in the narrow table
+     beside it - a size difference no rule in this file asked for and none could
+     override. Pinned to 100%: this page decides its own type sizes. */
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+
   scrollbar-gutter: stable;
   overflow-x: clip; max-width: 100%;
 }
@@ -907,9 +914,10 @@ figure + h3 { margin-top: 22px; }
   display: flex; align-items: center; gap: 3px;
 }
 .seg .cap .ic { width: 10px; height: 10px; flex: none; opacity: .95; }
-/* A slice too narrow for figures keeps the mark and drops the padding that would
-   push it out of a 12px column. */
-.seg .cap.gonly { padding: 0; gap: 0; }
+/* A slice too narrow for figures keeps the mark, and keeps the side air a captioned
+   slice gets -- a mark pressed against both edges reads as a rendering fault. Slices
+   that cannot afford the air are dropped upstream by GLYPH_MIN in charts.ts. */
+.seg .cap.gonly { padding: 0 3px; gap: 0; }
 .legend .ic { width: 10px; height: 10px; flex: none; }
 /* Hover detail for a slice. On its own paper rather than in the browser's native
    title chrome, so it can hold four lines of figures and stay legible in dark mode. */
@@ -1073,6 +1081,18 @@ ul.plain li { margin-bottom: 5px; }
   font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
   text-transform: uppercase; color: var(--ink-soft); padding: 8px 9px 4px;
 }
+/* The panel is a map of the site, so it has two levels. A page row is set in the page's
+   own weight and keeps a rule under it; its sections are indented under it and set a
+   step smaller. The page you are on is marked rather than hidden - a map that omits
+   where you are standing is the thing that made the old menu confusing. */
+.menu .panel a.pg {
+  font-weight: 650; color: var(--ink); font-size: 12px;
+  padding: 8px 9px 7px; margin-top: 4px; border-bottom: 1px solid var(--rule-hair);
+}
+.menu .panel a.pg:first-child { margin-top: 0; }
+.menu .panel a.pg.on { color: var(--accent); background: var(--paper-alt); }
+.menu .panel a.pg.on::after { content: "\\2713"; margin-left: auto; font-size: 10px; }
+.menu .panel a.sub { padding-left: 22px; font-size: 11.5px; }
 .menu .panel button[aria-pressed="true"] { color: var(--accent); font-weight: 600; }
 .menu .panel button[aria-pressed="true"]::after { content: "\\2713"; margin-left: auto; }
 .nav .spacer { margin-left: auto; }
@@ -1103,6 +1123,12 @@ ul.plain li { margin-bottom: 5px; }
    its aspect ratio and scrolls sideways on a narrow screen instead of squashing -
    squashed, the jars stop reading as jars and the whole point of it is lost. */
 .diagram { display: block; width: 100%; min-width: 900px; height: auto; }
+/* The design spec's figure is a miniature drawn at the size the page renders it, so a
+   chart badge in it is the same size as a real badge in the table beside it. The shared
+   rule above stretches any chart to at least 900px, which magnified this one by 1.4x or
+   more and left its labels reading larger than the badges they were there to explain.
+   It scrolls inside its figure below 640px rather than shrinking under the 9px floor. */
+.diagram.ux { width: 640px; min-width: 640px; }
 figure:has(.diagram) { overflow-x: auto; }
 
 /* Links inside a band header sit in the header's own muted type, not the link blue -
@@ -1197,7 +1223,14 @@ footer strong { color: var(--ink-muted); }
 .sparkfig { position: relative; }
 .xhair { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .1s ease; }
 .xhair .rule { position: absolute; width: 1px; background: var(--rule); }
-.xhair .dot { position: absolute; width: 5px; height: 5px; border-radius: 50%; }
+/* Centred in CSS rather than by the script that positions it: the size lives here, so the
+   half-width that centres it has to live here too. It used to be a literal 2.5 in
+   render.ts, which is exactly the kind of number that goes stale the first time this rule
+   changes and nobody notices. */
+.xhair .dot {
+  position: absolute; width: 5px; height: 5px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
 .sparkfig.live .xhair { opacity: 1; }
 .readout {
   position: absolute; z-index: 8; top: 8px; left: 0; width: 178px; padding: 7px 9px 8px;
@@ -1253,6 +1286,10 @@ footer strong { color: var(--ink-muted); }
   caption { font-size: 9px; padding-left: 86px; padding-right: 10px; }
   figure figcaption, .therm + figcaption { font-size: 9px; padding-right: 10px; }
   table { font-size: 10px; }
+  /* A table of sentences is read, not scanned, and on a phone it is carrying far more
+     words per row than a table of figures. A step down keeps a rule and its reason on
+     three lines instead of six without going under the 9px floor. */
+  table.prose td { font-size: 9px; }
   nav.sections { max-width: 100%; }
 }
 @media (max-width: 420px) {

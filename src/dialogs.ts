@@ -57,7 +57,7 @@ const PAYEE = [
  * account opens with the same charges on every build and `git diff dist/`
  * stays a review tool rather than noise.
  */
-function txns(r: Row, seed: number): string {
+function txns(r: Row, seed: number): { rows: string; n: number; total: number } {
   const g = rng(seed * 31 + 5);
   const n = 4 + Math.floor(g() * 3);
   /* The charges add up to the balance. A reader who opens a total does it to
@@ -84,7 +84,7 @@ function txns(r: Row, seed: number): string {
   /* Date order, because a ledger is read down a date column. The dates are drawn
      after the amounts and would otherwise arrive in the order the generator felt
      like, which is the one ordering no statement has ever used. */
-  return out.sort().join("");
+  return { rows: out.sort().join(""), n: n, total: amt.reduce((a, x) => a + x, 0) };
 }
 
 /**
@@ -97,6 +97,14 @@ function txns(r: Row, seed: number): string {
  * still says everything the page promised -- the inspector adds depth, it does
  * not hold the only copy.
  */
+/* The summary line was four facts joined by middots. At 10px a middot is not a
+   separator, it is a speck, and the group, the date and the money read as one grey
+   sentence. Each fact is a badge; the house rule that two values are two badges does
+   not stop at the table edge. Owner ruling 2026-08-24. */
+function sb(label: string): string {
+  return `<span class="badge auto">${esc(label)}</span>`;
+}
+
 export function inspector(
   id: string,
   rows: readonly Row[],
@@ -104,16 +112,23 @@ export function inspector(
 ): string {
   const panels = rows
     .map(
-      (r, i) =>
-        `<div class="rp" data-row="${i}" hidden>` +
+      (r, i) => {
+        const t = txns(r, i + 1);
+        return (
+          `<div class="rp" data-row="${i}" hidden>` +
         `<h4>${esc(r.name)} &middot; ${esc(r.kind)}</h4>` +
-        `<p class="sc">${esc(gname[r.group] ?? r.group)} &middot; last movement ` +
-        `${esc(r.day)} &middot; balance ${usd(r.v)}</p>` +
+        `<p class="sc"><span class="sbs">${sb(gname[r.group] ?? r.group)}` +
+        `${sb(r.kind)}${sb(`${t.n} charges`)}${sb(usd(r.v))}</span>` +
+        `<span class="shint">last movement ${esc(r.day)}</span></p>` +
         `<table><thead><tr><th>Date</th><th>Payee</th><th>Account</th>` +
-        `<th class="n">Amount</th></tr></thead><tbody>${txns(r, i + 1)}</tbody></table>` +
+        `<th class="n">Amount</th></tr></thead><tbody>${t.rows}</tbody>` +
+        `<tfoot><tr class="tot"><td>Total</td><td></td><td></td>` +
+        `<td class="n">${usd(t.total)}</td></tr></tfoot></table>` +
         `<p class="sc"><button type="button" class="drop" data-edit="${i}">` +
         `${icon("pen-to-square")}Reassign this charge</button></p>` +
-        `</div>`,
+        `</div>`
+        );
+      },
     )
     .join("");
   return (

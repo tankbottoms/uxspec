@@ -550,4 +550,58 @@ h2 .hint .ic { width: 9px; height: 9px; margin-right: 4px; vertical-align: -1px;
    in front of a header that already carries a glyph. */
 .band > summary { cursor: pointer; list-style: none; }
 .band > summary::-webkit-details-marker { display: none; }
+
+/* --- owner rulings 2026-08-24 -------------------------------------------------
+   Overrides only. tokens.ts is the canonical copy and is never edited here, so
+   every rule below re-states a selector that already exists there and wins on
+   source order. Tokens only -- no raw hex. */
+
+/* An account name in TBL. 5 opens a drill panel; it does not navigate. It kept the
+   base anchor colour, which promised a destination the click does not have. It reads as
+   body text now and earns its affordance on hover, where a pointer is already
+   committed. */
+.dl{color:var(--ink);text-decoration:none}
+.dl:hover,.dl:focus-visible{color:var(--ink);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+
+/* A 10px render of a 512-unit thin path puts the leftmost stroke within a sub-pixel
+   of the viewBox wall, and the svg box clips it. The glyph is not too big for the
+   cell -- the cell has 11px of padding -- it is too big for its own frame. Let it
+   bleed, and inset the pair so the bleed is not what touches the column edge. */
+.gl{padding-left:2px}
+.gl .ic{overflow:visible}
+
+/* The separator between groups was a 2px ink-muted rule -- a fret heavy enough to
+   read as a section break between every pair of members. It drops to the standard
+   hairline; the weight is reserved for the subtotal, which is the line that is
+   actually saying something. tr.sub and tr.tot keep their own rules from tokens.ts. */
+table.grouped tbody tr:not(.rep):not(:first-child) > td{border-top:1px solid var(--rule)}
+table.grouped tbody tr.sub > td{border-top:1px solid var(--ink-muted)}
+
+/* The close control was a 24px bordered tile in the corner of every overlay -- a
+   badge competing with the badges the overlay exists to show. It is the mark alone
+   now, with the hit area kept at 24px so it stays reachable. */
+dialog.rows form.x button{border-color:transparent;background:transparent}
+dialog.rows form.x button:hover,dialog.rows form.x button:focus-visible{color:var(--ink);background:transparent}
+
+/* Export sits at the caption's right margin, opposite the figure number at its left.
+   It is hidden until the client wires it, because a button that cannot do anything
+   is worse with scripting off than no button at all. */
+caption .exp{position:absolute;right:10px;top:9px;display:inline-flex;align-items:center;gap:5px;
+  padding:1.5px 7px;border:1px solid var(--rule);border-radius:var(--radius-sm);
+  background:var(--paper-card);color:var(--ink-muted);cursor:pointer;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase}
+caption .exp .ic{width:9px;height:9px}
+caption .exp:hover,caption .exp:focus-visible{color:var(--ink);border-color:var(--ink-muted)}
+caption .exp[hidden]{display:none}
+/* The caption reserves the corner the button occupies, so a caption long enough to
+   wrap does not run underneath it. 86px on the left for the figure number, 68 on the
+   right for the export. */
+caption{padding-right:68px}
+
+
+/* A subtitle is now a badge strip and, sometimes, an instruction. The strip wraps;
+   the instruction sits under it in the muted prose size it always had, so the two
+   do not read as one run of grey. */
+dialog.rows .sc .sbs{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle}
+dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
 `;

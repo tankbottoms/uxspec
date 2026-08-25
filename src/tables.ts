@@ -49,7 +49,7 @@ export function table(o: {
      adds `more`, so a table that fits never shows an affordance it cannot
      honour, and a page with no script shows none at all rather than a lie. */
   return `<div class="scroll-wrap"><div class="scroll"><table class="${cls}">
-<caption><span class="fig">${esc(o.fig)}</span>${o.caption}${
+<caption><span class="fig">${esc(o.fig)}</span><button type="button" class="exp" hidden data-exp="${esc(o.fig)}" aria-label="Download ${esc(o.fig)} as CSV">${icon("arrow-down-to-bracket")}CSV</button>${o.caption}${
     // Raw HTML, like every other scope on the page: a scope is a period and its
     // separator is an entity.
     o.scope ? `<span class="scope">${o.scope}</span>` : ""

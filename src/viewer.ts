@@ -82,7 +82,7 @@ export function stageFallback(): string {
 
 export function stage(): string {
   return (
-    `<div class="stage" id="stage">${stageFallback()}` +
+    `<div class="stage" id="gl-stage">${stageFallback()}` +
     `<div class="hud"><span id="hud-shape">lattice</span><span id="hud-fps">&mdash;</span></div></div>` +
     glyphControls()
   );
@@ -100,7 +100,15 @@ export function stage(): string {
 export const VIEWER_JS = `
 import * as THREE from "/vendor/three.module.min.js";
 
-const host = document.getElementById("stage");
+// Queried by class, not by id. The section heading this page is reached by is
+// also called "stage" -- ui.ts stamps every h2 with its anchor -- and
+// getElementById returns the first match in document order, which is the
+// heading. three.js was appending its canvas inside an h2: a static box with no
+// aspect-ratio, 264px tall, sitting above the real stage, which meanwhile kept
+// showing its fallback because the "on" class had gone to the heading too. A
+// class cannot collide with an anchor. The id is kept, and renamed, for anyone
+// reading the markup.
+const host = document.querySelector(".stage");
 if (host) start(host);
 
 // A token that resolves to nothing means the stylesheet did not load, and a

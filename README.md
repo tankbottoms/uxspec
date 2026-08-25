@@ -87,4 +87,4 @@ Cloudflare Workers static assets. `bun run deploy` lints, renders, stages
 
 ## Licence
 
-MIT. © M.P.
+MIT.

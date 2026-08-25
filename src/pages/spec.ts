@@ -998,25 +998,35 @@ function overlays(): string {
         { h: "Kind" },
         { h: "Balance", cls: "n" },
       ],
-      body: DRILL_BLOCKS.map((b) =>
-        b.accts
-          .map(
-            (a, j) =>
-              `<tr>` +
-              (j === 0
-                ? T.glabelCell(
-                    b.name,
-                    b.accts.length,
-                    DRILL_RAIL,
-                    { name: b.name, tone: b.tone, ic: b.ic },
-                    `data-drill="g|${esc(b.key)}" role="button" tabindex="0"`,
-                  )
-                : "") +
-              `<td><a class="dl" href="#levels" data-drill="a|${esc(b.key)}|${esc(a.name)}">${esc(a.name)}</a></td>` +
-              `<td><span class="gl">${icon(a.kic)}${esc(a.kind)}</span></td>` +
-              `<td class="n">${usdA(a.v)}</td></tr>`,
-          )
-          .join(""),
+      // The rail spans the members *and* the subtotal that closes them, so the span is
+      // accts.length + 1. The subtotal carries the group's mark as a bare glyph -- the
+      // boxed badge is the rail's job, and repeating it one column over read as two
+      // labels for one group. Owner ruling 2026-08-24.
+      body: DRILL_BLOCKS.map(
+        (b) =>
+          b.accts
+            .map(
+              (a, j) =>
+                `<tr>` +
+                (j === 0
+                  ? T.glabelCell(
+                      b.name,
+                      b.accts.length + 1,
+                      DRILL_RAIL,
+                      { name: b.name, tone: b.tone, ic: b.ic },
+                      `data-drill="g|${esc(b.key)}" role="button" tabindex="0"`,
+                    )
+                  : "") +
+                `<td><a class="dl" href="#levels" data-drill="a|${esc(b.key)}|${esc(a.name)}">${esc(a.name)}</a></td>` +
+                `<td><span class="gl">${icon(a.kic)}${esc(a.kind)}</span></td>` +
+                `<td class="n">${usdA(a.v)}</td></tr>`,
+            )
+            .join("") +
+          T.subRow(
+            `<td><span class="gl">${icon(b.ic)}${esc(b.name)} subtotal</span></td>` +
+              `<td>${b.accts.length} accounts</td>` +
+              `<td class="n">${usdA(b.accts.reduce((t, a) => t + a.v, 0))}</td>`,
+          ),
       ).join(""),
       grouped: true,
     }) +

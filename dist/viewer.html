@@ -76,6 +76,13 @@ body {
    clip simply refuses to paint past the edge and leaves position: fixed alone, so the
    receipt sheets and tooltips still cover the viewport. */
 html {
+  /* Safari on iOS inflates text inside any block it judges too wide for the viewport.
+     A prose table set in nowrap ran to two thousand pixels, tripped the heuristic, and
+     rendered its sentences visibly larger than the same 10px type in the narrow table
+     beside it - a size difference no rule in this file asked for and none could
+     override. Pinned to 100%: this page decides its own type sizes. */
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+
   scrollbar-gutter: stable;
   overflow-x: clip; max-width: 100%;
 }
@@ -895,9 +902,10 @@ figure + h3 { margin-top: 22px; }
   display: flex; align-items: center; gap: 3px;
 }
 .seg .cap .ic { width: 10px; height: 10px; flex: none; opacity: .95; }
-/* A slice too narrow for figures keeps the mark and drops the padding that would
-   push it out of a 12px column. */
-.seg .cap.gonly { padding: 0; gap: 0; }
+/* A slice too narrow for figures keeps the mark, and keeps the side air a captioned
+   slice gets -- a mark pressed against both edges reads as a rendering fault. Slices
+   that cannot afford the air are dropped upstream by GLYPH_MIN in charts.ts. */
+.seg .cap.gonly { padding: 0 3px; gap: 0; }
 .legend .ic { width: 10px; height: 10px; flex: none; }
 /* Hover detail for a slice. On its own paper rather than in the browser's native
    title chrome, so it can hold four lines of figures and stay legible in dark mode. */
@@ -1061,6 +1069,18 @@ ul.plain li { margin-bottom: 5px; }
   font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
   text-transform: uppercase; color: var(--ink-soft); padding: 8px 9px 4px;
 }
+/* The panel is a map of the site, so it has two levels. A page row is set in the page's
+   own weight and keeps a rule under it; its sections are indented under it and set a
+   step smaller. The page you are on is marked rather than hidden - a map that omits
+   where you are standing is the thing that made the old menu confusing. */
+.menu .panel a.pg {
+  font-weight: 650; color: var(--ink); font-size: 12px;
+  padding: 8px 9px 7px; margin-top: 4px; border-bottom: 1px solid var(--rule-hair);
+}
+.menu .panel a.pg:first-child { margin-top: 0; }
+.menu .panel a.pg.on { color: var(--accent); background: var(--paper-alt); }
+.menu .panel a.pg.on::after { content: "\2713"; margin-left: auto; font-size: 10px; }
+.menu .panel a.sub { padding-left: 22px; font-size: 11.5px; }
 .menu .panel button[aria-pressed="true"] { color: var(--accent); font-weight: 600; }
 .menu .panel button[aria-pressed="true"]::after { content: "\2713"; margin-left: auto; }
 .nav .spacer { margin-left: auto; }
@@ -1091,6 +1111,12 @@ ul.plain li { margin-bottom: 5px; }
    its aspect ratio and scrolls sideways on a narrow screen instead of squashing -
    squashed, the jars stop reading as jars and the whole point of it is lost. */
 .diagram { display: block; width: 100%; min-width: 900px; height: auto; }
+/* The design spec's figure is a miniature drawn at the size the page renders it, so a
+   chart badge in it is the same size as a real badge in the table beside it. The shared
+   rule above stretches any chart to at least 900px, which magnified this one by 1.4x or
+   more and left its labels reading larger than the badges they were there to explain.
+   It scrolls inside its figure below 640px rather than shrinking under the 9px floor. */
+.diagram.ux { width: 640px; min-width: 640px; }
 figure:has(.diagram) { overflow-x: auto; }
 
 /* Links inside a band header sit in the header's own muted type, not the link blue -
@@ -1185,7 +1211,14 @@ footer strong { color: var(--ink-muted); }
 .sparkfig { position: relative; }
 .xhair { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .1s ease; }
 .xhair .rule { position: absolute; width: 1px; background: var(--rule); }
-.xhair .dot { position: absolute; width: 5px; height: 5px; border-radius: 50%; }
+/* Centred in CSS rather than by the script that positions it: the size lives here, so the
+   half-width that centres it has to live here too. It used to be a literal 2.5 in
+   render.ts, which is exactly the kind of number that goes stale the first time this rule
+   changes and nobody notices. */
+.xhair .dot {
+  position: absolute; width: 5px; height: 5px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
 .sparkfig.live .xhair { opacity: 1; }
 .readout {
   position: absolute; z-index: 8; top: 8px; left: 0; width: 178px; padding: 7px 9px 8px;
@@ -1241,6 +1274,10 @@ footer strong { color: var(--ink-muted); }
   caption { font-size: 9px; padding-left: 86px; padding-right: 10px; }
   figure figcaption, .therm + figcaption { font-size: 9px; padding-right: 10px; }
   table { font-size: 10px; }
+  /* A table of sentences is read, not scanned, and on a phone it is carrying far more
+     words per row than a table of figures. A step down keeps a rule and its reason on
+     three lines instead of six without going under the 9px floor. */
+  table.prose td { font-size: 9px; }
   nav.sections { max-width: 100%; }
 }
 @media (max-width: 420px) {
@@ -1787,12 +1824,66 @@ h2 .hint .ic { width: 9px; height: 9px; margin-right: 4px; vertical-align: -1px;
    in front of a header that already carries a glyph. */
 .band > summary { cursor: pointer; list-style: none; }
 .band > summary::-webkit-details-marker { display: none; }
+
+/* --- owner rulings 2026-08-24 -------------------------------------------------
+   Overrides only. tokens.ts is the canonical copy and is never edited here, so
+   every rule below re-states a selector that already exists there and wins on
+   source order. Tokens only -- no raw hex. */
+
+/* An account name in TBL. 5 opens a drill panel; it does not navigate. It kept the
+   base anchor colour, which promised a destination the click does not have. It reads as
+   body text now and earns its affordance on hover, where a pointer is already
+   committed. */
+.dl{color:var(--ink);text-decoration:none}
+.dl:hover,.dl:focus-visible{color:var(--ink);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+
+/* A 10px render of a 512-unit thin path puts the leftmost stroke within a sub-pixel
+   of the viewBox wall, and the svg box clips it. The glyph is not too big for the
+   cell -- the cell has 11px of padding -- it is too big for its own frame. Let it
+   bleed, and inset the pair so the bleed is not what touches the column edge. */
+.gl{padding-left:2px}
+.gl .ic{overflow:visible}
+
+/* The separator between groups was a 2px ink-muted rule -- a fret heavy enough to
+   read as a section break between every pair of members. It drops to the standard
+   hairline; the weight is reserved for the subtotal, which is the line that is
+   actually saying something. tr.sub and tr.tot keep their own rules from tokens.ts. */
+table.grouped tbody tr:not(.rep):not(:first-child) > td{border-top:1px solid var(--rule)}
+table.grouped tbody tr.sub > td{border-top:1px solid var(--ink-muted)}
+
+/* The close control was a 24px bordered tile in the corner of every overlay -- a
+   badge competing with the badges the overlay exists to show. It is the mark alone
+   now, with the hit area kept at 24px so it stays reachable. */
+dialog.rows form.x button{border-color:transparent;background:transparent}
+dialog.rows form.x button:hover,dialog.rows form.x button:focus-visible{color:var(--ink);background:transparent}
+
+/* Export sits at the caption's right margin, opposite the figure number at its left.
+   It is hidden until the client wires it, because a button that cannot do anything
+   is worse with scripting off than no button at all. */
+caption .exp{position:absolute;right:10px;top:9px;display:inline-flex;align-items:center;gap:5px;
+  padding:1.5px 7px;border:1px solid var(--rule);border-radius:var(--radius-sm);
+  background:var(--paper-card);color:var(--ink-muted);cursor:pointer;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase}
+caption .exp .ic{width:9px;height:9px}
+caption .exp:hover,caption .exp:focus-visible{color:var(--ink);border-color:var(--ink-muted)}
+caption .exp[hidden]{display:none}
+/* The caption reserves the corner the button occupies, so a caption long enough to
+   wrap does not run underneath it. 86px on the left for the figure number, 68 on the
+   right for the export. */
+caption{padding-right:68px}
+
+
+/* A subtitle is now a badge strip and, sometimes, an instruction. The strip wraps;
+   the instruction sits under it in the muted prose size it always had, so the two
+   do not read as one run of grey. */
+dialog.rows .sc .sbs{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle}
+dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
 </style></head><body><svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden"><defs><symbol id="i-layer-group" viewBox="0 0 576 512"><path fill="currentColor" d="M288 0c-6.4 0-12.8 1.4-18.6 4.1L43.9 109.4C36.6 112.7 32 120 32 128s4.6 15.3 11.9 18.6L269.4 251.9c5.8 2.7 12.2 4.1 18.6 4.1s12.8-1.4 18.6-4.1L532.1 146.6C539.4 143.3 544 136 544 128s-4.6-15.3-11.9-18.6L306.6 4.1C300.8 1.4 294.4 0 288 0zM276.1 18.6c3.7-1.7 7.8-2.6 11.9-2.6s8.2 .9 11.9 2.6L525.4 123.9c1.6 .7 2.6 2.4 2.6 4.1s-1 3.4-2.6 4.1L299.9 237.4c-3.7 1.7-7.8 2.6-11.9 2.6s-8.2-.9-11.9-2.6L50.6 132.1c-1.6-.7-2.6-2.4-2.6-4.1s1-3.4 2.6-4.1L276.1 18.6zM43.9 237.4C36.6 240.7 32 248 32 256s4.6 15.3 11.9 18.6L269.4 379.9c5.8 2.7 12.2 4.1 18.6 4.1s12.8-1.4 18.6-4.1L532.1 274.6C539.4 271.3 544 264 544 256s-4.6-15.3-11.9-18.6l-59.4-27.7-18.9 8.8 71.5 33.4c1.6 .7 2.6 2.4 2.6 4.1s-1 3.4-2.6 4.1L299.9 365.4c-3.7 1.7-7.8 2.6-11.9 2.6s-8.2-.9-11.9-2.6L50.6 260.1c-1.6-.7-2.6-2.4-2.6-4.1s1-3.4 2.6-4.1l71.5-33.4-18.9-8.8L43.9 237.4zm0 128C36.6 368.7 32 376 32 384s4.6 15.3 11.9 18.6L269.4 507.9c5.8 2.7 12.2 4.1 18.6 4.1s12.8-1.4 18.6-4.1L532.1 402.6C539.4 399.3 544 392 544 384s-4.6-15.3-11.9-18.6l-59.4-27.7-18.9 8.8 71.5 33.4c1.6 .7 2.6 2.4 2.6 4.1s-1 3.4-2.6 4.1L299.9 493.4c-3.7 1.7-7.8 2.6-11.9 2.6s-8.2-.9-11.9-2.6L50.6 388.1c-1.6-.8-2.6-2.4-2.6-4.1s1-3.4 2.6-4.1l71.5-33.4-18.9-8.8L43.9 365.4z"></path></symbol><symbol id="i-scale-balanced" viewBox="0 0 640 512"><path fill="currentColor" d="M384.7 64c0 32.6-24.4 59.6-56 63.5V496h208c4.4 0 8 3.6 8 8s-3.6 8-8 8h-216H104c-4.4 0-8-3.6-8-8s3.6-8 8-8H312.7V127.5c-31.6-3.9-56-30.9-56-63.5L104 64c-4.4 0-8-3.6-8-8s3.6-8 8-8l154.7 0c7.1-27.6 32.2-48 62-48s54.9 20.4 62 48L536 48c4.4 0 8 3.6 8 8s-3.6 8-8 8L384.7 64zm52 304c20.5 19.2 47.1 32 75.7 32s55.2-12.8 75.7-32c20.3-19 33.1-43.1 35.8-64h-223c2.7 20.9 15.5 44.9 35.8 64zm75.7-254.2L407.8 288H616.9L512.4 113.8zM635.8 288.4c3 5 4.7 10.7 4.1 16.4C634 356.2 579.2 416 512.4 416s-121.7-59.8-127.5-111.2c-.7-5.8 1.1-11.5 4-16.4L500.3 102.9c2.6-4.3 7.2-6.9 12.1-6.9s9.6 2.6 12.1 6.9L635.8 288.4zM16.2 304c2.7 20.9 15.5 44.9 35.8 64c20.5 19.2 47.1 32 75.7 32s55.2-12.8 75.7-32c20.3-19 33.1-43.1 35.8-64H16.2zm6.9-16H232.2L127.6 113.8 23.1 288zM139.7 102.9L251.1 288.4c3 5 4.7 10.7 4.1 16.4C249.3 356.2 194.4 416 127.6 416S6 356.2 .1 304.8c-.7-5.8 1.1-11.5 4.1-16.4L115.5 102.9c2.6-4.3 7.2-6.9 12.1-6.9s9.6 2.6 12.1 6.9zM320.7 112a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"></path></symbol><symbol id="i-circle-question" viewBox="0 0 512 512"><path fill="currentColor" d="M496 256A240 240 0 1 0 16 256a240 240 0 1 0 480 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm168-56c0-30.9 25.1-56 56-56h56.2c35.2 0 63.8 28.6 63.8 63.8c0 21.4-10.8 41.5-28.7 53.3L264 294.9V320c0 4.4-3.6 8-8 8s-8-3.6-8-8V290.5c0-2.7 1.4-5.2 3.6-6.7l54.9-36.2c13.4-8.8 21.5-23.8 21.5-39.9c0-26.4-21.4-47.8-47.8-47.8H224c-22.1 0-40 17.9-40 40l0 6.5c0 4.4-3.6 8-8 8s-8-3.6-8-8l0-6.5zm72 168a16 16 0 1 1 32 0 16 16 0 1 1 -32 0z"></path></symbol><symbol id="i-folder-open" viewBox="0 0 576 512"><path fill="currentColor" d="M64 464c-10.6 0-20.5-5.3-26.5-14.1s-7.2-20-3.2-29.8l64-160C103.1 248 114.9 240 128 240H528c10.6 0 20.5 5.3 26.5 14.1s7.2 20 3.2 29.8l-64 160C488.9 456 477.1 464 464 464H384 64zm320 16h80c19.6 0 37.3-11.9 44.6-30.2l64-160c5.9-14.8 4.1-31.5-4.8-44.7S543.9 224 528 224H128c-19.6 0-37.3 11.9-44.6 30.2l-64 160c-1.3 3.2-2.2 6.5-2.8 9.8c-.4-2.6-.7-5.3-.7-8V96c0-26.5 21.5-48 48-48H181.5c12.7 0 24.9 5.1 33.9 14.1l26.5 26.5c15 15 35.4 23.4 56.6 23.4H416c26.5 0 48 21.5 48 48v32h16V160c0-35.3-28.7-64-64-64H298.5c-17 0-33.3-6.7-45.3-18.7L226.7 50.7c-12-12-28.3-18.7-45.3-18.7H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384z"></path></symbol><symbol id="i-bars" viewBox="0 0 448 512"><path fill="currentColor" d="M0 88c0-4.4 3.6-8 8-8H440c4.4 0 8 3.6 8 8s-3.6 8-8 8H8c-4.4 0-8-3.6-8-8zM0 248c0-4.4 3.6-8 8-8H440c4.4 0 8 3.6 8 8s-3.6 8-8 8H8c-4.4 0-8-3.6-8-8zM448 408c0 4.4-3.6 8-8 8H8c-4.4 0-8-3.6-8-8s3.6-8 8-8H440c4.4 0 8 3.6 8 8z"></path></symbol><symbol id="i-chart-line" viewBox="0 0 512 512"><path fill="currentColor" d="M16 40c0-4.4-3.6-8-8-8s-8 3.6-8 8V408c0 39.8 32.2 72 72 72H504c4.4 0 8-3.6 8-8s-3.6-8-8-8H72c-30.9 0-56-25.1-56-56V40zM477.7 141.7c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L320 276.7l-90.3-90.3c-3.1-3.1-8.2-3.1-11.3 0l-128 128c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0L224 203.3l90.3 90.3c3.1 3.1 8.2 3.1 11.3 0l152-152z"></path></symbol><symbol id="i-gear" viewBox="0 0 512 512"><path fill="currentColor" d="M211.6 28.5c1.6-7.3 8.1-12.5 15.6-12.5h57.6c7.5 0 14 5.2 15.6 12.5l12.9 57.1c.6 2.6 2.5 4.8 5 5.7c17.9 6.8 34.5 16.4 49.1 28.4c2.1 1.7 4.9 2.2 7.4 1.4l56-17.4c7.1-2.2 14.9 .8 18.6 7.3L478.3 161c3.7 6.5 2.5 14.7-3 19.8l-43.1 39.8c-2 1.8-2.9 4.5-2.5 7.2c1.5 9.2 2.3 18.7 2.3 28.4s-.8 19.1-2.3 28.4c-.4 2.6 .5 5.3 2.5 7.2l43.1 39.8c5.5 5.1 6.7 13.3 3 19.8L449.4 401c-3.7 6.5-11.5 9.5-18.6 7.3l-56-17.4c-2.6-.8-5.4-.3-7.4 1.4c-14.6 11.9-31.2 21.6-49.1 28.4c-2.5 1-4.4 3.1-5 5.7l-12.9 57.1c-1.6 7.3-8.1 12.5-15.6 12.5H227.2c-7.5 0-14-5.2-15.6-12.5l-12.9-57.1c-.6-2.6-2.5-4.8-5-5.7c-17.9-6.8-34.5-16.4-49.1-28.4c-2.1-1.7-4.9-2.2-7.4-1.4l-56 17.4c-7.1 2.2-14.9-.8-18.6-7.3L33.7 351c-3.7-6.5-2.5-14.7 3-19.8l43.1-39.8c2-1.8 2.9-4.5 2.5-7.2C80.8 275.1 80 265.7 80 256s.8-19.1 2.3-28.4c.4-2.6-.5-5.3-2.5-7.2L36.7 180.7c-5.5-5.1-6.7-13.3-3-19.8L62.6 111c3.7-6.5 11.5-9.5 18.6-7.3l2.4-7.6-2.4 7.6 56 17.4c2.6 .8 5.4 .3 7.4-1.4c14.6-12 31.2-21.6 49.1-28.4c2.5-1 4.4-3.1 5-5.7l12.9-57.1zM227.2 0c-15 0-27.9 10.4-31.2 25L184 78c-16.7 6.8-32.2 15.8-46.1 26.7L85.9 88.5C71.6 84 56.2 90.1 48.7 103L19.9 153c-7.5 13-5 29.4 6 39.5l39.9 36.9C64.6 238.1 64 247 64 256s.6 17.9 1.8 26.6L25.9 319.5l5.4 5.9-5.4-5.9c-11 10.1-13.5 26.6-6 39.5L48.7 409c7.5 13 22.9 19 37.2 14.6l51.9-16.2c14 10.9 29.5 19.9 46.1 26.7l12 53c3.3 14.6 16.3 25 31.2 25h57.6c15 0 27.9-10.4 31.2-25l12-53c16.7-6.7 32.2-15.8 46.1-26.7l51.9 16.2c14.3 4.4 29.7-1.6 37.2-14.6L492.1 359c7.5-13 5-29.4-6-39.5l-39.9-36.9c1.2-8.7 1.8-17.6 1.8-26.6s-.6-17.9-1.8-26.6l39.9-36.9c11-10.1 13.5-26.6 6-39.5L463.3 103c-7.5-13-22.9-19-37.2-14.6l-51.9 16.2C360.2 93.7 344.7 84.7 328 78L316 25c-3.3-14.6-16.3-25-31.2-25H227.2zM192 256a64 64 0 1 1 128 0 64 64 0 1 1 -128 0zm144 0a80 80 0 1 0 -160 0 80 80 0 1 0 160 0z"></path></symbol><symbol id="i-sun" viewBox="0 0 512 512"><path fill="currentColor" d="M165.7 2.8c-4.5-3.1-10.2-3.7-15.2-1.6s-8.6 6.6-9.6 11.9L121 121 13.1 140.8c-5.3 1-9.8 4.6-11.9 9.6s-1.5 10.7 1.6 15.2L65.1 256 2.8 346.3c-3.1 4.5-3.7 10.2-1.6 15.2s6.6 8.6 11.9 9.6L121 391l19.8 107.9c1 5.3 4.6 9.8 9.6 11.9l3.1-7.4-3.1 7.4c5 2.1 10.7 1.5 15.2-1.6L256 446.9l90.3 62.3c4.5 3.1 10.2 3.7 15.2 1.6s8.6-6.6 9.6-11.9L391 391l107.9-19.8c5.3-1 9.8-4.6 11.9-9.6s1.5-10.7-1.6-15.2L446.9 256l62.3-90.3c3.1-4.5 3.7-10.2 1.6-15.2l-7.4 3.1 7.4-3.1c-2.1-5-6.6-8.6-11.9-9.6L391 121 371.1 13.1c-1-5.3-4.6-9.8-9.6-11.9s-10.7-1.5-15.2 1.6L256 65.1 165.7 2.8zm94.9 78.6L355.4 16l20.8 113.3c.6 3.3 3.2 5.8 6.4 6.4L496 156.6l-65.4 94.9c-1.9 2.7-1.9 6.3 0 9.1L496 355.4 382.7 376.2c-3.3 .6-5.8 3.2-6.4 6.4L355.4 496l-94.9-65.4c-2.7-1.9-6.3-1.9-9.1 0L156.6 496 135.8 382.7c-.6-3.3-3.2-5.8-6.4-6.4L16 355.4l65.4-94.9c1.9-2.7 1.9-6.3 0-9.1L16 156.6l113.3-20.8c3.3-.6 5.8-3.2 6.4-6.4L156.6 16l94.9 65.4c2.7 1.9 6.3 1.9 9.1 0zM256 368a112 112 0 1 0 0-224 112 112 0 1 0 0 224zM160 256a96 96 0 1 1 192 0 96 96 0 1 1 -192 0z"></path></symbol><symbol id="i-moon" viewBox="0 0 384 512"><path fill="currentColor" d="M223.5 48C108.9 48 16 141.1 16 256s92.9 208 207.5 208c56.2 0 107.2-22.4 144.6-58.8c-10.7 1.9-21.7 2.8-32.9 2.8c-105.8 0-191.5-86-191.5-192c0-71.7 39.3-134.3 97.4-167.3c-5.8-.5-11.7-.7-17.6-.7zM0 256C0 132.3 100 32 223.5 32c6.4 0 12.7 .3 19 .8c7 .6 12.8 5.7 14.3 12.5s-1.6 13.9-7.7 17.3c-53.3 30.2-89.3 87.6-89.3 153.3c0 97.2 78.6 176 175.5 176c10.3 0 20.4-.9 30.1-2.6c6.9-1.2 13.8 2.2 17 8.5s1.9 13.8-3.1 18.7C339 455.8 284 480 223.5 480C100 480 0 379.7 0 256z"></path></symbol><symbol id="i-chevron-down" viewBox="0 0 512 512"><path fill="currentColor" d="M250.3 397.7c3.1 3.1 8.2 3.1 11.3 0l216-216c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L256 380.7 45.7 170.3c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3l216 216z"></path></symbol><symbol id="i-file-lines" viewBox="0 0 384 512"><path fill="currentColor" d="M64 496c-26.5 0-48-21.5-48-48V64c0-26.5 21.5-48 48-48H204.1c1.3 0 2.6 .1 3.9 .2V136c0 22.1 17.9 40 40 40H367.8c.2 1.3 .2 2.6 .2 3.9V448c0 26.5-21.5 48-48 48H64zM358.6 157.3c.9 .9 1.7 1.8 2.4 2.7H248c-13.3 0-24-10.7-24-24V22.9c1 .8 1.9 1.6 2.7 2.4L358.6 157.3zM64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V179.9c0-12.7-5.1-24.9-14.1-33.9L238.1 14.1c-9-9-21.2-14.1-33.9-14.1H64zm40 256c-4.4 0-8 3.6-8 8s3.6 8 8 8H280c4.4 0 8-3.6 8-8s-3.6-8-8-8H104zm0 64c-4.4 0-8 3.6-8 8s3.6 8 8 8H280c4.4 0 8-3.6 8-8s-3.6-8-8-8H104zm0 64c-4.4 0-8 3.6-8 8s3.6 8 8 8H280c4.4 0 8-3.6 8-8s-3.6-8-8-8H104z"></path></symbol><symbol id="i-circle-info" viewBox="0 0 512 512"><path fill="currentColor" d="M256 16a240 240 0 1 1 0 480 240 240 0 1 1 0-480zm0 496A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM208 352c-4.4 0-8 3.6-8 8s3.6 8 8 8h96c4.4 0 8-3.6 8-8s-3.6-8-8-8H264V216c0-4.4-3.6-8-8-8H224c-4.4 0-8 3.6-8 8s3.6 8 8 8h24V352H208zm48-176a16 16 0 1 0 0-32 16 16 0 1 0 0 32z"></path></symbol><symbol id="i-circle-check" viewBox="0 0 512 512"><path fill="currentColor" d="M256 16a240 240 0 1 1 0 480 240 240 0 1 1 0-480zm0 496A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM357.7 197.7c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0L224 308.7l-58.3-58.3c-3.1-3.1-8.2-3.1-11.3 0s-3.1 8.2 0 11.3l64 64c3.1 3.1 8.2 3.1 11.3 0l128-128z"></path></symbol><symbol id="i-link" viewBox="0 0 640 512"><path fill="currentColor" d="M580.2 244.7c50-50 50-131 0-181s-131-50-181 0l-17 17c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0l17-17c43.7-43.7 114.7-43.7 158.4 0s43.7 114.7 0 158.4L433.1 369.1c-43.7 43.7-114.7 43.7-158.4 0s-43.7-114.7 0-158.4l39.6-39.6c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0l-39.6 39.6c-50 50-50 131 0 181s131 50 181 0L580.2 244.7zM59.8 267.3c-50 50-50 131 0 181s131 50 181 0l17-17c3.1-3.1 3.1-8.2 0-11.3s-8.2-3.1-11.3 0l-17 17c-43.7 43.7-114.7 43.7-158.4 0s-43.7-114.7 0-158.4L206.9 142.9c43.7-43.7 114.7-43.7 158.4 0s43.7 114.7 0 158.4l-39.6 39.6c-3.1 3.1-3.1 8.2 0 11.3s8.2 3.1 11.3 0l39.6-39.6c50-50 50-131 0-181s-131-50-181 0L59.8 267.3z"></path></symbol><symbol id="i-building-columns" viewBox="0 0 512 512"><path fill="currentColor" d="M252.7 .7c2.1-.9 4.5-.9 6.6 0L497.9 108.5c8.6 3.9 14.1 12.4 14.1 21.9V136c0 13.3-10.7 24-24 24H256 24c-13.3 0-24-10.7-24-24v-5.7c0-9.4 5.5-18 14.1-21.9L252.7 .7zM288 144H488c4.4 0 8-3.6 8-8v-5.7c0-3.1-1.8-6-4.7-7.3L256 16.8 20.7 123c-2.9 1.3-4.7 4.1-4.7 7.3V136c0 4.4 3.6 8 8 8H224c-5-6.7-8-15-8-24c0-22.1 17.9-40 40-40s40 17.9 40 40c0 9-3 17.3-8 24zm-32 0a24 24 0 1 0 0-48 24 24 0 1 0 0 48zM72 192c4.4 0 8 3.6 8 8V368H184V200c0-4.4 3.6-8 8-8s8 3.6 8 8V368H312V200c0-4.4 3.6-8 8-8s8 3.6 8 8V368H432V200c0-4.4 3.6-8 8-8s8 3.6 8 8V376c0 4.4-3.6 8-8 8H72c-4.4 0-8-3.6-8-8V200c0-4.4 3.6-8 8-8zM32 440c0-4.4 3.6-8 8-8H472c4.4 0 8 3.6 8 8s-3.6 8-8 8H40c-4.4 0-8-3.6-8-8zM0 504c0-4.4 3.6-8 8-8H504c4.4 0 8 3.6 8 8s-3.6 8-8 8H8c-4.4 0-8-3.6-8-8z"></path></symbol><symbol id="i-ban" viewBox="0 0 512 512"><path fill="currentColor" d="M420 431.3L80.7 92C40.6 134.9 16 192.6 16 256c0 132.5 107.5 240 240 240c63.4 0 121.1-24.6 164-64.7zM431.3 420C471.4 377.1 496 319.4 496 256C496 123.5 388.5 16 256 16C192.6 16 134.9 40.6 92 80.7L431.3 420zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z"></path></symbol><symbol id="i-car" viewBox="0 0 512 512"><path fill="currentColor" d="M106.4 88.6L76.3 194c6.4-1.3 12.9-2 19.7-2H416c6.7 0 13.3 .7 19.7 2L405.6 88.6c-6.9-24-28.8-40.6-53.8-40.6H160.3c-25 0-47 16.6-53.8 40.6zM58 199.8L91 84.2C99.9 53.3 128.1 32 160.3 32H351.7c32.1 0 60.4 21.3 69.2 52.2l33 115.6c34.1 14.7 58 48.7 58 88.2v96 16 48c0 17.7-14.3 32-32 32H448c-17.7 0-32-14.3-32-32V400H96v48c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V400 384 288c0-39.5 23.9-73.5 58-88.2zM416 384h16 64V288c0-44.2-35.8-80-80-80H96c-44.2 0-80 35.8-80 80v96H80 96 416zm16 16v48c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400H432zM16 400v48c0 8.8 7.2 16 16 16H64c8.8 0 16-7.2 16-16V400H16zm96-112a16 16 0 1 0 -32 0 16 16 0 1 0 32 0zm-48 0a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm352 16a16 16 0 1 0 0-32 16 16 0 1 0 0 32zm0-48a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"></path></symbol><symbol id="i-laptop" viewBox="0 0 640 512"><path fill="currentColor" d="M512 48H128c-26.5 0-48 21.5-48 48V352H64V96c0-35.3 28.7-64 64-64H512c35.3 0 64 28.7 64 64V352H560V96c0-26.5-21.5-48-48-48zM19.2 400c-1.8 0-3.2 1.4-3.2 3.2C16 436.8 43.2 464 76.8 464H563.2c33.6 0 60.8-27.2 60.8-60.8c0-1.8-1.4-3.2-3.2-3.2H19.2zM0 403.2C0 392.6 8.6 384 19.2 384H620.8c10.6 0 19.2 8.6 19.2 19.2c0 42.4-34.4 76.8-76.8 76.8H76.8C34.4 480 0 445.6 0 403.2z"></path></symbol><symbol id="i-book" viewBox="0 0 448 512"><path fill="currentColor" d="M0 56C0 25.1 25.1 0 56 0H408c22.1 0 40 17.9 40 40V376c0 19.4-13.7 35.5-32 39.2V496h24c4.4 0 8 3.6 8 8s-3.6 8-8 8H56c-30.9 0-56-25.1-56-56V56zM56 416c-22.1 0-40 17.9-40 40s17.9 40 40 40H400V416H56zm-40 .8C26.2 406.4 40.3 400 56 400h56V16H56C33.9 16 16 33.9 16 56V416.8zM128 16V400H408c13.3 0 24-10.7 24-24V40c0-13.3-10.7-24-24-24H128zm48 120c0-4.4 3.6-8 8-8H376c4.4 0 8 3.6 8 8s-3.6 8-8 8H184c-4.4 0-8-3.6-8-8zm0 80c0-4.4 3.6-8 8-8H376c4.4 0 8 3.6 8 8s-3.6 8-8 8H184c-4.4 0-8-3.6-8-8z"></path></symbol><symbol id="i-arrow-rotate-left" viewBox="0 0 512 512"><path fill="currentColor" d="M127.9 419.9c90.5 70.7 221.2 54.7 292-35.8s54.7-221.2-35.8-292C293.6 21.4 162.9 37.4 92.1 127.9L56 176H184c4.4 0 8 3.6 8 8s-3.6 8-8 8H40c-4.4 0-8-3.6-8-8V40c0-4.4 3.6-8 8-8s8 3.6 8 8V160l31.4-41.8 0 0 .1-.1C155.6 20.6 296.4 3.3 393.9 79.5s114.8 216.9 38.6 314.4s-216.9 114.8-314.4 38.6C93.4 413.2 73.9 389.8 59.7 364c-2.1-3.9-.7-8.7 3.2-10.9s8.7-.7 10.9 3.2c13.2 24 31.3 45.7 54.2 63.7z"></path></symbol></defs></svg><div class="nav"><div class="nav-in"><span class="brand"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg> UX spec</span><details class="menu"><summary><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-bars"></use></svg> Sections <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-chevron-down"></use></svg></summary><nav class="panel sections"><a href="#foundations"><span class="n">1</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg>Foundations</a><a href="#badges"><span class="n">2</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg>Badges</a><a href="#tables"><span class="n">3</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-file-lines"></use></svg>Tables and grouped rows</a><a href="#tiles"><span class="n">4</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-scale-balanced"></use></svg>Tiles, meters, readouts</a><a href="#sparks"><span class="n">5</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-chart-line"></use></svg>Sparks</a><a href="#charts"><span class="n">6</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-building-columns"></use></svg>Figures and charts</a><a href="#controls"><span class="n">7</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-gear"></use></svg>Controls</a><a href="#overlays"><span class="n">8</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-question"></use></svg>Overlays</a><a href="#wireframes"><span class="n">9</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-bars"></use></svg>Wireframes</a><a href="#layout"><span class="n">10</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-folder-open"></use></svg>Layout surfaces</a><a href="#viewports"><span class="n">11</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-car"></use></svg>Viewports and docked controls</a><a href="#viewer"><span class="n">12</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-laptop"></use></svg>Viewer and glyph controls</a><a href="#contract"><span class="n">13</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-ban"></use></svg>The contract, enforced</a><a href="#recipes"><span class="n">14</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-book"></use></svg>Recipes</a></nav></details><span class="spacer"></span><a class="out" href="./index.html"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg><span>Spec</span></a><details class="menu"><summary><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-gear"></use></svg> <span class="lbl">Theme</span></summary><div class="panel right"><div class="grp">Appearance</div><button type="button" data-theme-set="light" aria-pressed="false"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sun"></use></svg>Light</button><button type="button" data-theme-set="solarized" aria-pressed="false"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-moon"></use></svg>Solarized</button><button type="button" data-theme-set="auto" aria-pressed="false"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>Match system</button><div class="grp">Reference</div><a href="https://github.com/tankbottoms/uxspec"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-link"></use></svg>Source</a></div></details></div></div><main><div class="page-head">
 <div class="eyebrow">Viewer &middot; three.js, vendored &middot; still SVG fallback</div>
 <h1>The WebGL stage</h1>
 <p class="lede">A lattice, a ring, a stack and an orb, tinted from the same tokens as every badge on the spec page. The controls are badges. With scripting off, without WebGL, or if the module throws, the same figure is shown as a flat isometric still and the page reads correctly.</p>
 </div><div class="tiles"><div class="tile"><div class="k">Module</div><div class="v">vendored</div><div class="s">public/vendor, never a CDN</div></div><div class="tile"><div class="k">Colour source</div><div class="v">tokens</div><div class="s">read live from the stylesheet</div></div><div class="tile"><div class="k">No-JS state</div><div class="v">a still</div><div class="s">same figure, flat</div></div><div class="tile"><div class="k">Draw calls</div><div class="v">2/shape</div><div class="s">solid plus edges</div></div></div><hr class="sep">
-<h2 id="stage"><span class="n">1</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-laptop"></use></svg>The stage<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>live now</span><span class="stmt">Four shapes, tinted from the same tokens as every badge on the spec page, drawn twice each &mdash; solid and edges.</span></h2><div class="stage" id="stage"><div class="fallback"><svg viewBox="0 0 600 260" width="100%" height="100%" role="img" aria-label="Static lattice"><polygon points="300,60 322,71 300,82 278,71" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="322,71 344,82 322,93 300,82" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="344,82 366,93 344,104 322,93" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="366,93 388,104 366,115 344,104" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="388,104 410,115 388,126 366,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="278,71 300,82 278,93 256,82" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="300,82 322,93 300,104 278,93" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="322,93 344,104 322,115 300,104" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="344,104 366,115 344,126 322,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="366,115 388,126 366,137 344,126" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="256,82 278,93 256,104 234,93" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="278,93 300,104 278,115 256,104" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="300,104 322,115 300,126 278,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="322,115 344,126 322,137 300,126" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="344,126 366,137 344,148 322,137" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="234,93 256,104 234,115 212,104" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="256,104 278,115 256,126 234,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="278,115 300,126 278,137 256,126" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="300,126 322,137 300,148 278,137" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="322,137 344,148 322,159 300,148" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="212,104 234,115 212,126 190,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="234,115 256,126 234,137 212,126" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="256,126 278,137 256,148 234,137" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="278,137 300,148 278,159 256,148" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="300,148 322,159 300,170 278,159" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><text x="300" y="240" text-anchor="middle" font-size="10" fill="var(--ink-muted)" font-family="var(--font-mono)">still &mdash; enable scripting for the live view</text></svg></div><div class="hud"><span id="hud-shape">lattice</span><span id="hud-fps">&mdash;</span></div></div><div class="gctl" role="group" aria-label="Shape"><button type="button" data-shape="lattice" aria-pressed="true"><span class="badge w11 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg>Lattice</span></button><button type="button" data-shape="ring" aria-pressed="false"><span class="badge w11 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-rotate-left"></use></svg>Ring</span></button><button type="button" data-shape="stack" aria-pressed="false"><span class="badge w11 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-bars"></use></svg>Stack</span></button><button type="button" data-shape="orb" aria-pressed="false"><span class="badge w11 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>Orb</span></button></div><div class="gctl" role="group" aria-label="Tone"><button type="button" data-tone="p1" aria-pressed="true"><span class="badge w9 p1">Aqua</span></button><button type="button" data-tone="p3" aria-pressed="false"><span class="badge w9 p3">Mint</span></button><button type="button" data-tone="p5" aria-pressed="false"><span class="badge w9 p5">Lilac</span></button><button type="button" data-tone="p9" aria-pressed="false"><span class="badge w9 p9">Teal</span></button><button type="button" data-tone="p11" aria-pressed="false"><span class="badge w9 p11">Cyan</span></button><button type="button" data-tone="p4" aria-pressed="false"><span class="badge w9 p4">Peach</span></button><button type="button" data-wire="1" aria-pressed="false"><span class="badge w9 idle hollow">Wire</span></button><button type="button" data-spin="1" aria-pressed="true"><span class="badge w9 idle hollow">Spin</span></button></div><p><span class="fig">Fig. 1</span> Shape and tone are independent, so the same geometry can carry any of the twelve identity swatches without a second material declared anywhere.</p><hr class="sep">
+<h2 id="stage"><span class="n">1</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-laptop"></use></svg>The stage<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>live now</span><span class="stmt">Four shapes, tinted from the same tokens as every badge on the spec page, drawn twice each &mdash; solid and edges.</span></h2><div class="stage" id="gl-stage"><div class="fallback"><svg viewBox="0 0 600 260" width="100%" height="100%" role="img" aria-label="Static lattice"><polygon points="300,60 322,71 300,82 278,71" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="322,71 344,82 322,93 300,82" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="344,82 366,93 344,104 322,93" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="366,93 388,104 366,115 344,104" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="388,104 410,115 388,126 366,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="278,71 300,82 278,93 256,82" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="300,82 322,93 300,104 278,93" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="322,93 344,104 322,115 300,104" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="344,104 366,115 344,126 322,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="366,115 388,126 366,137 344,126" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="256,82 278,93 256,104 234,93" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="278,93 300,104 278,115 256,104" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="300,104 322,115 300,126 278,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="322,115 344,126 322,137 300,126" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="344,126 366,137 344,148 322,137" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="234,93 256,104 234,115 212,104" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="256,104 278,115 256,126 234,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="278,115 300,126 278,137 256,126" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="300,126 322,137 300,148 278,137" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="322,137 344,148 322,159 300,148" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="212,104 234,115 212,126 190,115" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="234,115 256,126 234,137 212,126" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="256,126 278,137 256,148 234,137" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="278,137 300,148 278,159 256,148" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><polygon points="300,148 322,159 300,170 278,159" fill="var(--paper-alt)" stroke="var(--rule)"></polygon><text x="300" y="240" text-anchor="middle" font-size="10" fill="var(--ink-muted)" font-family="var(--font-mono)">still &mdash; enable scripting for the live view</text></svg></div><div class="hud"><span id="hud-shape">lattice</span><span id="hud-fps">&mdash;</span></div></div><div class="gctl" role="group" aria-label="Shape"><button type="button" data-shape="lattice" aria-pressed="true"><span class="badge w11 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-layer-group"></use></svg>Lattice</span></button><button type="button" data-shape="ring" aria-pressed="false"><span class="badge w11 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-rotate-left"></use></svg>Ring</span></button><button type="button" data-shape="stack" aria-pressed="false"><span class="badge w11 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-bars"></use></svg>Stack</span></button><button type="button" data-shape="orb" aria-pressed="false"><span class="badge w11 idle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>Orb</span></button></div><div class="gctl" role="group" aria-label="Tone"><button type="button" data-tone="p1" aria-pressed="true"><span class="badge w9 p1">Aqua</span></button><button type="button" data-tone="p3" aria-pressed="false"><span class="badge w9 p3">Mint</span></button><button type="button" data-tone="p5" aria-pressed="false"><span class="badge w9 p5">Lilac</span></button><button type="button" data-tone="p9" aria-pressed="false"><span class="badge w9 p9">Teal</span></button><button type="button" data-tone="p11" aria-pressed="false"><span class="badge w9 p11">Cyan</span></button><button type="button" data-tone="p4" aria-pressed="false"><span class="badge w9 p4">Peach</span></button><button type="button" data-wire="1" aria-pressed="false"><span class="badge w9 idle hollow">Wire</span></button><button type="button" data-spin="1" aria-pressed="true"><span class="badge w9 idle hollow">Spin</span></button></div><p><span class="fig">Fig. 1</span> Shape and tone are independent, so the same geometry can carry any of the twelve identity swatches without a second material declared anywhere.</p><hr class="sep">
 <h2 id="fallback"><span class="n">2</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-bars"></use></svg>What is underneath it<span class="hint"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-info"></use></svg>no script</span><span class="stmt">The same subject as flat isometric SVG, in the markup from the start, hidden only once a frame has actually been produced.</span></h2><p>The fallback is not a placeholder graphic. It is the same subject drawn as flat isometric SVG, present in the markup from the start, and only hidden once the renderer has produced a frame. The order matters: hide-then-draw leaves a blank rectangle for however long the module takes, and forever if it fails.</p><div class="code-hd">viewer.ts</div><pre class="code">renderer.setAnimationLoop(() =&gt; {
   ...
   <span class="k">if</span> (!shown) { shown = true; el.classList.add(<span class="s">&quot;on&quot;</span>); }  <span class="c">// reveal only after a real frame</span>
@@ -2189,10 +2280,72 @@ document.querySelectorAll("pre.code").forEach(function(pre){
     var s=getSelection(); if(!s) return; s.removeAllRanges(); s.addRange(r);
   });
 });
+/* --- CSV export -------------------------------------------------------------
+   The control ships hidden and is revealed here, so with scripting off the caption
+   carries no button that cannot do anything. The row scrape reads textContent, which
+   is what the reader actually sees: badge labels, rotated rail names and glyph
+   captions all resolve to their words, and the inlined svg contributes nothing. */
+function csvCell(el) {
+  var t = (el.textContent || "").replace(/\s+/g, " ").trim();
+  return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+function csvRows(tbl) {
+  var out = [];
+  var span = {};
+  function carry(row, col) {
+    for (;;) {
+      var sp = span[col];
+      if (!sp || sp.n <= 0) return col;
+      row.push(sp.v);
+      sp.n--;
+      col++;
+    }
+  }
+  [].slice.call(tbl.querySelectorAll("tr")).forEach(function (tr) {
+    if (tr.closest("table") !== tbl) return;
+    var row = [];
+    var col = carry(row, 0);
+    [].slice.call(tr.children).forEach(function (c) {
+      var v = csvCell(c);
+      var cs = +(c.getAttribute("colspan") || 1);
+      var rs = +(c.getAttribute("rowspan") || 1);
+      if (rs > 1) span[col] = { v: v, n: rs - 1 };
+      for (var k = 0; k < cs; k++) {
+        row.push(k === 0 ? v : "");
+        col++;
+      }
+      col = carry(row, col);
+    });
+    if (row.join("").length) out.push(row.join(","));
+  });
+  return out.join("\r\n");
+}
+document.querySelectorAll("caption .exp").forEach(function(btn){
+  var tbl = btn.closest("table");
+  if (!tbl) return;
+  var table = tbl;
+  btn.hidden = false;
+  btn.addEventListener("click", function(){
+    var fig = (btn.getAttribute("data-exp") || "table").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+    var blob = new Blob(["﻿" + csvRows(table)], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = fig + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 0);
+  });
+});
 })();</script><script type="module">
 import * as THREE from "/vendor/three.module.min.js";
 
-const host = document.getElementById("stage");
+// Queried by class, not by id. The section heading this page is reached by is
+// also called "stage" -- ui.ts stamps every h2 with its anchor -- and
+// getElementById returns the first match in document order, which is the
+// heading. three.js was appending its canvas inside an h2: a static box with no
+// aspect-ratio, 264px tall, sitting above the real stage, which meanwhile kept
+// showing its fallback because the "on" class had gone to the heading too. A
+// class cannot collide with an anchor. The id is kept, and renamed, for anyone
+// reading the markup.
+const host = document.querySelector(".stage");
 if (host) start(host);
 
 // A token that resolves to nothing means the stylesheet did not load, and a

@@ -96,6 +96,19 @@ export function total(b: Block): number {
 }
 
 /** A glyph and a word, with no box around either. */
+/* A subtitle used to be one sentence of `&middot;`-joined facts. At 10px the middots
+   were invisible and the counts, the money and the kind all read as one grey run.
+   Each fact is its own badge now -- the house rule that two values are two badges
+   applies to a subtitle exactly as it applies to a cell. The sentence that remains
+   is the instruction, which is prose and not a value. Owner ruling 2026-08-24. */
+function sb(label: string, tone = ""): string {
+  return `<span class="badge auto ${tone}">${esc(label)}</span>`;
+}
+/** A badge strip, plus the trailing instruction that is not a value. */
+function strip(parts: readonly string[], hint = ""): string {
+  return `<span class="sbs">${parts.join("")}</span>${hint ? `<span class="shint">${esc(hint)}</span>` : ""}`;
+}
+
 function gl(ic: string, label: string): string {
   return `<span class="gl">${icon(ic)}${esc(label)}</span>`;
 }
@@ -150,7 +163,10 @@ export function drill(id: string, bs: readonly Block[]): string {
         gk,
         gp,
         `${icon(b.ic)} ${esc(b.name)}`,
-        `${b.accts.length} accounts &middot; subtotal ${usdA(gt)} &middot; click an account for its charges`,
+        strip(
+          [sb(`${b.accts.length} accounts`), sb(usdA(gt), b.tone)],
+          "click an account for its charges",
+        ),
         `<table><thead><tr><th>Account</th><th>Kind</th><th class="n">Balance</th>` +
           `<th class="n">Share</th></tr></thead><tbody>` +
           b.accts
@@ -162,7 +178,9 @@ export function drill(id: string, bs: readonly Block[]): string {
                 `<td class="n">${gt === 0 ? "&mdash;" : pct(a.v / gt)}</td></tr>`,
             )
             .join("") +
-          `</tbody></table>`,
+          `</tbody><tfoot><tr class="tot"><td>Total</td><td></td>` +
+          `<td class="n">${usdA(gt)}</td><td class="n">${gt === 0 ? "&mdash;" : pct(1)}</td>` +
+          `</tr></tfoot></table>`,
       ),
     );
     for (const a of b.accts) {
@@ -173,7 +191,10 @@ export function drill(id: string, bs: readonly Block[]): string {
           ak,
           ap,
           `${esc(a.name)}`,
-          `${gl(a.kic, a.kind)} &middot; balance ${usdA(a.v)} &middot; ${a.pts.length} charges &middot; click one for the record behind it`,
+          strip(
+            [sb(a.kind), sb(usdA(a.v), b.tone), sb(`${a.pts.length} charges`)],
+            "click one for the record behind it",
+          ),
           `<table><thead><tr><th>Date</th><th>Payee</th><th>Method</th>` +
             `<th class="n">Amount</th></tr></thead><tbody>` +
             a.pts
@@ -185,7 +206,9 @@ export function drill(id: string, bs: readonly Block[]): string {
                   `<td class="n">${usdA(p.v)}</td></tr>`,
               )
               .join("") +
-            `</tbody></table>`,
+            `</tbody><tfoot><tr class="tot"><td>Total</td><td></td><td></td>` +
+            `<td class="n">${usdA(a.pts.reduce((t, q) => t + q.v, 0))}</td>` +
+            `</tr></tfoot></table>`,
         ),
       );
       a.pts.forEach((p, j) => {
@@ -195,7 +218,7 @@ export function drill(id: string, bs: readonly Block[]): string {
             tk,
             [...ap, { k: tk, label: p.day }],
             `${esc(p.payee)}`,
-            `${esc(p.day)} &middot; ${gl(p.mic, p.method)} &middot; ${usdA(p.v)}`,
+            strip([sb(p.day), sb(p.method), sb(usdA(p.v), b.tone)]),
             /* The bottom of the drill is not another table. A single record has
                no rows to compare, and a one-row table asks the reader to read a
                header to find out what one cell means. It is a field list, and
