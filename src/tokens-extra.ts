@@ -783,4 +783,106 @@ caption{padding-right:68px}
    do not read as one run of grey. */
 dialog.rows .sc .sbs{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle}
 dialog.rows .sc .shint{display:block;margin-top:5px;color:var(--ink-faint)}
+
+/* --- The address board -------------------------------------------------
+   The row length is a custom property set on the element and used once, so
+   the board cannot reflow at a narrow width and put a different character
+   under the same finger. It scrolls instead. */
+.ab{width:fit-content;max-width:100%;border:1px solid var(--rule);border-radius:var(--radius);
+  background:var(--paper-card);padding:8px 10px 9px;margin:12px 0}
+.ab-m{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%);
+  pointer-events:none}
+.ab-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.ab-face{flex:1;min-width:180px;font-size:10.5px;color:var(--ink-muted);
+  word-break:break-all;line-height:1.5}
+.ab-face b{color:var(--ink);font-weight:400}
+.ab-face.dim{color:var(--ink-faint)}
+.ab-tabs{display:inline-flex;gap:0;border:1px solid var(--rule);border-radius:3px;
+  overflow:hidden;flex:none}
+.ab-t{padding:3px 9px;font-family:var(--font-mono);font-size:9px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-soft);cursor:pointer;
+  background:var(--paper-alt);border-right:1px solid var(--rule)}
+.ab-t:last-child{border-right:0}
+.ab-t:hover{color:var(--ink)}
+.ab-plain:checked ~ .ab-hd .ab-t[for="ab-plain"],
+.ab-ends:checked ~ .ab-hd .ab-t[for="ab-ends"],
+.ab-val:checked ~ .ab-hd .ab-t[for="ab-val"]{background:var(--ink);color:var(--paper)}
+.ab-grid{display:grid;grid-template-columns:repeat(var(--per),26px);
+  gap:3px;justify-content:start}
+.ab-c{position:relative;display:flex;align-items:center;justify-content:center;
+  height:24px;padding:0;background:var(--paper-alt);border:1px solid var(--rule-soft);
+  border-radius:2px;cursor:pointer;font-family:var(--font-mono);font-size:10px;
+  color:var(--ink-muted);line-height:1}
+.ab-c:hover{border-color:var(--ink-muted);color:var(--ink)}
+.ab-c.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);color:var(--ink)}
+.ab-c .vb{display:none;position:absolute;left:1px;right:1px;bottom:1px;
+  height:calc(2px + var(--v) * 18px);background:var(--pastel-aqua);
+  border-top:1px solid var(--stroke-aqua);border-radius:1px}
+.ab-c .ch{position:relative;z-index:1}
+.ab-ends:checked ~ .ab-grid .ab-c{color:var(--ink-faint);
+  border-color:var(--rule-soft);background:transparent}
+.ab-ends:checked ~ .ab-grid .ab-c.e{color:var(--ink);background:var(--paper-alt);
+  border-color:var(--ink-muted)}
+.ab-val:checked ~ .ab-grid .ab-c .vb{display:block}
+.ab-val:checked ~ .ab-grid .ab-c{color:var(--ink-soft)}
+.ab-ft{display:flex;align-items:flex-start;gap:8px;margin-top:8px}
+.ab-ft .t{flex:1;font-size:9.5px;line-height:1.45;color:var(--ink-faint)}
+
+/* --- Field controls ----------------------------------------------------
+   A field is a name, a control and a note. The control wears the page's
+   type; the platform's chrome is what is being replaced, never the input
+   element itself, which still carries the value and the keyboard. */
+.fset{border:1px solid var(--rule);border-radius:var(--radius);
+  background:var(--paper-card);overflow:hidden;margin:12px 0;max-width:430px}
+.fset-hd,.fset-ft{display:flex;align-items:flex-start;gap:6px;padding:6px 10px;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-soft);background:var(--paper-alt)}
+.fset-hd{border-bottom:1px solid var(--rule-soft)}
+.fset-ft{border-top:1px solid var(--rule-soft);text-transform:none;
+  letter-spacing:0;font-family:var(--font-sans);font-size:9.5px;line-height:1.45;
+  color:var(--ink-faint)}
+.fset-hd .ic,.fset-ft .ic{width:11px;height:11px;flex:none;margin-top:1px}
+.fld{display:grid;grid-template-columns:88px 1fr;gap:2px 10px;align-items:center;
+  padding:7px 10px;border-bottom:1px solid var(--rule-soft)}
+.fld:last-of-type{border-bottom:0}
+.fl{font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.fc{display:flex;align-items:center;gap:6px;min-width:0}
+.fn{grid-column:2;font-size:9px;line-height:1.4;color:var(--ink-faint)}
+.fin{width:100%;max-width:210px;padding:2px 0;background:transparent;
+  border:0;border-bottom:1px solid var(--rule);border-radius:0;
+  font-family:var(--font-sans);font-size:11px;color:var(--ink)}
+.fin.mono{font-family:var(--font-mono);font-size:10px}
+.fin:focus{outline:0;border-bottom-color:var(--accent)}
+.fp{position:relative;display:inline-flex}
+.fp > input{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%);
+  pointer-events:none}
+.fp-f{display:inline-flex;align-items:center;gap:6px;padding:2px 6px 2px 0;
+  border-bottom:1px solid var(--rule);cursor:pointer;font-size:11px;
+  color:var(--ink);min-width:140px}
+.fp-f .v{flex:1}
+.fp-f .ic{width:9px;height:9px;color:var(--ink-faint)}
+.fp-f:hover{border-bottom-color:var(--ink-muted)}
+.fp > .scrim{display:none;position:fixed;inset:0;z-index:24;cursor:default}
+.fp-p{display:none;position:absolute;left:0;top:calc(100% + 3px);z-index:25;
+  min-width:150px;padding:4px;background:var(--tip-paper);
+  border:1px solid var(--rule);border-radius:var(--radius);
+  box-shadow:0 6px 18px rgba(0,0,0,.14)}
+.fp > input:checked ~ .scrim,.fp > input:checked ~ .fp-p{display:block}
+.fp-o{display:flex;align-items:center;gap:7px;padding:3px 7px;border-radius:2px;
+  cursor:pointer;font-size:10.5px;color:var(--ink-muted)}
+.fp-o:hover{background:var(--paper-alt);color:var(--ink)}
+.fp-o input{position:absolute;width:1px;height:1px;opacity:0;clip-path:inset(50%)}
+.fp-o .d{flex:none;width:7px;height:7px;border-radius:50%;
+  border:1px solid var(--ink-faint)}
+.fp-o input:checked ~ .d{background:var(--ink);border-color:var(--ink)}
+.fp-o input:checked ~ .d + *,.fp-o:has(input:checked){color:var(--ink)}
+.fst{display:inline-flex;align-items:center;gap:6px}
+.fs{padding:0;background:none;border:0;cursor:pointer;line-height:0}
+.fst .v{min-width:14px;text-align:center;font-size:11px;color:var(--ink)}
+.fst .u{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-faint)}
+.fsw{padding:0;background:none;border:0;cursor:pointer;text-align:left}
+.fsw .badge{opacity:.55}
+.fsw[aria-pressed="true"] .badge{opacity:1}
 `;

@@ -17,6 +17,7 @@ import * as T from "../tables.ts";
 import * as W from "../wireframes.ts";
 import { stage, PLATES } from "../viewer.ts";
 import { toneAt } from "../palette.ts";
+import * as F from "../fields.ts";
 import * as S from "../spark.ts";
 import { walk } from "../data.ts";
 
@@ -396,6 +397,69 @@ dis("sp+", stop === STOPS - 1);`,
     U.banner(
       "warn",
       `A control should say what it is about to do, not what is currently true. The label on a toggle reads &ldquo;Stop the plates breathing&rdquo;, not &ldquo;animation: on&rdquo; &mdash; plain English, verb first, and it changes with the state.`,
+    ) +
+    /* ----------------------------------------------------------------- 12 */
+    U.h2(12, "address", "A value with no word in it", icon("table-columns"), {
+      hint: "40 characters, 10 per row",
+      hintIc: icon("circle-info"),
+      stmt:
+        "An address is not text. It is forty symbols a reader compares, and the default rendering makes comparing the reader's job.",
+    }) +
+    U.p(
+      `Printed as a run of monospace it answers one question &mdash; <em>here are forty characters</em> &mdash; and leaves the only question anyone actually asks unanswered: <strong>is this the same account as the one I have</strong>. Nobody reads the middle. They read the first four and the last four, which is why every wallet in the world truncates to exactly that, and why the truncation is the honest default rather than a space-saving hack.`,
+    ) +
+    F.addressBoard() +
+    U.p(
+      `The board makes that comparison a surface. <strong>Plain</strong> is the character. <strong>Ends</strong> dims the thirty-two nobody reads and leaves the eight they do. <strong>Value</strong> gives each cell a bar the height of its nibble, which turns the address into a small skyline &mdash; a shape two people can agree about over a video call in a way they cannot agree about <span class="mono">c3d4e5f6</span>.`,
+    ) +
+    U.noteBox({
+      kind: "good",
+      title: "Sixteen symbols have no colour vocabulary",
+      body: `The obvious move is a hue per hex digit. It is wrong here twice over: this site has twelve identities, all of them spoken for, and a reader does not convert a colour back into a digit anyway. A quantity gets a <strong>length</strong>. Colour stays reserved for the things a colour names.`,
+    }) +
+    U.p(
+      `The row length is a constant, not a <span class="mono">minmax()</span>. A board that reflows puts a different character under the same finger at a different window width, which is precisely the mistake the board exists to prevent; at a narrow width it scrolls instead. Same reasoning as the fixed row in the tile dock, where a folding address pushed the tool it belonged to off the bottom of the card.`,
+    ) +
+    U.code(
+      `.ab-grid{display:grid;grid-template-columns:repeat(var(--per),minmax(0,1fr));
+  gap:3px;min-width:340px}
+.ab-ends:checked ~ .ab-grid .ab-c{color:var(--ink-faint);background:transparent}
+.ab-val:checked ~ .ab-grid .ab-c .vb{display:block}`,
+      { lang: "tokens-extra.ts" },
+    ) +
+    U.banner(
+      "warn",
+      `Nothing on the board writes. A surface built out of forty buttons looks like an editor, so it has to say plainly that it is not one &mdash; the foot does, and the cells only ever select.`,
+    ) +
+    /* ----------------------------------------------------------------- 13 */
+    U.h2(13, "fields", "Fields wear the site's face", icon("pen-to-square"), {
+      hint: "no native select",
+      hintIc: icon("sliders"),
+      stmt:
+        "A field is a name, a control and a note. The platform's chrome is what gets replaced -- never the input, which still carries the value and the keyboard.",
+    }) +
+    U.p(
+      `A tool panel is mostly fields, and a default form control is the one element on a page that refuses the type, the spacing and the palette everything else agreed on. A native <span class="mono">&lt;select&gt;</span> opens an operating-system list in an operating-system font at an operating-system size, sitting inside a card built to 9.5px mono. That is not a taste objection. It breaks the one promise the rest of the frame makes: <strong>things that behave alike look alike</strong>.`,
+    ) +
+    F.fieldSet() +
+    U.p(
+      `So the value keeps its element and loses its box. A text field is an <span class="mono">&lt;input&gt;</span> with a single bottom rule. A dropdown is a checkbox, two labels and a list of radios &mdash; it opens, it dismisses on the scrim, it records the choice, and it does all three with scripting switched off; the script only mirrors the chosen word onto the face. A number gets two hands instead of a spinner, and a switch is labelled with the sentence it is about to carry out, not the state it is in.`,
+    ) +
+    U.twoUp(
+      U.dont(`<select><option>Peach</option></select>
+<input type="number" min="0" max="9">`),
+      U.doThis(`<span class="fp"><input type="checkbox" id="fp1">
+  <label class="fp-f" for="fp1">...</label>
+  <label class="scrim" for="fp1"></label>
+  <span class="fp-p"><label class="fp-o"><input type="radio" ...`),
+    ) +
+    U.noteBox({
+      kind: "caution",
+      title: "Replace the chrome, keep the element",
+      body: `A div with a click handler is not a control. Everything above is still a label, a button, an input or a radio, so focus order, the keyboard, form submission and a screen reader all keep working. The moment a picker stops being radios it stops being reachable, and the only person who notices is the one who cannot use it.`,
+    }) +
+    U.p(
+      `The panel's foot restates what is stored, in the same words the fields used &mdash; the same rule as the tile dock, where a decision is stated as an imperative with a subject rather than as a setting name. A reader who has changed four things needs one sentence telling them what they changed, not four labels to re-read.`,
     ) +
     /* ----------------------------------------------------------------- 11 */
     U.h2(11, "budget", "What it costs", icon("chart-line"), {
