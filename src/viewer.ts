@@ -1,13 +1,32 @@
 /**
- * The three.js stage, and the rule it exists to demonstrate.
+ * The three.js stage, and the viewport grammar it exists to demonstrate.
  *
- * A WebGL view is the one component on this site that genuinely cannot work with
- * scripting off, which makes it the best place to show what "progressive
- * enhancement" actually costs. The answer is: a still. `stageFallback()` draws
- * the same lattice as flat isometric SVG, and it is what a reader sees with JS
- * disabled, with WebGL unavailable, while the module is still parsing, and if
- * the module throws. The canvas is only revealed once the first frame is on it --
- * `.stage.on` -- so there is never a blank rectangle where a picture should be.
+ * The first version of this page put four abstract shapes on a dark rectangle
+ * and a row of badges underneath it. Two things were wrong with that, and they
+ * are the same thing twice.
+ *
+ * The subject floated. There was no ground, no horizon and no contact, so the
+ * shapes did not sit anywhere -- and a viewport whose subject is not anchored to
+ * the frame reads as a picture of an object rather than as a view onto a scene.
+ * Everything a viewport control does is relative: closer to what, apart from
+ * what, above what. With nothing underneath, none of those verbs had an object.
+ * So the subject is now a stack of plates standing on a lit ground plane, and
+ * the plane is drawn: a rule grid, in the same tokens as everything else.
+ *
+ * And the controls sat outside the frame. A rail under a picture is a toolbar
+ * for the page; a rail inside the frame is a control on the view. The
+ * difference is not decoration -- put four of these side by side and the
+ * external toolbars stack into a wall of buttons that no longer say which frame
+ * they belong to. Every control now docks inside the viewport it acts on, in
+ * the six places `ui.ts` names, and the frame is the only thing that has to be
+ * pointed at.
+ *
+ * The still underneath all of it has not changed job. A WebGL view is the one
+ * component on this site that genuinely cannot work with scripting off, which
+ * makes it the best place to show what progressive enhancement costs: a flat
+ * isometric SVG of the same subject, present in the markup from the start, and
+ * hidden only once a real frame has been produced -- `.stage.on`. Never a blank
+ * rectangle where a picture should be.
  *
  * three.js is vendored into `public/vendor/`, not pulled from a CDN. A page that
  * fetches its renderer from someone else's origin has a third party in its
@@ -16,75 +35,236 @@
  */
 import { esc } from "./html.ts";
 import { icon } from "./icons.ts";
+import { nextFig } from "./charts.ts";
 
-/** The controls, as badges that happen to be pressable. Same height, same
- *  border, same radius as any other badge -- they add state, not geometry. */
-export function glyphControls(): string {
-  const shapes: [string, string, string][] = [
-    ["lattice", "layer-group", "Lattice"],
-    ["ring", "arrow-rotate-left", "Ring"],
-    ["stack", "bars", "Stack"],
-    ["orb", "circle-info", "Orb"],
-  ];
-  const tones: [string, string][] = [
-    ["p1", "Aqua"], ["p3", "Mint"], ["p5", "Lilac"],
-    ["p9", "Teal"], ["p11", "Cyan"], ["p4", "Peach"],
-  ];
+/** The four plates, named. The stack is a tile: nine squares, drawn four times,
+ *  each pass adding to what the pass below it left. The names are the point of
+ *  the layer rail -- a rail of four numbered checkboxes says nothing about what
+ *  turning one off would remove. */
+export const PLATES: readonly { k: string; name: string; tone: string }[] = [
+  { k: "ground", name: "Ground", tone: "p1" },
+  { k: "form", name: "Form", tone: "p4" },
+  { k: "mark", name: "Mark", tone: "p7" },
+  { k: "gloss", name: "Gloss", tone: "p10" },
+];
+
+/**
+ * A glyph-only control.
+ *
+ * Every one of these carries a name and a note, not a bare `title`. A rail of
+ * unlabelled marks is readable to whoever built it and to nobody else, and the
+ * browser's own tooltip arrives after a delay long enough that a reader who is
+ * hesitating has already moved on. `.tip` is the page's own, opens on hover and
+ * on focus, and says both what the control is called and what pressing it does.
+ */
+function tool(
+  o: { ic: string; name: string; note: string; act: string; on?: boolean; off?: boolean },
+): string {
   return (
-    `<div class="gctl" role="group" aria-label="Shape">` +
-    shapes
-      .map(
-        ([k, ic, label], i) =>
-          `<button type="button" data-shape="${esc(k)}" aria-pressed="${
-            i === 0
-          }"><span class="badge w11 idle">${icon(ic)}${esc(label)}</span></button>`,
-      )
-      .join("") +
-    `</div>` +
-    `<div class="gctl" role="group" aria-label="Tone">` +
-    tones
-      .map(
-        ([k, label], i) =>
-          `<button type="button" data-tone="${esc(k)}" aria-pressed="${
-            i === 0
-          }"><span class="badge w9 ${k}">${esc(label)}</span></button>`,
-      )
-      .join("") +
-    `<button type="button" data-wire="1" aria-pressed="false"><span class="badge w9 idle hollow">Wire</span></button>` +
-    `<button type="button" data-spin="1" aria-pressed="true"><span class="badge w9 idle hollow">Spin</span></button>` +
+    `<button type="button" class="vt" data-act="${esc(o.act)}"` +
+    (o.on === undefined ? "" : ` aria-pressed="${o.on}"`) +
+    (o.off === true ? " disabled" : "") +
+    ` aria-label="${esc(o.name)}">` +
+    `<span class="badge w3 idle">${icon(o.ic)}</span>` +
+    `<span class="tip-plate" role="tooltip">` +
+    `<span class="n">${esc(o.name)}</span><span class="d">${esc(o.note)}</span>` +
+    `</span></button>`
+  );
+}
+
+/** A rail: a column of tools on one plate, docked to a side of the frame. */
+function rail(side: "lm" | "rm", label: string, inner: string): string {
+  return `<div class="vp-${side}" role="group" aria-label="${esc(label)}">${inner}</div>`;
+}
+
+/** The camera rail. Distance only -- what the eye does, never what the subject
+ *  does. See the note in `viewer.ts` on why the magnifier is reserved. */
+function cameraRail(): string {
+  return rail(
+    "lm",
+    "Camera",
+    `<div class="vp-btns col">` +
+      tool({
+        ic: "magnifying-glass-plus",
+        name: "Closer",
+        note: "Moves the eye in one rung. Five rungs; the subject does not change size.",
+        act: "cam+",
+      }) +
+      tool({
+        ic: "magnifying-glass-minus",
+        name: "Further",
+        note: "Moves the eye out one rung.",
+        act: "cam-",
+      }) +
+      tool({
+        ic: "arrow-rotate-left",
+        name: "Home",
+        note: "Puts the eye back where the frame opened. Spread and layers are left alone.",
+        act: "cam0",
+      }) +
+      `<span class="vp-rung" id="vw-rung" aria-hidden="true">2/5</span>` +
+      `</div>`,
+  );
+}
+
+/** The layer rail. One badge per plate, pressed when the plate is standing. */
+function layerRail(): string {
+  return rail(
+    "rm",
+    "Layers",
+    `<div class="vp-btns col">` +
+      PLATES.map(
+        (p, i) =>
+          `<button type="button" class="vt" data-layer="${esc(p.k)}" aria-pressed="true"` +
+          ` aria-label="${esc(p.name)}">` +
+          `<span class="badge w3 ${p.tone}">${icon("layer-group")}</span>` +
+          `<span class="tip-plate lt" role="tooltip">` +
+          `<span class="n">${esc(p.name)}</span>` +
+          `<span class="d">Plate ${i + 1} of ${PLATES.length}. Hidden plates keep their place in the stack.</span>` +
+          `</span></button>`,
+      ).join("") +
+      `</div>`,
+  );
+}
+
+/** Apart and together: the subject's own geometry, not the camera's. */
+function spreadDock(): string {
+  return (
+    `<div class="vp-btns">` +
+    tool({
+      ic: "minus",
+      name: "Together",
+      note: "Closes the stack one stop. At zero the four plates are one tile.",
+      act: "sp-",
+      off: true,
+    }) +
+    `<span class="vp-rung" id="vw-stop" aria-hidden="true">0/4</span>` +
+    tool({
+      ic: "plus",
+      name: "Apart",
+      note: "Lifts the plates one stop so what each one contributes can be seen on its own.",
+      act: "sp+",
+    }) +
     `</div>`
   );
 }
 
-/** Flat isometric lattice: what the stage shows before, and instead of, WebGL. */
+/** What the frame is doing, as distinct from what it is looking at. */
+function stateDock(): string {
+  return (
+    `<div class="vp-btns">` +
+    tool({
+      ic: "arrows-up-down-left-right",
+      name: "Turn",
+      note: "Rotates the stack. Off while you are reading a plate; the motion is the first thing that gets in the way.",
+      act: "spin",
+      on: true,
+    }) +
+    tool({
+      ic: "table-columns",
+      name: "Edges",
+      note: "Draws the wireframe only. The same geometry, without the fill.",
+      act: "wire",
+      on: false,
+    }) +
+    tool({
+      ic: "pen-to-square",
+      name: "Editing",
+      note: "Turns the frame from a view into a tool: the rails stay, and the plates become pickable.",
+      act: "edit",
+      on: false,
+    }) +
+    `</div>`
+  );
+}
+
+/** Flat isometric plate stack: what the stage shows before, and instead of, WebGL. */
 export function stageFallback(): string {
-  const cells: string[] = [];
+  const parts: string[] = [];
   const ox = 300;
-  const oy = 60;
-  const s = 22;
-  for (let r = 0; r < 5; r++)
-    for (let c = 0; c < 5; c++) {
+  const oy = 96;
+  const s = 26;
+  /* Ground first, then the plates from the bottom up, so the painter's order in
+     the still is the painter's order in the scene. A still that stacks the other
+     way looks subtly wrong in a way nobody can name. */
+  for (let r = 0; r < 3; r++)
+    for (let c = 0; c < 3; c++) {
       const x = ox + (c - r) * s;
-      const y = oy + (c + r) * s * 0.5;
-      cells.push(
+      const y = oy + 84 + (c + r) * s * 0.5;
+      parts.push(
         `<polygon points="${x},${y} ${x + s},${y + s * 0.5} ${x},${y + s} ${
           x - s
-        },${y + s * 0.5}" fill="var(--paper-alt)" stroke="var(--rule)"></polygon>`,
+        },${y + s * 0.5}" fill="none" stroke="var(--rule)"></polygon>`,
       );
     }
+  const FILL = ["--pastel-aqua", "--pastel-peach", "--pastel-lilac", "--pastel-teal"];
+  const EDGE = ["--stroke-aqua", "--stroke-peach", "--stroke-lilac", "--stroke-teal"];
+  for (let L = 0; L < 4; L++) {
+    const lift = 84 - L * 26;
+    for (let r = 0; r < 3; r++)
+      for (let c = 0; c < 3; c++) {
+        if ((r + c + L) % 3 === 2) continue;
+        const x = ox + (c - r) * s;
+        const y = oy + lift + (c + r) * s * 0.5;
+        parts.push(
+          `<polygon points="${x},${y} ${x + s},${y + s * 0.5} ${x},${y + s} ${
+            x - s
+          },${y + s * 0.5}" fill="var(${FILL[L]})" stroke="var(${EDGE[L]})"></polygon>`,
+        );
+      }
+  }
   return (
-    `<div class="fallback"><svg viewBox="0 0 600 260" width="100%" height="100%" role="img" aria-label="Static lattice">` +
-    cells.join("") +
-    `<text x="300" y="240" text-anchor="middle" font-size="10" fill="var(--ink-muted)" font-family="var(--font-mono)">still &mdash; enable scripting for the live view</text>` +
+    `<div class="fallback"><svg viewBox="0 0 600 300" width="100%" height="100%" role="img"` +
+    ` aria-label="Four plates standing apart above a ground grid">` +
+    parts.join("") +
+    `<text x="300" y="290" text-anchor="middle" font-size="10" fill="var(--ink-muted)"` +
+    ` font-family="var(--font-mono)">still &mdash; enable scripting for the live view</text>` +
     `</svg></div>`
   );
 }
 
+/**
+ * The stage, in a viewport with every dock filled.
+ *
+ * This is the figure the page is about, so it is built by hand rather than
+ * through `U.viewport()`: it needs the two side rails, which no other frame on
+ * the site has, and the body is a live canvas rather than a still.
+ */
 export function stage(): string {
   return (
-    `<div class="stage" id="gl-stage">${stageFallback()}` +
-    `<div class="hud"><span id="hud-shape">lattice</span><span id="hud-fps">&mdash;</span></div></div>` +
-    glyphControls()
+    `<div class="vp vw has-cap">` +
+    `<div class="vp-body"><div class="stage" id="gl-stage">${stageFallback()}</div></div>` +
+    `<div class="vp-top"><div class="l">` +
+    `<span class="vp-name"><span class="badge auto hollow" id="vw-mode">${icon(
+      "eye",
+    )}Viewing</span></span>` +
+    `</div><div class="r">` +
+    `<div class="vp-btns">` +
+    tool({
+      ic: "up-right-and-down-left-from-center",
+      name: "Fill",
+      note: "How much of the frame the subject takes. Three settings; it moves the subject, not the eye.",
+      act: "fill",
+    }) +
+    tool({
+      ic: "palette",
+      name: "Tone",
+      note: "Cycles the identity swatch the plates are tinted from. Read live out of the stylesheet.",
+      act: "tone",
+    }) +
+    `</div>` +
+    `</div></div>` +
+    cameraRail() +
+    layerRail() +
+    `<div class="vp-bot"><div class="d bl">${stateDock()}</div>` +
+    `<div class="d bc">${spreadDock()}</div>` +
+    `<div class="d br">` +
+    `<div class="vp-read"><span class="v" id="hud-fps">&mdash;</span>` +
+    `<span class="u">fps</span><span class="s" id="hud-tri">&mdash;</span></div>` +
+    `</div></div>` +
+    `<div class="vp-cap">${nextFig()} &middot; four plates, one tile &middot; ` +
+    `<span class="mono" id="vw-state">4 up &middot; apart 0 &middot; rung 2</span></div>` +
+    `</div>`
   );
 }
 
@@ -129,77 +309,138 @@ function start(host){
     return; // no WebGL: the still stays, which is the correct outcome
   }
   const scene = new THREE.Scene();
-  const cam = new THREE.PerspectiveCamera(38, 16/10, 0.1, 200);
-  cam.position.set(7.5, 5.4, 8.6);
-  cam.lookAt(0, 0, 0);
+  const cam = new THREE.PerspectiveCamera(36, 16/10, 0.1, 200);
 
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   host.appendChild(renderer.domElement);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 1.55));
-  const key = new THREE.DirectionalLight(0xffffff, 1.15);
-  key.position.set(6, 9, 5);
+  scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+  const key = new THREE.DirectionalLight(0xffffff, 1.05);
+  key.position.set(6, 11, 5);
   scene.add(key);
 
-  let tone = "p1";
-  let wire = false;
+  // ---------------------------------------------------------------- state
+  //
+  // Five independent things, and they are five variables rather than one
+  // object because every rail owns exactly one of them. The bug this shape
+  // prevents is the one where "reset" is written as a spread of defaults over
+  // the whole state and quietly puts the layer rail back too -- which no
+  // reader asked for and none of them notice until their work disappears.
+  const STOPS = 5;   // apart: 0 closed .. 4 fully open
+  const RUNGS = 5;   // camera distance
+  const FILLS = [0.62, 0.82, 1.0];
+
+  let stop = 0;
+  let rung = 2;
+  let fillAt = 1;
+  let toneAt = 0;
   let spin = true;
-  let shape = "lattice";
-  let group = null;
+  let wire = false;
+  let editing = false;
+  const up = [true, true, true, true];
 
-  const TONE_VAR = { p1:"--pastel-aqua", p3:"--pastel-mint", p5:"--pastel-lilac",
-                     p9:"--pastel-teal", p11:"--pastel-cyan", p4:"--pastel-peach" };
-  const EDGE_VAR = { p1:"--stroke-aqua", p3:"--stroke-mint", p5:"--stroke-lilac",
-                     p9:"--stroke-teal", p11:"--stroke-cyan", p4:"--stroke-peach" };
+  const PLATE = [
+    { fill: "--pastel-aqua",  edge: "--stroke-aqua"  },
+    { fill: "--pastel-peach", edge: "--stroke-peach" },
+    { fill: "--pastel-lilac", edge: "--stroke-lilac" },
+    { fill: "--pastel-teal",  edge: "--stroke-teal"  }
+  ];
+  const TONES = [0, 1, 2, 3];
 
-  function material(){
-    return new THREE.MeshLambertMaterial({
-      color: tokenColour(TONE_VAR[tone]),
-      wireframe: wire,
-    });
+  // --------------------------------------------------------------- scene
+  //
+  // The ground is drawn. It is the whole reason the subject reads as standing
+  // somewhere rather than hanging: with it removed the plates are identical
+  // pixels and the frame goes back to being a picture of an object.
+  const ground = new THREE.Group();
+  {
+    const g = new THREE.BufferGeometry();
+    const pts = [];
+    const N = 6, S = 1.1;
+    for (let i = -N; i <= N; i++) {
+      pts.push(-N*S, 0, i*S,  N*S, 0, i*S);
+      pts.push(i*S, 0, -N*S,  i*S, 0, N*S);
+    }
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    ground.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({
+      color: tokenColour("--rule"), transparent: true, opacity: 0.85
+    })));
   }
+  scene.add(ground);
+
+  // One box geometry and one edge geometry for all thirty-six squares. The
+  // count of squares is what changes when a plate is turned off; the count of
+  // buffers never does.
+  const box = new THREE.BoxGeometry(0.9, 0.16, 0.9);
+  const boxEdge = new THREE.EdgesGeometry(box);
+
+  // Which of the nine squares each plate contributes to. Fixed, not random:
+  // the same tile every build, so a screenshot in a commit means something.
+  const CELLS = [
+    [0,1,2,3,4,5,6,7,8],
+    [0,1,3,4,5,7,8],
+    [1,3,4,5,7],
+    [4]
+  ];
+
+  const stackG = new THREE.Group();
+  scene.add(stackG);
+  const plateG = [];
 
   function build(){
-    if (group) { scene.remove(group); group.traverse(o => { if(o.geometry) o.geometry.dispose(); }); }
-    group = new THREE.Group();
-    const mat = material();
-    const edge = new THREE.LineBasicMaterial({ color: tokenColour(EDGE_VAR[tone]) });
-
-    // One geometry, one edge geometry, reused across every instance -- 25 boxes
-    // sharing two buffers rather than allocating fifty.
-    if (shape === "lattice") {
-      const g = new THREE.BoxGeometry(0.86, 0.86, 0.86);
-      const eg = new THREE.EdgesGeometry(g);
-      for (let x = -2; x <= 2; x++) for (let z = -2; z <= 2; z++) {
-        const h = 0.5 + Math.abs(Math.sin((x + z) * 0.9)) * 2.2;
-        const m = new THREE.Mesh(g, mat);
-        m.position.set(x * 1.05, h / 2 - 1, z * 1.05);
-        m.scale.y = h;
-        const ln = new THREE.LineSegments(eg, edge);
-        ln.position.copy(m.position);
-        ln.scale.copy(m.scale);
-        group.add(m, ln);
-      }
-    } else if (shape === "ring") {
-      const g = new THREE.TorusGeometry(2.4, 0.62, 18, 64);
-      const m = new THREE.Mesh(g, mat);
-      const ln = new THREE.LineSegments(new THREE.EdgesGeometry(g), edge);
-      m.rotation.x = ln.rotation.x = Math.PI / 2.6;
-      group.add(m, ln);
-    } else if (shape === "stack") {
-      for (let i = 0; i < 7; i++) {
-        const g = new THREE.CylinderGeometry(2.2 - i * 0.24, 2.3 - i * 0.24, 0.34, 40);
-        const m = new THREE.Mesh(g, mat);
-        m.position.y = -1.4 + i * 0.42;
-        m.rotation.y = i * 0.18;
-        group.add(m);
-      }
-    } else {
-      const g = new THREE.IcosahedronGeometry(2.6, 1);
-      group.add(new THREE.Mesh(g, mat));
-      group.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), edge));
+    for (const g of plateG) {
+      stackG.remove(g);
     }
-    scene.add(group);
+    plateG.length = 0;
+    for (let L = 0; L < 4; L++) {
+      const t = PLATE[TONES[(L + toneAt) % 4]];
+      const mat = new THREE.MeshLambertMaterial({
+        color: tokenColour(t.fill), wireframe: wire
+      });
+      const em = new THREE.LineBasicMaterial({ color: tokenColour(t.edge) });
+      const g = new THREE.Group();
+      for (const c of CELLS[L]) {
+        const x = (c % 3) - 1, z = Math.floor(c / 3) - 1;
+        const m = new THREE.Mesh(box, mat);
+        m.position.set(x * 1.0, 0, z * 1.0);
+        const ln = new THREE.LineSegments(boxEdge, em);
+        ln.position.copy(m.position);
+        g.add(m, ln);
+      }
+      stackG.add(g);
+      plateG.push(g);
+    }
+    layout();
+  }
+
+  // Layout is separate from build because apart, fill and layers change every
+  // frame's arithmetic and none of them change a buffer. Rebuilding the meshes
+  // to move them is the single most common way a viewport like this ends up
+  // dropping frames on a phone.
+  function layout(){
+    const gap = 0.22 + (stop / (STOPS - 1)) * 1.35;
+    let y = 0.14;
+    for (let L = 0; L < 4; L++) {
+      plateG[L].visible = up[L];
+      plateG[L].position.y = y;
+      // A hidden plate keeps its place. Closing the gap over it would move
+      // every plate above it, and the reader who turned one off to look at
+      // what is underneath would watch the thing they were looking at slide.
+      y += gap;
+    }
+    const f = FILLS[fillAt];
+    stackG.scale.setScalar(f);
+    ground.scale.setScalar(f);
+  }
+
+  function place(){
+    // The eye moves along one line through the origin. Orbit is not offered:
+    // a viewport with a free camera and no way back is a viewport readers get
+    // lost in, and "home" would then have to restore an orientation as well as
+    // a distance.
+    const d = 9.4 - rung * 1.05;
+    cam.position.set(d * 0.62, d * 0.52, d * 0.72);
+    cam.lookAt(0, 1.0, 0);
   }
 
   function size(){
@@ -209,42 +450,96 @@ function start(host){
     cam.updateProjectionMatrix();
   }
 
-  const press = (sel, fn) => document.querySelectorAll(sel).forEach(b => {
+  // --------------------------------------------------------------- readout
+  //
+  // Every rail reports its own position in words. A control with five stops
+  // and no readout is a control the reader has to press to the end to find
+  // out where they were.
+  function report(){
+    const t = (id, s) => { const e = document.getElementById(id); if (e) e.textContent = s; };
+    t("vw-rung", rung + "/" + (RUNGS - 1));
+    t("vw-stop", stop + "/" + (STOPS - 1));
+    const n = up.filter(Boolean).length;
+    t("vw-state", n + " up \\u00b7 apart " + stop + " \\u00b7 rung " + rung);
+    const m = document.getElementById("vw-mode");
+    if (m) m.textContent = editing ? "Editing" : "Viewing";
+    // A rail says where its own ends are by refusing to go past them, and it
+    // says so before it is pressed. Silently doing nothing is the version of
+    // this that makes a reader think the page is broken.
+    const dis = (act, off) => document.querySelectorAll('[data-act="' + act + '"]')
+      .forEach(b => { b.disabled = off; });
+    dis("sp-", stop === 0);
+    dis("sp+", stop === STOPS - 1);
+    dis("cam+", rung === RUNGS - 1);
+    dis("cam-", rung === 0);
+  }
+
+  const ACTS = {
+    "cam+": () => { rung = Math.min(RUNGS - 1, rung + 1); place(); },
+    "cam-": () => { rung = Math.max(0, rung - 1); place(); },
+    "cam0": () => { rung = 2; place(); },
+    "sp+":  () => { stop = Math.min(STOPS - 1, stop + 1); layout(); },
+    "sp-":  () => { stop = Math.max(0, stop - 1); layout(); },
+    "fill": () => { fillAt = (fillAt + 1) % FILLS.length; layout(); },
+    "tone": () => { toneAt = (toneAt + 1) % 4; build(); },
+    "spin": () => { spin = !spin; },
+    "wire": () => { wire = !wire; build(); },
+    "edit": () => { editing = !editing; host.classList.toggle("editing", editing); }
+  };
+  const TOGGLE = { spin: 1, wire: 1, edit: 1 };
+
+  document.querySelectorAll("[data-act]").forEach(b => {
     b.addEventListener("click", () => {
-      fn(b);
-      document.querySelectorAll(sel).forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+      const a = b.getAttribute("data-act");
+      const fn = ACTS[a];
+      if (!fn) return;
+      fn();
+      if (TOGGLE[a]) {
+        b.setAttribute("aria-pressed", String(
+          a === "spin" ? spin : a === "wire" ? wire : editing
+        ));
+      }
+      report();
     });
   });
-  press("[data-shape]", b => { shape = b.getAttribute("data-shape"); build();
-    const h = document.getElementById("hud-shape"); if (h) h.textContent = shape; });
-  press("[data-tone]", b => { tone = b.getAttribute("data-tone"); build(); });
-  document.querySelectorAll("[data-wire]").forEach(b => b.addEventListener("click", () => {
-    wire = !wire; b.setAttribute("aria-pressed", String(wire)); build();
-  }));
-  document.querySelectorAll("[data-spin]").forEach(b => b.addEventListener("click", () => {
-    spin = !spin; b.setAttribute("aria-pressed", String(spin));
-  }));
+
+  document.querySelectorAll("[data-layer]").forEach((b, i) => {
+    b.addEventListener("click", () => {
+      // The last plate standing cannot be put away. An empty stage is a state
+      // with no way out that looks exactly like a crash.
+      if (up[i] && up.filter(Boolean).length === 1) return;
+      up[i] = !up[i];
+      b.setAttribute("aria-pressed", String(up[i]));
+      layout();
+      report();
+    });
+  });
 
   // A theme change repaints the objects, because their colour was read from the
   // stylesheet rather than written down here.
-  new MutationObserver(build).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  new MutationObserver(build).observe(document.documentElement,
+    { attributes: true, attributeFilter: ["data-theme"] });
   addEventListener("resize", size);
 
   build();
+  place();
   size();
+  report();
 
-  let last = performance.now(), frames = 0, acc = 0;
+  let last = performance.now(), frames = 0, acc = 0, shown = false;
   renderer.setAnimationLoop(now => {
     const dt = (now - last) / 1000; last = now;
-    if (spin && group) group.rotation.y += dt * 0.35;
+    if (spin) stackG.rotation.y += dt * 0.3;
     renderer.render(scene, cam);
     frames++; acc += dt;
     if (acc >= 1) {
       const el = document.getElementById("hud-fps");
-      if (el) el.textContent = Math.round(frames / acc) + " fps";
+      if (el) el.textContent = String(Math.round(frames / acc));
+      const tr = document.getElementById("hud-tri");
+      if (tr) tr.textContent = renderer.info.render.calls + " calls";
       frames = 0; acc = 0;
     }
-    host.classList.add("on");
+    if (!shown) { shown = true; host.classList.add("on"); }
   });
 }
 `;

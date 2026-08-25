@@ -18,6 +18,7 @@ import { VIEWER_JS } from "./viewer.ts";
 import { specBody } from "./pages/spec.ts";
 import { viewerBody } from "./pages/viewer.ts";
 import { pageHead, p } from "./ui.ts";
+import { resetFig } from "./charts.ts";
 
 const BUILT = process.env.BUILT ?? "23 August 2026";
 
@@ -49,7 +50,7 @@ const pages: { file: string; nav: string; html: string }[] = [
     html:
       head("UX spec - the house design system", meta("UX spec", "")) +
       nav("index") +
-      specBody() +
+      (resetFig(), specBody()) +
       foot(BUILT) +
       `<script>${CLIENT}</script>`,
   },
@@ -72,7 +73,7 @@ const pages: { file: string; nav: string; html: string }[] = [
     html:
       head("Viewer - the WebGL stage", meta("Viewer", "viewer.html")) +
       nav("viewer") +
-      viewerBody() +
+      (resetFig(), viewerBody()) +
       foot(BUILT) +
       `<script>${CLIENT}</script>` +
       // The stage is the only module on the site. It is deferred by being a

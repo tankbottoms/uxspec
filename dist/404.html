@@ -1347,6 +1347,71 @@ footer strong { color: var(--ink-muted); }
 .stage .hud{position:absolute;left:9px;bottom:9px;display:flex;gap:5px;
   font-family:var(--font-mono);font-size:9.5px;color:var(--ink-soft)}
 
+/* ------------------------------------------------------- the side rails */
+/* Two docks the other viewports do not have, because two of the axes a 3D view
+   offers do not exist on a map or a chart: where the eye stands, and which of
+   the subject's layers are standing. They are vertical and mid-height rather
+   than folded into the top or bottom rows for one reason -- the bottom row is
+   already three clusters wide, and a fourth and fifth group added to it would
+   put camera, spread and state in one undifferentiated line of marks. Position
+   is what tells the reader which axis a control belongs to; that is the whole
+   argument for docking controls inside a frame in the first place. */
+.vp-lm,.vp-rm{position:absolute;top:50%;transform:translateY(-50%);z-index:4}
+.vp-lm{left:9px}
+.vp-rm{right:9px}
+/* A rail is the same plate as any other cluster, turned. It does not get its
+   own background, padding or radius -- two plate treatments on one frame is
+   how a viewport starts looking like two applications. */
+.vp-btns.col{flex-direction:column;align-items:center;padding:5px}
+/* The rail's own position, under its buttons. It is not a badge: a badge here
+   would be a sixth pressable-looking thing in a column of five real ones. */
+.vp-rung{font-family:var(--font-mono);font-size:8px;letter-spacing:.04em;
+  color:var(--ink-faint);font-variant-numeric:tabular-nums;padding:1px 2px 0}
+.vp-btns:not(.col) .vp-rung{padding:0 3px}
+/* A disabled tool is dimmed and inert but stays in the rail. Removing it would
+   make the rail change length as the reader used it, and a control that moves
+   under the pointer is a control pressed twice by accident. */
+.vp-btns button[disabled]{cursor:default}
+.vp-btns button[disabled] .badge{opacity:.34}
+.vp-btns button[disabled] .tip-plate{display:none}
+
+/* -------------------------------------------------- the glyph-only tooltip */
+/* A name and a note, on hover and on focus, opening away from the rail it is
+   docked to. The browser's own tooltip was tried first and is not enough: it
+   waits about a second, which is longer than a reader hesitating over an
+   unfamiliar mark will wait, and it cannot hold two lines of different weight.
+   It is positioned inside the button, so it follows the rail rather than being
+   placed against the frame. */
+.vt{position:relative}
+.tip-plate{display:none;position:absolute;left:calc(100% + 7px);top:50%;
+  transform:translateY(-50%);z-index:16;width:186px;padding:6px 9px 7px;
+  background:var(--tip-paper);border:1px solid var(--rule);
+  border-radius:var(--radius);box-shadow:0 6px 20px rgba(0,0,0,.14);
+  text-align:left;pointer-events:none}
+/* The right-hand rail opens left, or the note is drawn off the frame. */
+.tip-plate.lt{left:auto;right:calc(100% + 7px)}
+.vt:hover .tip-plate,.vt:focus-visible .tip-plate{display:block}
+.tip-plate .n{display:block;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+.tip-plate .d{display:block;margin-top:3px;font-size:10px;line-height:1.45;
+  color:var(--ink-muted)}
+
+/* ------------------------------------------------------------ the stage */
+/* Inside a viewport the stage is the body and nothing else: the frame already
+   owns the border, the radius and the clipping, and a second border here drew
+   a hairline just inside the first one on every rebuild. */
+.vw .vp-body{aspect-ratio:16/10}
+.vw .stage{position:absolute;inset:0;aspect-ratio:auto;margin:0;border:0;
+  border-radius:0;background:var(--paper-alt)}
+/* The frame says which of the two things it is. A viewport that can be edited
+   and one that can only be looked at wear the same rails -- that is the point,
+   the rails are the view's controls either way -- so the difference has to be
+   said, and it is said in the corner rather than by changing the controls. */
+.vp-name .badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;
+  letter-spacing:.06em;text-transform:uppercase}
+.vp-name .badge .ic{width:9px;height:9px}
+.vw .stage.editing{box-shadow:inset 0 0 0 2px var(--accent)}
+
 /* --------------------------------------------------------------- tip mark */
 /* The glyph form of .tip. The dotted underline that promises a pointer on a word
    makes no sense under a 10px circle, so it comes off and the mark carries the
