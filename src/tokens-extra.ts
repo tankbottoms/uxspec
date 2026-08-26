@@ -1142,4 +1142,23 @@ tr[data-tx]{cursor:pointer}
 .ab-p2:checked ~ .ab-ft .n2,.ab-p3:checked ~ .ab-ft .n3,
 .ab-p4:checked ~ .ab-ft .n4{display:inline}
 
+/* ------------------------------------------------- drawings on a narrow page */
+/* Every drawing is authored 620 units wide and scales to its column, which means
+   that below 620px it scales its type down too: an 8.5px axis label renders at
+   5px in a 366px column, and a wireframe caption -- already set a step under the
+   body -- lands near 3px. Nothing is wrong with the layout; the problem is that
+   a viewBox has no equivalent of max-width for font-size.
+   The calendar band already answers this. It alone keeps its authored pixel size
+   and lets its scroll box take the overflow, which is why its labels measure the
+   same at 390px as at 1440px. Below the common breakpoint every other drawing
+   does the same: authored size, horizontal scroll, legible type. The hover pods
+   are groups inside the SVG, so they travel with the drawing and the scroller
+   cannot clip them; the figure number sits at the caption's left edge, inside
+   the box, so it is unaffected. */
+@media (max-width:720px){
+  .lchart,.bchart,.schart,.tline{width:620px;max-width:none}
+  figure{overflow-x:auto}
+  .wf svg{width:620px;max-width:none}
+}
+
 `;
