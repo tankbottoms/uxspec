@@ -180,19 +180,28 @@ const IDENTITY = TONES.filter(([cls]) => !RESERVED.has(cls));`,
     ) +
     U.h3("Type scale", "type") +
     U.p(
-      `Page 11.5px, table 10px, badge 9.5px, overlay one step below whatever it covers, floor 9px. Numbers are tabular everywhere they are compared and never anywhere else -- tabular figures in a sentence look broken because they are.`,
+      `Page 13px, table 10.5px, badge 10px, overlay one step below whatever it covers. Numbers are tabular everywhere they are compared and never anywhere else -- tabular figures in a sentence look broken because they are.`,
     ) +
     U.kv([
-      ["Page body", "11.5px / 1.62"],
-      ["Table cell", "10px, tabular"],
-      ["Badge", "9.5px, 15px tall, tabular"],
+      ["Page body", "13px / 1.5"],
+      ["Lead paragraph", "13.5px / 1.62"],
+      ["Table cell", "10.5px, tabular"],
+      ["Badge", "10px, 17px tall, tabular"],
       ["Dialog head", "13.5px"],
       ["Tooltip", "11px"],
       ["Overlay table", "9.5px"],
-      ["Floor", "9px &mdash; below this, nothing"],
+      ["Prose floor", "9px &mdash; 8.5px for a caption of four lines"],
+      ["Drawing label", "6.5px, 6px for a dimension"],
     ]) +
     W.spacingRuler() +
-    U.p(`<span class="fig">Fig. A</span> The five vertical steps, and no others.`)
+    U.p(`<span class="fig">Fig. A</span> The five vertical steps, and no others.`) +
+    U.p(
+      `The floor governs prose. A label inside a wireframe or a chart is not prose: nobody reads it in sequence, it is matched to the thing it points at and then dropped. Those run at 6.5px, and 6px where the label is a dimension &mdash; two sizes, deliberately under the floor, with nothing between them and it. An 8px label in a drawing reads as body copy that failed, which is the confusion the floor exists to prevent, so the gap is part of the rule rather than a hole in it.`,
+    ) +
+    U.note(
+      `A drawing is authored at a fixed width and scaled to its column, and scaling a viewBox scales the type inside it &mdash; a 6.5px label in a 366px column renders near 3.8px. There is no SVG equivalent of max-width for font-size, so under 720px every drawing keeps its authored size and hands the overflow to a scroll box instead. The calendar band always did this; the rule is the band's, generalised.`,
+      "caution",
+    )
   );
 }
 
@@ -491,7 +500,7 @@ function tables(): string {
       `The left column is one cell per block, spanning it: a glyph, and the group's name turned on its side beneath it. It is a badge like any other &mdash; one width for the whole rail, taken from every group name the table can ever hold rather than the ones this dataset happens to contain, so the rail does not change width when a group drops out.`,
     ) +
     U.p(
-      `The interesting case is a two-row block. Twenty-nine pixels a row, thirty-six spent on the glyph and its gap, and a nine-character name needs sixty-one: it does not fit, and the three ways out are all worse than the fourth. Shrinking the type below the smaller face makes a label nobody reads. Wrapping the rotated name turns the rail into a paragraph on its side. Stretching every block to the tallest name pads the table for the sake of one word. So <span class="mono">fit()</span> tries the full face, then the smaller one, then two to five rows' worth of height for blocks that can afford it &mdash; and when none of those hold, it drops the name and keeps the glyph. That is <span class="mono">td.rot.gonly</span>: the badge loses its fill, its border and its insets, and what is left is the mark, centred, in the group's colour, with the full name on the cell's <span class="mono">title</span>. Nothing is lost that the row's own badges do not already say; the rail's job at that size is to show where the block starts and ends.`,
+      `The interesting case is a two-row block. Twenty-nine pixels a row, thirty-six spent on the glyph and its gap, and a nine-character name needs sixty-one: it does not fit, and the three ways out are all worse than the fourth. Shrinking the type below the smaller face makes a label nobody reads. Wrapping the rotated name turns the rail into a paragraph on its side. Stretching every block to the tallest name pads the table for the sake of one word. So <span class="mono">fit()</span> tries the full face, then the smaller one, then two to five rows' worth of height for blocks that can afford it &mdash; and when none of those hold, it drops the name and keeps the glyph. That is <span class="mono">td.rot.gonly</span>: the badge loses its fill, its border, its insets and its fixed height, and what is left is the mark, centred, in the group's colour, with the full name on the cell's <span class="mono">title</span>. The height goes with the rest of it on purpose. Seventeen pixels is the height of a chip that has a value inside it, and this cell has no value inside it &mdash; holding the box open to the badge measure would draw a second rectangle inside a cell that is already a tall rectangle. The glyph sizes its own box instead, which is the one place on the site where a thing carrying <span class="mono">.badge</span> is not badge-height, and it is the only one. Nothing is lost that the row's own badges do not already say; the rail's job at that size is to show where the block starts and ends.`,
     ) +
     U.p(
       `The subtotal wears the same mark and never the ribbon. A subtotal is one row, so a rotated name would have twenty-nine pixels to stand in and would draw a box around a single upright glyph &mdash; a second, emptier badge beside the one the block already wears. <span class="mono">hollow</span> was tried there first and only dropped the fill; the border stayed, and the border was the part that read as a box.`,
