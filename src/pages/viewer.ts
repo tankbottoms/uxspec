@@ -238,6 +238,95 @@ dis("sp+", stop === STOPS - 1);`,
 .vp-btns > * + *{border-left:1px solid var(--rule-soft)}`,
       { lang: "tokens-extra.ts" },
     ) +
+    U.h3("The ring is already there", "toolring") +
+    U.p(
+      `A mark inside a frame has five things to say and only two properties to say them with, so both are spent carefully. The <strong>colour of the glyph</strong> carries the state, and a <strong>ring around it</strong> carries the pointer. Neither of them is a fill, and neither of them is a border &mdash; the ring is an <span class="mono">outline</span>, and it is declared transparent at rest. That is the whole trick: the lit state changes one colour and nothing else, so a glyph never moves by a pixel as a reader crosses the cluster. A border would have to be reserved as a border, which means either a jump on hover or a permanently drawn box on every tool.`,
+    ) +
+    T.table({
+      fig: "Table 8c",
+      caption: "The five states of a tool mark, and the one that is not a state",
+      cols: [{ h: "State" }, { h: "Glyph" }, { h: "Ring" }],
+      body:
+        row(
+          T.td("At rest") +
+            T.td(`<span class="mono">--ink-muted</span>`) +
+            T.td("transparent, and already there"),
+        ) +
+        row(
+          T.td("Under the pointer") +
+            T.td(`<span class="mono">--accent</span>`) +
+            T.td(`<span class="mono">--accent</span>`),
+        ) +
+        row(
+          T.td("On") +
+            T.td(`<span class="mono">--stroke-amber</span>`) +
+            T.td("none &mdash; nothing is pointing at it"),
+        ) +
+        row(
+          T.td("On, and under the pointer") +
+            T.td(`<span class="mono">--accent</span>`) +
+            T.td(`<span class="mono">--accent</span>`),
+        ) +
+        row(
+          T.td("Being pressed") +
+            T.td(`<span class="mono">--stroke-amber</span>`) +
+            T.td(`<span class="mono">--stroke-amber</span>`),
+        ) +
+        row(
+          T.td("Unavailable") +
+            T.td(`<span class="mono">opacity: .38</span>, and the cursor stops`) +
+            T.td("none, and hover does nothing"),
+        ),
+      scope: "every mark in every dock &middot; no fills anywhere in the list",
+      mark: {
+        ic: "circle-info",
+        label: "the pointer wins",
+        title:
+          "On plus hover resolves to teal, not amber. A reader with their hand on a latched control needs to know it is still pressable more than they need to be told again that it is on -- they can see that it is on, because they turned it on.",
+      },
+    }) +
+    U.code(
+      `.vp .vt .badge{outline:1px solid transparent;outline-offset:2px;
+  border-radius:var(--radius-sm)}
+.vp .vt:hover .badge{color:var(--accent);outline-color:var(--accent)}
+.vp .vt[aria-pressed="true"] .badge{color:var(--stroke-amber)}
+.vp .vt[aria-pressed="true"]:hover .badge{color:var(--accent);
+  outline-color:var(--accent)}
+.vp .vt:active .badge{color:var(--stroke-amber);outline-color:var(--stroke-amber)}
+.vp-btns .vt[disabled]{opacity:.38;cursor:default}`,
+      { lang: "tokens-extra.ts" },
+    ) +
+    U.noteBox({
+      kind: "good",
+      title: "Inside a frame the badge is neutered, not restyled",
+      body: `The badge element survives so the glyph keeps its box and its alignment, but everything that makes a badge a badge comes off inside <span class="mono">.vp</span>: no ground, no border, no padding, and <span class="mono">width:auto</span> rather than a step off the width scale. The scale exists to line up a column of values; a control is not in a column of values. Keeping the element and dropping the costume is what stops a second set of geometry rules being invented for the frame.`,
+    }) +
+    U.p(
+      `The group carries the same idea one level up. Pointing anywhere at a cluster tints <em>that cluster&rsquo;s own glyphs</em> teal &mdash; it does not draw anything new. The version that drew a ring round the whole group was tried and it was a box laid over the controls: a fourth rectangle on a frame that already has a plate, a dock and a subject, and one that arrives and leaves as the pointer travels. A cluster says &ldquo;you are here&rdquo; the same way a single tool does, by lighting up what it already owns.`,
+    ) +
+    U.h3("A readout is a rung in the same plate", "rung") +
+    U.p(
+      `A rail that prints its position has to print it <strong>inside</strong> the plate, as one more cell with a hairline before it, not as a caption floating beside it. A number sitting next to the cluster is a second object, and the reader has to decide whether it belongs to the cluster on its left or the one on its right &mdash; which on a frame with four docks is a real question, not a pedantic one. As a rung it is unambiguous by construction, and it inherits the plate&rsquo;s ground, border, radius and shadow for free.`,
+    ) +
+    U.p(
+      `The rung is mono, 8px, tabular and stretched to the plate&rsquo;s full height, with a minimum of two glyph cells so a value changing from <span class="mono">1/5</span> to <span class="mono">100%</span> does not resize the cluster under a pointer that is already moving toward it. Where a frame only reports and never acts, the same rungs make a plate on their own &mdash; a readout is not a different component from a rail, it is a rail with no buttons in it.`,
+    ) +
+    U.code(
+      `.vp-rung{display:inline-flex;align-items:center;justify-content:center;
+  align-self:stretch;box-sizing:border-box;min-width:calc(var(--vp-gl)*2);
+  height:var(--vp-gl);font:400 8px var(--font-mono);letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;color:var(--ink-muted);padding:0 4px}
+.vp-read .vp-rung + .vp-rung{border-left:1px solid var(--rule-soft)}
+/* A stacked cluster is one cell wide, so its readout is one cell wide too. */
+.vp-btns.col .vp-rung{min-width:0;width:var(--vp-gl);font-size:7px;
+  letter-spacing:0;padding:1px 0}`,
+      { lang: "tokens-extra.ts" },
+    ) +
+    U.noteBox({
+      kind: "caution",
+      title: "A rung in a column shrinks; it does not widen the stack",
+      body: `Two glyph cells is the right minimum on a horizontal plate and the wrong one on a vertical stack, where it would make the whole column twice as wide as its buttons for the sake of one number. So the stacked rung drops to a single cell, loses its tracking and drops a half-point of type. That is only safe because it was checked against the values actually shown &mdash; a distance, a percentage, a ratio, none of them wider than the cell. Carrying the carve-out to a dial that prints a timestamp would clip it silently.`,
+    }) +
     U.h3("A tool with more than two answers opens a drawn one", "drawntools") +
     U.p(
       `A glyph that cycles is only honest where the answers are two. Past that the reader is pressing to find out, which is the interaction equivalent of reading a list by deleting it one line at a time &mdash; twelve tints reached by twelve presses is eleven wrong pictures on the way to the right one. So the four marks beside the circle-i are not cycles. Each opens a small panel, and each panel is <strong>drawn</strong>: the tint tool is swatches, the shape tool is shapes, the layer tool is the stack in the order the stack is in, and the mode tool draws both sides of the choice so the reader can see the other one before standing in it.`,
@@ -344,6 +433,61 @@ dis("sp+", stop === STOPS - 1);`,
       title: "Amber is the subject, teal is the pointer",
       body: `Two colours, two jobs, everywhere on the frame. <strong>Amber</strong> means <em>this is the thing being explained</em> &mdash; the lit circle-i, the numbers, the wash under a numbered cluster, the ring the tour is standing on. <strong>Teal</strong> means <em>this is the thing under your hand</em> &mdash; hover, and only hover. Because they never overlap, a reader can tell at a glance whether a highlight is something the page is saying or something they are doing, without being told.`,
     }) +
+    U.h3("The number outranks the card it belongs to", "helpz") +
+    U.p(
+      `Help mode puts three new things over a frame that already has four layers in it, and the order they stack in is not a detail &mdash; get it wrong and the mode breaks in exactly the way it is meant to fix. The rule is short: <strong>the number sits above the card that explains it</strong>. A reader in help mode is using the number as an index &mdash; they find a circle on the picture, then look for that circle in the legend &mdash; so a card that covers its own number has hidden the one mark the reader is holding their place with, at the precise moment they are using it.`,
+    ) +
+    T.table({
+      fig: "Table 8d",
+      caption: "What is over what, on a frame in help mode",
+      cols: [{ h: "Layer" }, { h: "z" }, { h: "Why it is there" }],
+      body:
+        row(
+          T.td("The docks and their plates") +
+            T.td(`<span class="mono">18</span>`) +
+            T.td("above the picture, below everything that explains them"),
+        ) +
+        row(
+          T.td("The pinned explainer") +
+            T.td(`<span class="mono">21</span>`) +
+            T.td("over the plates, because it is about a plate"),
+        ) +
+        row(
+          T.td("The cluster number") +
+            T.td(`<span class="mono">22</span>`) +
+            T.td("over its own card &mdash; it is the index into it"),
+        ) +
+        row(
+          T.td("The moved explainer") +
+            T.td(`<span class="mono">40</span>`) +
+            T.td("fixed to the window, so it is out of the frame's stack entirely"),
+        ),
+      scope: "one ladder &middot; no layer shares a number with another",
+    }) +
+    U.h3("Two explainers, one job", "helpcards") +
+    U.p(
+      `There are two cards, and which one a reader gets depends on whether the script ran. The <strong>pinned</strong> one is plain CSS: it lives inside the cluster, and a side class on the group &mdash; above, below, left, right &mdash; decides which way it opens, chosen once per cluster by where that cluster stands. It is fixed width, inert, and it is the only explainer a still page has, so it opens on hover with no mode required.`,
+    ) +
+    U.p(
+      `The <strong>moved</strong> one is what the script swaps in, and the swap is a class on the frame rather than a rewrite of the markup: <span class="mono">.js-tip</span> suppresses the pinned card and one shared card is positioned per widget instead. It is <span class="mono">position:fixed</span>, which is the whole reason it exists &mdash; a card measured against the window can be clamped to it, and a card measured against a cluster that happens to be sitting in the bottom-right corner cannot. It also caps its own width against the viewport, so it survives a narrow screen, and being one element rather than fourteen it can be given to a touch device that has no hover at all.`,
+    ) +
+    U.code(
+      `.vp-grp.st .vp-hx{top:calc(100% + 8px);left:0}
+.vp-grp.sb .vp-hx{bottom:calc(100% + 8px);left:0}
+.vp-grp.sl .vp-hx{left:calc(100% + 8px);top:0}
+.vp-grp.sr .vp-hx{right:calc(100% + 8px);top:0}
+/* With scripting off the pinned card is the only explainer there is. */
+.vp:not(.js-tip) .vp-grp:hover .vp-hx{display:block}
+.vp-tip{position:fixed;z-index:40;width:min(230px,calc(100vw - 16px));
+  pointer-events:none;background:var(--paper-card);border:1px solid var(--rule);
+  border-radius:var(--radius);box-shadow:0 6px 18px rgba(0,0,0,.14)}`,
+      { lang: "tokens-extra.ts" },
+    ) +
+    U.noteBox({
+      kind: "caution",
+      title: "Highlight a group by tinting it, never by drawing a plate around it",
+      body: `The first version of the numbered state put a ring round each cluster to say <em>this one</em>. It was a fourth rectangle on a frame that already has a picture, a dock and a plate, and it arrived and left as the pointer travelled. The fix was to say it with what the cluster already owns: point at a group and <em>its own glyphs</em> go teal, the same signal a single tool gives. Nothing new is drawn, so nothing new can be in the way.`,
+    }) +
     U.h3("A tour is a caption that moves", "helptour") +
     U.p(
       `The map answers <em>where is everything</em> in one picture, but it cannot pace a reader through five clusters in order. So the card ends with one door &mdash; <span class="gl">${icon(
@@ -430,6 +574,30 @@ dis("sp+", stop === STOPS - 1);`,
     W.chartAnatomy() +
     U.p(
       `<span class="fig">${nextFig()}</span> The same frame, caption and scope apply to a canvas as to a chart.`,
+    ) +
+    U.h3("Order the siblings so the selectors can reach", "sibs") +
+    U.p(
+      `A frame that switches without script switches with the sibling combinator, and the combinator only walks <em>forward</em>. So the inputs that hold the state go <strong>before</strong> every dock they have to reach, at the top of the frame &mdash; the three help radios first, then the top dock, the side rails and the bottom bar. Put them where they are visually used, next to the circle-i in the corner, and the rule that lights the left rail silently stops matching: no error, no warning, and a mode that half works.`,
+    ) +
+    U.p(
+      `The other half of the pattern is <span class="mono">:has()</span>, which does not care about order and is what a drawer&rsquo;s tabs are made of. One radio per tab, one panel per tab, and the drawer itself decides which panel shows. Both are the same commitment: <strong>the state lives in an input</strong>, so it survives a script that failed to load, keyboard access is the browser&rsquo;s and not something re-implemented, and a screen reader gets a real radio group rather than a set of buttons wearing one.`,
+    ) +
+    U.code(
+      `<!-- The inputs first, then every dock they light. -->
+<input type="radio" name="vp-help" id="vp-h0" class="vp-hm h0" checked>
+<input type="radio" name="vp-help" id="vp-h1" class="vp-hm h1">
+<input type="radio" name="vp-help" id="vp-h2" class="vp-hm h2">
+<div class="vp-top">…</div>
+<div class="vp-lm">…</div>`,
+      { lang: "viewer.ts" },
+    ) +
+    U.code(
+      `.vp-hm{position:absolute;width:1px;height:1px;opacity:0;
+  clip-path:inset(50%);pointer-events:none}
+.h2:checked ~ .vp-lm .hn,.h2:checked ~ .vp-bot .hn{display:inline-flex}
+/* :has does not need the order, so a drawer's tabs are written locally. */
+.dw:has(#wt-ground:checked) .wt-p[data-tab="ground"]{display:block}`,
+      { lang: "tokens-extra.ts" },
     ) +
     /* ------------------------------------------------------------------ 9 */
     U.h2(9, "colour", "Colour comes from the stylesheet", icon("circle-check"), {
@@ -604,6 +772,94 @@ dis("sp+", stop === STOPS - 1);`,
       "Frames per second, simulated",
       "invented data, shape only",
     ) +
+    /* ----------------------------------------------------------------- 14 */
+    U.h2(14, "instruments", "Instruments, and where a reading lives", icon("palette"), {
+      hint: "drawer, dial, chip",
+      hintIc: icon("circle-info"),
+      stmt:
+        "A rail holds the tools that have two answers. Everything with more answers than that lives in a drawer, and a drawer is built out of four parts and no more.",
+    }) +
+    U.p(
+      `A frame with real depth behind it runs out of rail long before it runs out of settings. The rule that keeps the rails honest &mdash; a glyph is a tool, and a tool has one or two answers &mdash; means the twenty-odd numbers that shape what is on the stage have to live somewhere else. They live in a drawer, and the drawer is deliberately made of a very small kit: a titled sheet, a row that shows one number, a segmented control, and a grid of chips. Four parts covers every setting on this page. A fifth part would be a new thing for a reader to learn in exchange for one screen.`,
+    ) +
+    U.h3("A drawer is a sheet, not a menu", "drawer") +
+    U.p(
+      `It opens as paper on the same ground as the page: a head with the name and a close mark pushed to the right by <span class="mono">margin-left:auto</span>, a body on a two-column grid with a fixed left column and a fluid right one, and a foot restating what was changed. It is not a dropdown and it does not float over the subject if it can avoid it &mdash; a reader who opens the shape settings is going to change several of them and then look at the result, so the drawer stays put while they work and closes when they are done. Its tabs are the <span class="mono">:has()</span> pattern from &sect;8: a radio per tab, and the drawer picks the panel.`,
+    ) +
+    U.h3("A dial is a label, a bar and a number", "dial") +
+    U.p(
+      `Every numeric setting on the page is the same row, and it is a grid rather than a flex line so that thirty rows in four panels align down their whole length: a fixed label column, a bar that takes the slack, and a fixed value column. Rows are separated by the hairline rule, never by space &mdash; a list of thirty settings broken up with gaps is twice as tall and no easier to read.`,
+    ) +
+    T.table({
+      fig: "Table 9c",
+      caption: "The four cells of a dial row, and what each one is allowed to do",
+      cols: [{ h: "Cell" }, { h: "Width" }, { h: "Behaviour" }],
+      body:
+        row(
+          T.td("Label") +
+            T.td(`<span class="mono">92px</span>`) +
+            T.td("plain text, no wrap, no colon"),
+        ) +
+        row(
+          T.td("Bar") +
+            T.td(`<span class="mono">1fr</span>`) +
+            T.td(
+              `6px tall, filled in <span class="mono">--accent</span>, going <span class="mono">--stroke-amber</span> under the pointer &mdash; the same two colours as a tool`,
+            ),
+        ) +
+        row(
+          T.td("Steppers") +
+            T.td("two glyph cells") +
+            T.td("one increment each, held down to repeat, disabled at the ends"),
+        ) +
+        row(
+          T.td("Value") +
+            T.td(`<span class="mono">46px</span>`) +
+            T.td("mono, tabular, and an editable field wearing no chrome until pointed at"),
+        ),
+      scope: "every numeric setting on the page &middot; one row shape, four panels",
+    }) +
+    U.code(
+      `.dl-row{display:grid;grid-template-columns:92px 1fr 46px;align-items:center;
+  gap:7px;padding:2px 0}
+.dl-row + .dl-row{border-top:1px solid var(--rule-hair)}
+.dl-bar{flex:1;min-width:0;height:6px;border-radius:var(--radius-sm);
+  background:var(--rule-soft)}
+.dl-bar > i{display:block;height:100%;background:var(--accent)}
+.dl-bar:hover > i{background:var(--stroke-amber)}
+/* The value is a real input with its platform costume taken off. */
+.dl-ve{appearance:none;background:none;border:1px solid transparent;cursor:text}
+.dl-ve:hover{border-color:var(--rule-soft);color:var(--ink)}
+.dl-ve:focus-visible{outline:1px solid var(--accent);outline-offset:1px}`,
+      { lang: "tokens-extra.ts" },
+    ) +
+    U.noteBox({
+      kind: "good",
+      title: "A field that looks like text until it is worth looking like a field",
+      body: `Thirty boxed inputs stacked in a panel is thirty rectangles competing with the picture they are meant to be shaping. So the value renders as the reading it is &mdash; mono, tabular, no border &mdash; and grows a hairline only under the pointer, a real focus ring only when focused. It is still an <span class="mono">input</span>: typed, validated, tabbable, and submittable. The chrome went, the element stayed &mdash; the same trade as the fields in &sect;13.`,
+    }) +
+    U.h3("A choice of four is segmented; a choice of sixteen is chips", "choices") +
+    U.p(
+      `Both are radios and both take amber when chosen, and the only question is how many there are. Up to about four short words it is a segmented control &mdash; one plate, hairline-divided, the chosen label carrying <span class="mono">--pastel-amber</span>. Past that it stops being readable as a row of words and becomes a grid of swatches, where the chosen one is ringed in <span class="mono">--ink</span> with an inset hairline of paper so the ring never sits directly against a colour it might disappear into. A swatch grid says <em>pick one of these things</em> without asking the reader to read sixteen names.`,
+    ) +
+    U.h3("Two readings that are not controls", "readouts") +
+    U.p(
+      `Some numbers are not settings, and they must not be dressed as any of the above. There are two of them and they sit in two different places. The <strong>in-glass readout</strong> is a small mono stack in the top-left of the picture itself, teal-free, ground-free, and <span class="mono">pointer-events:none</span> &mdash; it is printed on the glass, so it can never take a click that was meant for the subject underneath it. The <strong>census</strong> sits under the whole frame as an auto-fitting row of blocks, each a label over a figure, mono and tabular so a figure that ticks does not shove the ones beside it.`,
+    ) +
+    U.code(
+      `.stage-hud{position:absolute;left:9px;top:9px;z-index:6;display:flex;
+  flex-direction:column;gap:2px;font:400 9.5px var(--font-mono);
+  color:var(--ink-muted);pointer-events:none}
+.vw-stats{display:grid;gap:10px;margin-top:10px;
+  grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
+.vw-stats .st-g{display:grid;gap:2px 8px;grid-template-columns:1fr auto}`,
+      { lang: "tokens-extra.ts" },
+    ) +
+    U.noteBox({
+      kind: "",
+      title: "The hand bar joins the frame; it does not sit under it",
+      body: `The strip that says what is in hand is on the frame&rsquo;s bottom edge with <span class="mono">border-top:0</span> and only its bottom corners rounded, so the two share one border and read as one body. Give it its own full border and a gap and it becomes a caption under a picture &mdash; which is exactly what it is not: it is the part of the frame that reports the frame&rsquo;s own state.`,
+    }) +
     U.p(`Back to the spec: <a href="./index.html">index.html</a>.`)
   );
 }
