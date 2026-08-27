@@ -17,6 +17,7 @@
  *
  * Run by lint.sh. Exits non-zero with file:line on any violation.
  */
+import { dirname, resolve } from "node:path";
 import { Glob } from "bun";
 
 type Bad = { file: string; line: number; why: string; text: string; warn?: boolean };
@@ -40,6 +41,26 @@ function attr(src: string, from: number): { body: string; end: number } | null {
 const WVAR = /\$\{[^}]*\b\w*W\b[^}]*\}/;
 
 /**
+ * The stylesheet is one per project, not one per directory.
+ *
+ * The lint walks a single folder at a time, but `tokens.ts` lives once, at the
+ * root of the source tree. Walk up until it turns up rather than demand a copy
+ * beside every folder being checked — duplicated tokens are the exact failure
+ * this contract exists to prevent.
+ */
+async function tokensNear(dir: string): Promise<string> {
+  let at = resolve(dir);
+  for (let i = 0; i < 8; i++) {
+    const p = `${at}/tokens.ts`;
+    if (await Bun.file(p).exists()) return p;
+    const up = dirname(at);
+    if (up === at) break;
+    at = up;
+  }
+  throw new Error(`no tokens.ts at or above ${dir}`);
+}
+
+/**
  * The width vocabulary, read from the stylesheet rather than hardcoded.
  *
  * A class only counts as a width if tokens.ts actually gives it one; that way the
@@ -49,7 +70,7 @@ const WVAR = /\$\{[^}]*\b\w*W\b[^}]*\}/;
  * them is a column-specific rule that the next renderer will not inherit.
  */
 async function widthClasses(dir: string): Promise<Set<string>> {
-  const css = await Bun.file(`${dir}/tokens.ts`).text();
+  const css = await Bun.file(await tokensNear(dir)).text();
   const out = new Set<string>(["auto"]);
   for (const m of css.matchAll(/\.badge\.([\w-]+)\s*\{([^}]*)\}/g)) {
     if (/(?:^|[\s;])(?:min-)?width\s*:/.test(m[2] ?? "")) out.add(m[1] ?? "");

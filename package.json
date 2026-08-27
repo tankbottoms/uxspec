@@ -3,12 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "bun run src/design-lint.ts src && bun run src/badge-lint.ts src",
+    "lint": "bun run src/design-lint.ts src && bun run src/badge-lint.ts src && bun run src/token-lint.ts",
     "build": "bun run lint && bunx tsc --noEmit && bun run src/index.ts && bun run src/script-lint.ts dist/index.html dist/404.html dist/viewer.html",
     "stage": "mkdir -p public && cp dist/*.html public/",
     "dev": "bun run build && bun run stage && bunx wrangler@4 dev",
     "deploy": "bun run build && bun run stage && bunx wrangler@4 deploy",
-    "serve": "bun run build && python3 -m http.server 8895 --bind 0.0.0.0 --directory dist",
+    "serve": "bun run build && bun run src/serve.ts",
     "check": "bunx tsc --noEmit"
   },
   "devDependencies": {

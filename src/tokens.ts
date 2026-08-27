@@ -13,7 +13,7 @@
 export const CSS = `
 :root {
   --paper:#faf9f7; --paper-card:#ffffff; --paper-alt:#f6f4f1; --tip-paper:#ffffff;
-  --ink:#1c1e20; --ink-muted:#5f666d; --ink-soft:#8b9299;
+  --ink:#1c1e20; --ink-muted:#5f666d; --ink-soft:#8b9299; --ink-faint:#a8aeb4;
   --rule:#e2ded8; --rule-soft:#eae7e1; --rule-hair:#f1efeb;
   --accent:#2e8fa6;
 
@@ -41,7 +41,7 @@ export const CSS = `
    the operating system rather than fighting it. */
 :root[data-theme="solarized"] {
   --paper:#002b36; --paper-card:#073642; --paper-alt:#053642; --tip-paper:#073642;
-  --ink:#93a1a1; --ink-muted:#839496; --ink-soft:#586e75;
+  --ink:#93a1a1; --ink-muted:#839496; --ink-soft:#586e75; --ink-faint:#46595f;
   --rule:#12495a; --rule-soft:#0c3f4e; --rule-hair:#083642; --accent:#2aa198;
   --pastel-orchid:#2f2f52; --pastel-violet:#45213c; --pastel-peach:#472619;
   --pastel-vanilla:#3f3617; --pastel-blush:#452023; --pastel-rose:#48213a;
@@ -57,7 +57,7 @@ export const CSS = `
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     --paper:#002b36; --paper-card:#073642; --paper-alt:#053642; --tip-paper:#073642;
-    --ink:#93a1a1; --ink-muted:#839496; --ink-soft:#586e75;
+    --ink:#93a1a1; --ink-muted:#839496; --ink-soft:#586e75; --ink-faint:#46595f;
     --rule:#12495a; --rule-soft:#0c3f4e; --rule-hair:#083642; --accent:#2aa198;
     --pastel-orchid:#2f2f52; --pastel-violet:#45213c; --pastel-peach:#472619;
     --pastel-vanilla:#3f3617; --pastel-blush:#452023; --pastel-rose:#48213a;

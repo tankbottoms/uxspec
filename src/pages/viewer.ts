@@ -860,6 +860,114 @@ dis("sp+", stop === STOPS - 1);`,
       title: "The hand bar joins the frame; it does not sit under it",
       body: `The strip that says what is in hand is on the frame&rsquo;s bottom edge with <span class="mono">border-top:0</span> and only its bottom corners rounded, so the two share one border and read as one body. Give it its own full border and a gap and it becomes a caption under a picture &mdash; which is exactly what it is not: it is the part of the frame that reports the frame&rsquo;s own state.`,
     }) +
+    /* ----------------------------------------------------------------- 15 */
+    U.h2(15, "application", "The whole application, ringed", icon("diagram-project"), {
+      hint: "citygen",
+      hintIc: icon("circle-info"),
+      stmt:
+        "Seven docks are a vocabulary; this is what the vocabulary looks like once a real three.js tool has filled every one of them and had to survive a phone.",
+    }) +
+    U.p(
+      `A generator is the hardest case for this grammar, because it has more knobs than any one frame should show and none of them are optional. The rule that holds it together is that <strong>the controls ring the picture and never sit under it</strong>: identity top left, presentation top right, eye on the left rail, layers on the right, the frame&rsquo;s own verbs bottom left, the subject&rsquo;s geometry bottom centre, readouts bottom right. Everything a reader has to hunt for is a dock that was given the wrong axis, not a control that was drawn badly.`,
+    ) +
+    U.h3("Six stances, one target", "stances") +
+    U.p(
+      `Two cameras, six named stances, and one focus point shared by all of them &mdash; so switching never loses your place. Three of the stances pin the pair of angles they are named for; three keep whatever you had. A stance that pins its pitch still lets you spin the bearing: you may turn a plan view round, you just cannot tip it out of plan.`,
+    ) +
+    T.table({
+      fig: "Table 10",
+      caption: "The six camera stances, and the angles each is pinned to",
+      cols: [{ h: "Stance" }, { h: "Camera" }, { h: "Pinned to" }],
+      body:
+        row(T.td(`<span class="gl">${icon("arrows-up-down-left-right")}Orbit</span>`) + T.td("perspective") + T.td("&mdash; free")) +
+        row(T.td(`<span class="gl">${icon("play")}Fly through</span>`) + T.td("perspective") + T.td("&mdash; free")) +
+        row(T.td(`<span class="gl">${icon("clone")}Flat</span>`) + T.td("orthographic") + T.td(`<span class="mono">89.9 deg</span> straight down`)) +
+        row(T.td(`<span class="gl">${icon("hexagon")}Isometric</span>`) + T.td("orthographic") + T.td(`<span class="mono">35.264 deg</span>, three axes measure alike`)) +
+        row(T.td(`<span class="gl">${icon("table-columns")}Paraline</span>`) + T.td("orthographic") + T.td(`<span class="mono">30 deg</span>, board-drawing convention`)) +
+        row(T.td(`<span class="gl">${icon("eye")}Angle</span>`) + T.td("orthographic") + T.td("&mdash; parallel lines, free bearing")),
+      scope: "one focus point &middot; six stances &middot; switching keeps your place",
+    }) +
+    U.noteBox({
+      kind: "good",
+      title: "Home is a fraction of the world, not a number of metres",
+      body: `Every distance in the rig is expressed as a multiple of the world&rsquo;s half-width &mdash; the eye stands at <span class="mono">extent &times; 1.9</span>, the orthographic half-height is <span class="mono">extent &times; 1.05</span>, the near plane is a ten-thousandth of it. Hard-code metres instead and the app opens <em>inside</em> the city the moment the subject is regenerated at another size, or the whole subject falls behind a near plane cut for a world four hundred times larger. Anything that can be a ratio should be one.`,
+    }) +
+    U.code(
+      `const HOME_DIST = 1.9;   // eye distance, as a multiple of the half-width
+const HOME_SPAN = 1.05;  // orthographic half-height, likewise
+function nearFor(extent: number) { return Math.max(0.01, extent * 0.0008); }`,
+      { lang: "view/cameras.ts" },
+    ) +
+    U.h3("One menu, never two", "collapse") +
+    U.p(
+      `A ring of seven docks is a desktop shape. On a phone the rails have nowhere to stand, and the failure everybody reaches for first &mdash; make the controls thinner &mdash; is the wrong one: it changes the chair. The control keeps its size and shape; what changes is <em>how many of them are showing</em>. The strips consolidate into <strong>one</strong> collapsed menu in the top left, settings stay top right, and the plan drops into the space the bottom strip vacated. Two collapsing menus is worse than none, because the reader now has to remember which half of the tool went into which.`,
+    ) +
+    U.tiles([
+      { k: "Docks, desktop", v: "7", s: "ringing the frame" },
+      { k: "Docks, phone", v: "3", s: "menu, settings, plan" },
+      { k: "Control size", v: "unchanged", s: "count collapses, shape does not" },
+      { k: "Gestures", v: "pinch, drag", s: "zoom and turn without a control" },
+    ]) +
+    U.h3("Help is an overlay of numbers, not a tour", "helpmode") +
+    U.p(
+      `Pressing the question mark does not start a walkthrough; it drops a thin wireframe of the frame you are already looking at, with a small amber circle on every control, the plan and each readout badge. The circles are numbered <strong>in one direction round the ring</strong> &mdash; a numbering that jumps across the frame is a numbering nobody follows. Circles that would fall under a neighbouring control move out, never under: a clipped help number is worse than an absent one. Same overlay on both widths, redrawn for the collapsed layout rather than scaled down.`,
+    ) +
+    U.h3("What the frame reports about itself", "census") +
+    U.p(
+      `Two readings, two places, and they are not interchangeable. The <strong>in-glass HUD</strong> is a small mono stack printed on the picture &mdash; stance, distance, bearing, frame time &mdash; and it is <span class="mono">pointer-events:none</span>, so it can never eat a drag meant for the subject underneath it. The <strong>census</strong> sits under the whole frame as an auto-fitting row of label-over-figure blocks: polygons, buildings by kind, trees, water surface, land area, memory. Mono and tabular, so a figure that ticks does not shove its neighbours.`,
+    ) +
+    U.noteBox({
+      kind: "",
+      title: "The budget is a control, not a warning",
+      body: `A generator that can outrun the frame rate needs the reader to be able to <em>spend</em>, not to be told off afterwards. So the polygon budget is a dial on the ring with the same shape as every other dial, the frame time sits beside it, and the two are read together. A modal that appears when the scene got too heavy is a design that waited until it was too late to be useful.`,
+    }) +
+    /* ----------------------------------------------------------------- 16 */
+    U.h2(16, "audits", "Four audits, run before anything is built", icon("circle-check"), {
+      hint: "build gate",
+      hintIc: icon("gear"),
+      stmt:
+        "Every rule on this page that can be checked mechanically is checked mechanically, and the build fails rather than the page looking wrong in production.",
+    }) +
+    U.p(
+      `A spec that is only prose decays &mdash; the second contributor pastes a raw hex out of another dashboard because it was quicker, and the page grows a second green. These four scripts are the parts of this document that a machine can enforce. They run in <span class="mono">lint</span> and <span class="mono">build</span>, before the type check and before a single file is emitted.`,
+    ) +
+    T.table({
+      fig: "Table 11",
+      caption: "The four build audits, and what each one refuses",
+      cols: [{ h: "Script" }, { h: "What it refuses" }, { h: "Runs on" }],
+      body:
+        row(
+          T.td(`<span class="mono">design-lint.ts</span>`) +
+            T.td("raw hex, <span class=\"mono\">rgb()</span> and named colours outside the token file; a colour is a name or it is a build error") +
+            T.td(`<span class="mono">src</span>`),
+        ) +
+        row(
+          T.td(`<span class="mono">badge-lint.ts</span>`) +
+            T.td("badges with an inline colour, a rounded corner or a width off the scale &mdash; one width per column, including the empty and error states") +
+            T.td(`<span class="mono">src</span>`),
+        ) +
+        row(
+          T.td(`<span class="mono">token-lint.ts</span>`) +
+            T.td("a <span class=\"mono\">var(--&hellip;)</span> the stylesheet has never heard of; the failure mode it prevents is a blank canvas in a browser") +
+            T.td(`<span class="mono">src</span>`),
+        ) +
+        row(
+          T.td(`<span class="mono">script-lint.ts</span>`) +
+            T.td("emitted HTML that needs JavaScript to read; the page must be correct with scripting off") +
+            T.td(`<span class="mono">dist/*.html</span>`),
+        ),
+      scope: "four scripts &middot; zero runtime deps &middot; the build gate, not a report",
+    }) +
+    U.code(
+      `"lint":  "bun run src/design-lint.ts src && bun run src/badge-lint.ts src && bun run src/token-lint.ts",
+"build": "bun run lint && bunx tsc --noEmit && bun run src/index.ts && bun run src/script-lint.ts dist/*.html"`,
+      { lang: "package.json" },
+    ) +
+    U.noteBox({
+      kind: "good",
+      title: "Local declarations are not violations",
+      body: `The token audit walks every file for <span class="mono">var(--&hellip;)</span> and checks the name against the stylesheet &mdash; but a file that writes <span class="mono">.vp{--vp-in:6px}</span> has declared a local dimension, not reached for a theme colour it invented. The check collects each file&rsquo;s own declarations first and exempts them. A lint that cannot tell those apart gets switched off within a week, which is worse than not having it.`,
+    }) +
     U.p(`Back to the spec: <a href="./index.html">index.html</a>.`)
   );
 }
